@@ -50,8 +50,13 @@ export function parseMarkdownContent(rawText: string, fallbackTitle = 'Untitled'
     });
   }
 
+  // Exclude code blocks and inline code when extracting tags and WikiLinks
+  const bodyWithoutCode = body
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/`[^`\n]+`/g, '');
+
   // Also extract inline #hashtags from body
-  const inlineTagMatches = body.matchAll(/(?:^|\s)#([a-zA-Z0-9_\-\/]+)(?=\s|$|[.,;:!?])/g);
+  const inlineTagMatches = bodyWithoutCode.matchAll(/(?:^|\s)#([a-zA-Z0-9_\-\/]+)(?=\s|$|[.,;:!?])/g);
   for (const tagMatch of inlineTagMatches) {
     if (tagMatch[1]) {
       tagsSet.add(tagMatch[1]);
@@ -60,7 +65,7 @@ export function parseMarkdownContent(rawText: string, fallbackTitle = 'Untitled'
 
   // 3. Extract WikiLinks: [[Target]] or [[Target|Alias]]
   const wikiLinks: Array<{ target: string; alias?: string; raw: string }> = [];
-  const wikiLinkMatches = body.matchAll(/\[\[(.*?)\]\]/g);
+  const wikiLinkMatches = bodyWithoutCode.matchAll(/\[\[(.*?)\]\]/g);
   for (const wlMatch of wikiLinkMatches) {
     const rawContent = wlMatch[1]?.trim();
     if (!rawContent) continue;

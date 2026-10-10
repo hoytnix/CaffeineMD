@@ -48,6 +48,9 @@ export function editorHtmlToMarkdown(html: string): string {
 
     // Check for WikiLink span
     if (el.hasAttribute('data-wikilink')) {
+      if (el.closest('pre') || el.closest('code')) {
+        return el.textContent || '';
+      }
       const target = el.getAttribute('data-wikilink') || '';
       return `[[${target}]]`;
     }

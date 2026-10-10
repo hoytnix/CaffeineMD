@@ -48,6 +48,10 @@ export const WikiLinkNode = Node.create<WikiLinkOptions>({
         tag: 'span[data-wikilink]',
         getAttrs: (element) => {
           if (typeof element === 'string') return false;
+          // Do not parse WikiLinks within code blocks or inline code
+          if (element.closest('pre') || element.closest('code')) {
+            return false;
+          }
           return {
             target: element.getAttribute('data-wikilink') || element.getAttribute('data-target'),
             alias: element.getAttribute('data-alias'),
@@ -65,7 +69,7 @@ export const WikiLinkNode = Node.create<WikiLinkOptions>({
       mergeAttributes(
         {
           class:
-            'wiki-link inline-flex items-center gap-0.5 text-indigo-600 dark:text-indigo-400 font-medium hover:underline cursor-pointer px-1 py-0.5 rounded hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors',
+            'wiki-link inline-flex items-center gap-0.5 text-indigo-600 dark:text-indigo-400 font-medium hover:underline cursor-pointer px-0.5 py-[1px] rounded hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors',
           'data-wikilink': target,
         },
         HTMLAttributes
@@ -86,6 +90,13 @@ export const WikiLinkNode = Node.create<WikiLinkOptions>({
       suggestion: {
         char: '[[',
         pluginKey: WikiLinkPluginKey,
+        allow: ({ state, range }) => {
+          const $from = state.doc.resolve(range.from);
+          // Do not allow WikiLink popup or autocomplete inside code blocks or code marks
+          if ($from.parent.type.name === 'codeBlock') return false;
+          if ($from.marks().some((m) => m.type.name === 'code')) return false;
+          return true;
+        },
       } as Partial<SuggestionOptions>,
     };
   },

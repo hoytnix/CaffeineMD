@@ -98,7 +98,6 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
       extensions: [
         StarterKit.configure({
           heading: { levels: [1, 2, 3] },
-          codeBlock: false,
         }),
         Placeholder.configure({
           placeholder: 'Type "/" for commands, "[[" to link notes...',
@@ -113,6 +112,12 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
         WikiLinkNode.configure({
           suggestion: {
             char: '[[',
+            allow: ({ state, range }: any) => {
+              const $from = state.doc.resolve(range.from);
+              if ($from.parent.type.name === 'codeBlock') return false;
+              if ($from.marks().some((m: any) => m.type.name === 'code')) return false;
+              return true;
+            },
             render: () => ({
               onStart: (props: any) => {
                 const clientRect = props.clientRect?.();
@@ -214,6 +219,9 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
         handleDOMEvents: {
           click: (view, event) => {
             const target = event.target as HTMLElement;
+            if (target.closest('pre') || target.closest('code')) {
+              return false;
+            }
             const wikiLinkEl = target.closest('[data-wikilink]') as HTMLElement;
             if (wikiLinkEl) {
               const targetTitle = wikiLinkEl.getAttribute('data-wikilink');
@@ -381,6 +389,18 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
 
   const executeWikiLink = (suggestion: { title: string; path: string; isNew?: boolean }) => {
     if (!editor || !editor.schema) return;
+    const { state } = editor;
+    const $from = state.doc.resolve(state.selection.from);
+    if ($from.parent.type.name === 'codeBlock' || $from.marks().some((m) => m.type.name === 'code')) {
+      editor
+        .chain()
+        .focus()
+        .deleteRange(wikiMenu.range)
+        .insertContent(`[[${suggestion.title}]]`)
+        .run();
+      setWikiMenu((prev) => ({ ...prev, isOpen: false }));
+      return;
+    }
     editor
       .chain()
       .focus()

@@ -127,6 +127,11 @@ export const SlashCommands = Extension.create({
       suggestion: {
         char: '/',
         pluginKey: SlashCommandPluginKey,
+        allow: ({ state, range }) => {
+          const $from = state.doc.resolve(range.from);
+          if ($from.parent.type.name === 'codeBlock') return false;
+          return true;
+        },
         command: ({ editor, range, props }: any) => {
           props.command({ editor, range });
         },

@@ -1,31 +1,40 @@
 /**
  * Convert markdown to simplified HTML for initial Tiptap document loading,
  * preserving WikiLinks, single line breaks (<br>), multiple consecutive blank lines,
- * and markdown tables.
+ * and markdown tables. WikiLinks within code blocks and inline code are NOT prettified.
  */
-export function markdownToEditorHtml(markdown: string): string {
-  if (!markdown || !markdown.trim()) return '<p></p>';
-
-  // If already full HTML, just ensure wikilinks are preserved
-  const isHtml = /^\s*<[a-z][\s\S]*>/i.test(markdown);
-  if (isHtml) {
-    return markdown.replace(/\[\[(.*?)\]\]/g, (_, inner) => {
-      const parts = inner.split('|').map((s: string) => s.trim());
-      const target = parts[0];
-      const label = parts[1] || target;
-      return `<span data-wikilink="${escapeHtml(target)}" class="wiki-link">[[${escapeHtml(label)}]]</span>`;
-    });
-  }
-
-  // Pre-process WikiLinks: [[Target]] or [[Target|Alias]]
-  const processed = markdown.replace(/\[\[(.*?)\]\]/g, (_, inner) => {
+export function prettifyWikiLinks(text: string): string {
+  return text.replace(/\[\[(.*?)\]\]/g, (_, inner) => {
     const parts = inner.split('|').map((s: string) => s.trim());
     const target = parts[0];
     const label = parts[1] || target;
     return `<span data-wikilink="${escapeHtml(target)}" class="wiki-link">[[${escapeHtml(label)}]]</span>`;
   });
+}
 
-  const lines = processed.split(/\r?\n/);
+function replaceWikiLinksInHtml(html: string): string {
+  // Tokenize by code blocks and inline code so WikiLinks within them are NOT prettified
+  const tokens = html.split(/(<pre[\s\S]*?<\/pre>|<code[\s\S]*?<\/code>)/gi);
+  return tokens
+    .map((token) => {
+      if (/^<(pre|code)[\s\S]*<\/\1>$/i.test(token)) {
+        return token;
+      }
+      return prettifyWikiLinks(token);
+    })
+    .join('');
+}
+
+export function markdownToEditorHtml(markdown: string): string {
+  if (!markdown || !markdown.trim()) return '<p></p>';
+
+  // If already full HTML, preserve wikilinks only outside code blocks
+  const isHtml = /^\s*<[a-z][\s\S]*>/i.test(markdown);
+  if (isHtml) {
+    return replaceWikiLinksInHtml(markdown);
+  }
+
+  const lines = markdown.split(/\r?\n/);
   const htmlParts: string[] = [];
 
   let inUl = false;
@@ -271,16 +280,34 @@ function parseMarkdownTableToHtml(rows: string[]): string {
 }
 
 export function formatInline(text: string): string {
+  // Protect inline code spans: `code` so WikiLinks inside inline code are not prettified
+  const codeSpans: string[] = [];
+  let res = text.replace(/`([^`]+)`/g, (_, code) => {
+    codeSpans.push(code);
+    return `__INLINE_CODE_${codeSpans.length - 1}__`;
+  });
+
+  // Prettify WikiLinks outside code
+  res = prettifyWikiLinks(res);
+
   // Bold **text**
-  let res = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  res = res.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   // Italic *text*
   res = res.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
   // Strikethrough ~~text~~
   res = res.replace(/~~(.+?)~~/g, '<s>$1</s>');
   // Markdown links [label](url)
-  res = res.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
-  // Inline code `code`
-  res = res.replace(/`([^`]+)`/g, '<code>$1</code>');
+  res = res.replace(
+    /\[([^\]]+)\]\(([^)]+)\)/g,
+    '<a href="$2" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 underline underline-offset-2 transition-colors">$1</a>'
+  );
+
+  // Restore inline code spans without prettifying wikilinks inside them
+  res = res.replace(/__INLINE_CODE_(\d+)__/g, (_, idx) => {
+    const code = codeSpans[Number(idx)];
+    return `<code>${escapeHtml(code)}</code>`;
+  });
+
   return res;
 }
 

@@ -142,10 +142,11 @@
   line-height: 1.8;
 }
 
-/* Code Blocks */
+/* Code Blocks - Solarized Light */
 .ProseMirror pre {
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background-color: #fdf6e3;
+  color: #586e75;
+  border: 1px solid #eee8d5;
   border-radius: 0.5rem;
   padding: 0.875rem 1.125rem;
   margin: 1rem 0;
@@ -155,32 +156,121 @@
   line-height: 1.6;
 }
 
+.ProseMirror pre code {
+  background-color: transparent !important;
+  color: #586e75 !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  font-family: inherit !important;
+  font-size: inherit !important;
+}
+
 .dark .ProseMirror pre {
-  background-color: #0f172a;
-  border-color: #1e293b;
-  color: #e2e8f0;
+  background-color: #fdf6e3;
+  color: #586e75;
+  border-color: #eee8d5;
+}
+
+.dark .ProseMirror pre code {
+  background-color: transparent !important;
+  color: #586e75 !important;
+}
+
+/* Solarized Light syntax tokens */
+.ProseMirror pre .token.comment,
+.ProseMirror pre .token.prolog,
+.ProseMirror pre .token.doctype,
+.ProseMirror pre .token.cdata {
+  color: #93a1a1;
+  font-style: italic;
+}
+
+.ProseMirror pre .token.punctuation {
+  color: #586e75;
+}
+
+.ProseMirror pre .token.property,
+.ProseMirror pre .token.tag,
+.ProseMirror pre .token.boolean,
+.ProseMirror pre .token.number,
+.ProseMirror pre .token.constant,
+.ProseMirror pre .token.symbol {
+  color: #b58900;
+}
+
+.ProseMirror pre .token.selector,
+.ProseMirror pre .token.attr-name,
+.ProseMirror pre .token.string,
+.ProseMirror pre .token.char,
+.ProseMirror pre .token.builtin {
+  color: #2aa198;
+}
+
+.ProseMirror pre .token.operator,
+.ProseMirror pre .token.entity,
+.ProseMirror pre .token.url {
+  color: #6c71c4;
+}
+
+.ProseMirror pre .token.keyword {
+  color: #859900;
+  font-weight: 600;
+}
+
+.ProseMirror pre .token.function,
+.ProseMirror pre .token.class-name {
+  color: #268bd2;
+}
+
+.ProseMirror pre .token.variable {
+  color: #cb4b16;
 }
 
 /* Inline Code */
-.ProseMirror code {
-  background-color: #f1f5f9;
+.ProseMirror :not(pre) > code {
+  background-color: #fdf6e3;
+  color: #586e75;
+  border: 1px solid #eee8d5;
   border-radius: 0.25rem;
   padding: 0.15rem 0.35rem;
   font-size: 0.875em;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-.dark .ProseMirror code {
-  background-color: #1e293b;
-  color: #e2e8f0;
+.dark .ProseMirror :not(pre) > code {
+  background-color: #073642;
+  color: #93a1a1;
+  border-color: #002b36;
 }
 
-/* WikiLink Badges */
+/* Standard Links (same font color as Wiki Links) */
+.ProseMirror a {
+  color: #4f46e5;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.ProseMirror a:hover {
+  color: #4338ca;
+}
+
+.dark .ProseMirror a {
+  color: #a5b4fc;
+}
+
+.dark .ProseMirror a:hover {
+  color: #c7d2fe;
+}
+
+/* WikiLink Badges (padding reduced by 50%) */
 .ProseMirror .wiki-link,
 .wiki-link {
   display: inline-flex;
   align-items: center;
-  padding: 0.05rem 0.35rem;
+  padding: 0.025rem 0.175rem;
   margin: 0 0.1rem;
   border-radius: 0.375rem;
   font-weight: 500;
@@ -210,6 +300,29 @@
 .dark .wiki-link:hover {
   background-color: rgba(99, 102, 241, 0.25);
   border-color: rgba(99, 102, 241, 0.45);
+}
+
+/* Prevent WikiLinks from being prettified inside code blocks or inline code */
+.ProseMirror pre .wiki-link,
+.ProseMirror pre [data-wikilink],
+.ProseMirror code .wiki-link,
+.ProseMirror code [data-wikilink],
+pre .wiki-link,
+pre [data-wikilink],
+code .wiki-link,
+code [data-wikilink] {
+  display: inline !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  color: inherit !important;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  text-decoration: none !important;
+  cursor: inherit !important;
+  box-shadow: none !important;
 }
 
 /* Horizontal Rules */
