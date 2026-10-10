@@ -52,14 +52,23 @@ export function extractCleanExcerpt(content: string, maxLength = 400): string {
 }
 
 export function TagCloudView() {
-  const rawFiles = useLiveQuery(() => db.files.filter((f) => !f.isBinary && !f.isTrash).toArray());
-  const files = useMemo(() => rawFiles ?? [], [rawFiles]);
-
   const {
     openFileTab,
     selectedTagFilter,
     setSelectedTagFilter,
+    activeWorkspaceId,
   } = useWorkspaceStore();
+
+  const rawFiles = useLiveQuery(() => db.files.filter((f) => !f.isBinary && !f.isTrash).toArray());
+  const files = useMemo(() => {
+    const list = rawFiles ?? [];
+    return list.filter((f) => {
+      if (!activeWorkspaceId || activeWorkspaceId === 'default-vault') {
+        return !f.vaultId || f.vaultId === 'default-vault';
+      }
+      return f.vaultId === activeWorkspaceId;
+    });
+  }, [rawFiles, activeWorkspaceId]);
 
   const [searchQuery, setSearchQuery] = useState('');
 

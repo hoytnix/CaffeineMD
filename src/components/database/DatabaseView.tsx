@@ -11,10 +11,24 @@ import { DatabaseToolbar } from './DatabaseToolbar';
 import { useDatabaseSchema } from '@/src/hooks/useDatabaseSchema';
 
 export function DatabaseView({ mode }: { mode?: 'table' | 'board' | 'list' }) {
-  const { databaseViewMode, setDatabaseViewMode, openFileTab, setActiveView } = useWorkspaceStore();
+  const {
+    databaseViewMode,
+    setDatabaseViewMode,
+    openFileTab,
+    setActiveView,
+    activeWorkspaceId,
+  } = useWorkspaceStore();
   const currentMode = mode || databaseViewMode;
   const rawFiles = useLiveQuery(() => db.files.filter((f) => !f.isBinary && !f.isTrash).toArray());
-  const files = useMemo(() => rawFiles ?? [], [rawFiles]);
+  const files = useMemo(() => {
+    const list = rawFiles ?? [];
+    return list.filter((f) => {
+      if (!activeWorkspaceId || activeWorkspaceId === 'default-vault') {
+        return !f.vaultId || f.vaultId === 'default-vault';
+      }
+      return f.vaultId === activeWorkspaceId;
+    });
+  }, [rawFiles, activeWorkspaceId]);
 
   const [filterFolder, setFilterFolder] = useState<string>('all');
   const [filterTag, setFilterTag] = useState<string>('all');
@@ -62,7 +76,7 @@ tags: [${filterTag !== 'all' ? filterTag : 'note'}]
       size: 120,
       createdAt: timestamp,
       updatedAt: timestamp,
-      vaultId: 'default-vault',
+      vaultId: activeWorkspaceId || 'default-vault',
     };
 
     await db.files.put(newNote);

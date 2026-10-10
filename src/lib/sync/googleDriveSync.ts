@@ -18,6 +18,22 @@ function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function runWithConcurrency<T>(
+  items: T[],
+  concurrency: number,
+  workerFn: (item: T) => Promise<void>
+): Promise<void> {
+  if (items.length === 0) return;
+  let index = 0;
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (index < items.length) {
+      const item = items[index++];
+      await workerFn(item);
+    }
+  });
+  await Promise.all(workers);
+}
+
 function getFileBlob(file: VaultFile): Blob {
   if (file.blob) {
     return file.blob;
@@ -243,7 +259,6 @@ export async function uploadLargeFileResumable(
         const chunkRes = await fetch(sessionUri, {
           method: 'PUT',
           headers: {
-            'Content-Length': chunkLength.toString(),
             'Content-Range': contentRange,
           },
           body: chunk,
@@ -425,6 +440,20 @@ export class GoogleDriveSyncService {
   }
 
   /**
+   * Create a new dedicated workspace folder in Google Drive and return its metadata
+   */
+  public static async createRemoteWorkspace(workspaceName: string): Promise<RemoteWorkspace> {
+    const folderId = await this.getOrCreateWorkspaceFolder(workspaceName);
+    const safeName = `Kite-${workspaceName.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+    this.setWorkspaceFolder(workspaceName, folderId);
+    return {
+      id: folderId,
+      name: workspaceName,
+      folderName: safeName,
+    };
+  }
+
+  /**
    * Helper to make authenticated Google Drive API requests
    */
   private static async driveFetch(endpoint: string, options: RequestInit = {}): Promise<Response> {
@@ -540,7 +569,13 @@ export class GoogleDriveSyncService {
           : allLocal.filter((f) => f.vaultId === currentWorkspaceId);
       const localMap = new Map<string, VaultFile>();
 
-      // Push local files to Drive
+      // Push local files to Drive via parallel concurrency pool (5 workers)
+      const uploadTasks: Array<{
+        local: VaultFile;
+        driveFileName: string;
+        remoteId?: string;
+      }> = [];
+
       for (const local of localFiles) {
         if (local.isTrash) continue;
 
@@ -549,81 +584,96 @@ export class GoogleDriveSyncService {
         localMap.set(driveFileName, local);
 
         const remote = remoteMap.get(driveFileName);
-        const fileBlob = getFileBlob(local);
-        const metadata = {
-          name: driveFileName,
-          mimeType: local.mimeType || fileBlob.type,
-        };
 
         if (!remote) {
-          // Upload new file to Drive
-          await this.syncFileToDrive(token, metadata, fileBlob, folderId);
-          stats.uploaded++;
+          uploadTasks.push({ local, driveFileName, remoteId: undefined });
         } else if (local.updatedAt > remote.modifiedTime + 2000) {
-          // Local is newer -> update Drive file
-          await this.syncFileToDrive(token, metadata, fileBlob, undefined, remote.id);
-          stats.uploaded++;
+          uploadTasks.push({ local, driveFileName, remoteId: remote.id });
         } else {
           stats.skipped++;
         }
       }
 
-      // Pull new or newer remote files from Drive to local
+      await runWithConcurrency(uploadTasks, 5, async (task) => {
+        const fileBlob = getFileBlob(task.local);
+        const metadata = {
+          name: task.driveFileName,
+          mimeType: task.local.mimeType || fileBlob.type,
+        };
+        await GoogleDriveSyncService.syncFileToDrive(
+          token,
+          metadata,
+          fileBlob,
+          task.remoteId ? undefined : folderId,
+          task.remoteId
+        );
+        stats.uploaded++;
+      });
+
+      // Pull new or newer remote files from Drive to local via parallel concurrency pool (5 workers)
+      const downloadTasks: Array<{
+        remoteName: string;
+        remoteInfo: { id: string; modifiedTime: number };
+      }> = [];
+
       for (const [remoteName, remoteInfo] of remoteMap.entries()) {
         const local = localMap.get(remoteName);
-
         if (!local || remoteInfo.modifiedTime > local.updatedAt + 2000) {
-          // Fetch remote content
-          const contentRes = await this.driveFetch(`files/${remoteInfo.id}?alt=media`);
-
-          const reconstructedPath = remoteName.replace(/___/g, '/');
-          const fileName = reconstructedPath.split('/').pop() || reconstructedPath;
-          const title = fileName.replace(/\.[^/.]+$/, '');
-          const extension = fileName.split('.').pop()?.toLowerCase() || 'md';
-
-          const isBinary =
-            imageExtensions.has(extension) ||
-            pdfExtensions.has(extension) ||
-            !['md', 'markdown', 'txt', 'json', 'yaml', 'yml'].includes(extension);
-
-          let textContent = '';
-          let binaryBlob: Blob | undefined = undefined;
-          let size = 0;
-
-          if (isBinary) {
-            const arrayBuffer = await contentRes.arrayBuffer();
-            const mimeType =
-              contentRes.headers.get('Content-Type') ||
-              (extension === 'pdf' ? 'application/pdf' : `image/${extension}`);
-            binaryBlob = new Blob([arrayBuffer], { type: mimeType });
-            size = binaryBlob.size;
-          } else {
-            textContent = await contentRes.text();
-            size = textContent.length;
-          }
-
-          const noteRecord: VaultFile = {
-            id: reconstructedPath,
-            path: reconstructedPath,
-            name: fileName,
-            title,
-            extension,
-            content: textContent,
-            frontmatter: {},
-            tags: ['drive-synced'],
-            isBinary,
-            blob: binaryBlob,
-            mimeType: binaryBlob?.type,
-            size,
-            createdAt: remoteInfo.modifiedTime,
-            updatedAt: remoteInfo.modifiedTime,
-            vaultId: currentWorkspaceId,
-          };
-
-          await db.files.put(noteRecord);
-          stats.downloaded++;
+          downloadTasks.push({ remoteName, remoteInfo });
         }
       }
+
+      await runWithConcurrency(downloadTasks, 5, async ({ remoteName, remoteInfo }) => {
+        // Fetch remote content
+        const contentRes = await GoogleDriveSyncService.driveFetch(`files/${remoteInfo.id}?alt=media`);
+
+        const reconstructedPath = remoteName.replace(/___/g, '/');
+        const fileName = reconstructedPath.split('/').pop() || reconstructedPath;
+        const title = fileName.replace(/\.[^/.]+$/, '');
+        const extension = fileName.split('.').pop()?.toLowerCase() || 'md';
+
+        const isBinary =
+          imageExtensions.has(extension) ||
+          pdfExtensions.has(extension) ||
+          !['md', 'markdown', 'txt', 'json', 'yaml', 'yml'].includes(extension);
+
+        let textContent = '';
+        let binaryBlob: Blob | undefined = undefined;
+        let size = 0;
+
+        if (isBinary) {
+          const arrayBuffer = await contentRes.arrayBuffer();
+          const mimeType =
+            contentRes.headers.get('Content-Type') ||
+            (extension === 'pdf' ? 'application/pdf' : `image/${extension}`);
+          binaryBlob = new Blob([arrayBuffer], { type: mimeType });
+          size = binaryBlob.size;
+        } else {
+          textContent = await contentRes.text();
+          size = textContent.length;
+        }
+
+        const noteRecord: VaultFile = {
+          id: reconstructedPath,
+          path: reconstructedPath,
+          name: fileName,
+          title,
+          extension,
+          content: textContent,
+          frontmatter: {},
+          tags: ['drive-synced'],
+          isBinary,
+          blob: binaryBlob,
+          mimeType: binaryBlob?.type,
+          size,
+          createdAt: remoteInfo.modifiedTime,
+          updatedAt: remoteInfo.modifiedTime,
+          vaultId: currentWorkspaceId,
+        };
+
+        await db.files.put(noteRecord);
+        stats.downloaded++;
+      });
 
       this.lastSyncTime = Date.now();
 

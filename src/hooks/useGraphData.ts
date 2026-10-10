@@ -5,6 +5,8 @@ import * as d3 from 'd3-force';
 import { db, EisenhowerQuadrant } from '@/src/lib/storage/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 
+import { useWorkspaceStore } from '@/src/stores/workspaceStore';
+
 export interface GraphNode extends d3.SimulationNodeDatum {
   id: string;
   title: string;
@@ -26,10 +28,19 @@ interface UseGraphDataOptions {
 }
 
 export function useGraphData({ filterTag, showOrphans }: UseGraphDataOptions) {
+  const { activeWorkspaceId } = useWorkspaceStore();
   const rawFiles = useLiveQuery(() => db.files.filter((f) => !f.isBinary && !f.isTrash).toArray());
   const rawBacklinks = useLiveQuery(() => db.backlinks.toArray());
 
-  const files = useMemo(() => rawFiles ?? [], [rawFiles]);
+  const files = useMemo(() => {
+    const list = rawFiles ?? [];
+    return list.filter((f) => {
+      if (!activeWorkspaceId || activeWorkspaceId === 'default-vault') {
+        return !f.vaultId || f.vaultId === 'default-vault';
+      }
+      return f.vaultId === activeWorkspaceId;
+    });
+  }, [rawFiles, activeWorkspaceId]);
   const backlinks = useMemo(() => rawBacklinks ?? [], [rawBacklinks]);
 
   return useMemo(() => {

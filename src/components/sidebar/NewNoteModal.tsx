@@ -12,7 +12,7 @@ interface NewNoteModalProps {
 
 export function NewNoteModal({ isOpen, onClose }: NewNoteModalProps) {
   const [newNoteName, setNewNoteName] = useState('');
-  const { openFileTab } = useWorkspaceStore();
+  const { openFileTab, activeWorkspaceId } = useWorkspaceStore();
 
   if (!isOpen) return null;
 
@@ -37,7 +37,7 @@ export function NewNoteModal({ isOpen, onClose }: NewNoteModalProps) {
       size: 50,
       createdAt: Date.now(),
       updatedAt: Date.now(),
-      vaultId: 'default-vault',
+      vaultId: activeWorkspaceId || 'default-vault',
     };
 
     await db.files.put(newNote);

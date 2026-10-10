@@ -24,7 +24,9 @@ import {
   Zap,
   Trash2,
   Download,
+  Plus,
 } from 'lucide-react';
+import { CreateWorkspaceModal } from '@/src/components/workspace/CreateWorkspaceModal';
 import { db } from '@/src/lib/storage/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
@@ -63,6 +65,7 @@ export default function SettingsPage() {
     setActiveWorkspaceId,
     setMountedMode,
     showToast,
+    setCreateWorkspaceModalOpen,
   } = useWorkspaceStore();
 
   const rawFiles = useLiveQuery(() => db.files.toArray());
@@ -494,16 +497,26 @@ export default function SettingsPage() {
                       Select an existing Google Drive workspace folder to download and begin syncing
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={fetchRemoteWorkspaces}
-                    disabled={isLoadingRemoteWorkspaces}
-                    className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-neutral-600 dark:text-neutral-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-                    title="Refresh remote workspaces"
-                  >
-                    <RefreshCw className={`w-3 h-3 ${isLoadingRemoteWorkspaces ? 'animate-spin' : ''}`} />
-                    <span>Refresh</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCreateWorkspaceModalOpen(true)}
+                      className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors cursor-pointer shadow-xs"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>New Workspace</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={fetchRemoteWorkspaces}
+                      disabled={isLoadingRemoteWorkspaces}
+                      className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-neutral-600 dark:text-neutral-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                      title="Refresh remote workspaces"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${isLoadingRemoteWorkspaces ? 'animate-spin' : ''}`} />
+                      <span>Refresh</span>
+                    </button>
+                  </div>
                 </div>
 
                 {isLoadingRemoteWorkspaces ? (
@@ -1043,6 +1056,9 @@ export default function SettingsPage() {
           </div>
         </div>
       </main>
+
+      {/* Create Workspace Modal */}
+      <CreateWorkspaceModal />
     </div>
   );
 }

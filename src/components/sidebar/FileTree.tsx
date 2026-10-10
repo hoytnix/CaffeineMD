@@ -23,6 +23,7 @@ export function FileTree() {
 
   const {
     activeFilePath,
+    activeWorkspaceId,
     openFileTab,
     vaultName,
     setImportProgress,
@@ -41,8 +42,25 @@ export function FileTree() {
     purgeExpiredTrashNotes();
   }, [purgeExpiredTrashNotes]);
 
-  const activeFiles = useMemo(() => files.filter((f) => !f.isTrash), [files]);
-  const trashFiles = useMemo(() => files.filter((f) => f.isTrash), [files]);
+  const activeFiles = useMemo(() => {
+    return files.filter((f) => {
+      if (f.isTrash) return false;
+      if (!activeWorkspaceId || activeWorkspaceId === 'default-vault') {
+        return !f.vaultId || f.vaultId === 'default-vault';
+      }
+      return f.vaultId === activeWorkspaceId;
+    });
+  }, [files, activeWorkspaceId]);
+
+  const trashFiles = useMemo(() => {
+    return files.filter((f) => {
+      if (!f.isTrash) return false;
+      if (!activeWorkspaceId || activeWorkspaceId === 'default-vault') {
+        return !f.vaultId || f.vaultId === 'default-vault';
+      }
+      return f.vaultId === activeWorkspaceId;
+    });
+  }, [files, activeWorkspaceId]);
 
   const treeData = useTreeStructure(activeFiles, filterQuery);
 
@@ -74,7 +92,11 @@ export function FileTree() {
 
     const droppedFiles = await scanDroppedItems(items);
     if (droppedFiles.length > 0) {
-      await runIngestionPipeline(droppedFiles, 'default-vault', (p) => setImportProgress(p));
+      await runIngestionPipeline(
+        droppedFiles,
+        activeWorkspaceId || 'default-vault',
+        (p) => setImportProgress(p)
+      );
       openFileTab(droppedFiles[0].relativePath, droppedFiles[0].name.replace(/\.[^/.]+$/, ''));
     }
   };

@@ -58,6 +58,10 @@ export interface WorkspaceState {
   setTheme: (themeId: string) => void;
   updateCustomTheme: (tokens: Partial<ThemeDefinition>) => void;
 
+  // Workspace Creation Modal
+  isCreateWorkspaceModalOpen: boolean;
+  setCreateWorkspaceModalOpen: (open: boolean) => void;
+
   // Trash & Deletion Modal
   isDeleteModalOpen: boolean;
   deleteModalTarget: { path: string; title: string } | null;
@@ -110,6 +114,10 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   sidebarCollapsed: false,
   rightPanelOpen: true,
   databaseViewMode: 'table',
+
+  // Workspace Creation Modal
+  isCreateWorkspaceModalOpen: false,
+  setCreateWorkspaceModalOpen: (open: boolean) => set({ isCreateWorkspaceModalOpen: open }),
 
   // Trash State & Deletion Modal
   isDeleteModalOpen: false,

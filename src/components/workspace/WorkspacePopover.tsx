@@ -14,7 +14,10 @@ import {
   ChevronRight,
   ExternalLink,
   Layers,
+  Cloud,
+  Plus,
 } from 'lucide-react';
+import { CreateWorkspaceModal } from './CreateWorkspaceModal';
 
 export function KiteLogoMark({ size = 22, className = '' }: { size?: number; className?: string }) {
   return (
@@ -68,6 +71,7 @@ export function WorkspacePopover() {
     setMountedMode,
     vaultName,
     setImportProgress,
+    setCreateWorkspaceModalOpen,
   } = useWorkspaceStore();
 
   const rawWorkspaces = useLiveQuery(() => db.workspaces?.toArray() ?? []);
@@ -110,7 +114,7 @@ export function WorkspacePopover() {
 
   const handleDisconnect = async (e: React.MouseEvent, wsId: string) => {
     e.stopPropagation();
-    if (confirm('Disconnect this workspace? (Files stored on disk will not be deleted)')) {
+    if (confirm('Disconnect this workspace? (Files stored on disk or Google Drive will not be deleted)')) {
       await WorkspaceManager.disconnectWorkspace(wsId);
       if (activeWorkspaceId === wsId) {
         setActiveWorkspaceId('default-vault', 'Local Vault');
@@ -120,117 +124,145 @@ export function WorkspacePopover() {
   };
 
   return (
-    <div className="relative inline-block" ref={popoverRef}>
-      {/* 1:1 Crisp SVG Kite Logo Mark Trigger */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="group flex items-center justify-center p-1.5 rounded-lg hover:bg-[var(--foreground)]/10 transition-colors cursor-pointer select-none"
-        title="Kite Workspaces"
-      >
-        <KiteLogoMark size={22} />
-      </button>
+    <>
+      <div className="relative inline-block" ref={popoverRef}>
+        {/* 1:1 Crisp SVG Kite Logo Mark Trigger */}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="group flex items-center justify-center p-1.5 rounded-lg hover:bg-[var(--foreground)]/10 transition-colors cursor-pointer select-none"
+          title="Kite Workspaces"
+        >
+          <KiteLogoMark size={22} />
+        </button>
 
-      {/* Popover Menu */}
-      {isOpen && (
-        <div className="absolute left-0 mt-2 w-72 bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-2xl z-50 p-2 flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 text-[var(--foreground)]">
-          {/* Active Workspace Header */}
-          <div className="px-2.5 py-2 border-b border-[var(--border)]">
-            <span className="text-[10px] uppercase tracking-wider font-semibold text-[var(--foreground)]/50">
-              Active Workspace
-            </span>
-            <div className="flex items-center justify-between mt-1">
-              <div className="flex items-center gap-2 truncate">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                <span className="text-xs font-bold text-[var(--foreground)] truncate">
-                  {vaultName}
+        {/* Popover Menu */}
+        {isOpen && (
+          <div className="absolute left-0 mt-2 w-72 bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-2xl z-50 p-2 flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 text-[var(--foreground)]">
+            {/* Active Workspace Header */}
+            <div className="px-2.5 py-2 border-b border-[var(--border)]">
+              <span className="text-[10px] uppercase tracking-wider font-semibold text-[var(--foreground)]/50">
+                Active Workspace
+              </span>
+              <div className="flex items-center justify-between mt-1">
+                <div className="flex items-center gap-2 truncate">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                  <span className="text-xs font-bold text-[var(--foreground)] truncate">
+                    {vaultName}
+                  </span>
+                </div>
+                <span className="text-[10px] font-mono text-[var(--foreground)]/60 bg-[var(--background)] border border-[var(--border)] px-1.5 py-0.5 rounded">
+                  {activeWorkspaceId.startsWith('drive-')
+                    ? 'Google Drive'
+                    : activeWorkspaceId.startsWith('disk-')
+                    ? 'Live Disk'
+                    : 'Local Vault'}
                 </span>
               </div>
-              <span className="text-[10px] font-mono text-[var(--foreground)]/60 bg-[var(--background)] border border-[var(--border)] px-1.5 py-0.5 rounded">
-                {activeWorkspaceId.startsWith('disk-') ? 'Live Disk' : 'IndexedDB'}
+            </div>
+
+            {/* Connected Workspaces List */}
+            <div className="max-h-48 overflow-y-auto py-1 space-y-0.5">
+              <span className="px-2.5 text-[10px] font-medium text-[var(--foreground)]/50">
+                Workspaces
               </span>
+
+              {workspaces.length === 0 ? (
+                <div
+                  onClick={() =>
+                    handleSelectWorkspace({
+                      id: 'default-vault',
+                      name: 'Local Vault',
+                      mode: 'indexeddb',
+                      createdAt: Date.now(),
+                      updatedAt: Date.now(),
+                    })
+                  }
+                  className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs hover:bg-[var(--foreground)]/10 cursor-pointer"
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <Database className="w-3.5 h-3.5 text-[var(--accent)]" />
+                    <span className="truncate">Local Vault</span>
+                  </div>
+                  <Check className="w-3.5 h-3.5 text-[var(--accent)]" />
+                </div>
+              ) : (
+                workspaces.map((ws) => {
+                  const isActive = ws.id === activeWorkspaceId;
+                  const isGoogleDrive = Boolean(ws.driveFolderId || ws.id.startsWith('drive-'));
+                  const isDisk = ws.mode === 'filesystem';
+
+                  return (
+                    <div
+                      key={ws.id}
+                      onClick={() => handleSelectWorkspace(ws)}
+                      className={`group flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
+                        isActive
+                          ? 'bg-[var(--background)] font-semibold text-[var(--foreground)] border border-[var(--border)]'
+                          : 'text-[var(--foreground)]/70 hover:bg-[var(--foreground)]/10'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        {isGoogleDrive ? (
+                          <Cloud className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                        ) : isDisk ? (
+                          <HardDrive className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" />
+                        ) : (
+                          <Database className="w-3.5 h-3.5 text-[var(--foreground)]/50 shrink-0" />
+                        )}
+                        <span className="truncate">{ws.name}</span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        {isActive && <Check className="w-3.5 h-3.5 text-[var(--accent)]" />}
+                        {ws.id !== 'default-vault' && (
+                          <button
+                            onClick={(e) => handleDisconnect(e, ws.id)}
+                            className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-[var(--foreground)]/40 hover:text-red-500 transition-opacity"
+                            title="Disconnect workspace"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Actions: Create Workspace & Mount Disk Folder */}
+            <div className="pt-1.5 border-t border-[var(--border)] space-y-1">
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  setCreateWorkspaceModalOpen(true);
+                }}
+                className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <Plus className="w-3.5 h-3.5 text-white" />
+                  <span>Create Workspace</span>
+                </div>
+                <ChevronRight className="w-3 h-3 text-white/70" />
+              </button>
+
+              <button
+                onClick={handleMountNewWorkspace}
+                className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-[var(--background)] hover:bg-[var(--foreground)]/10 text-[var(--foreground)] border border-[var(--border)] text-xs font-medium transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <FolderPlus className="w-3.5 h-3.5 text-[var(--accent)]" />
+                  <span>Mount Disk Folder</span>
+                </div>
+                <ChevronRight className="w-3 h-3 text-[var(--foreground)]/50" />
+              </button>
             </div>
           </div>
+        )}
+      </div>
 
-          {/* Connected Workspaces List */}
-          <div className="max-h-48 overflow-y-auto py-1 space-y-0.5">
-            <span className="px-2.5 text-[10px] font-medium text-[var(--foreground)]/50">
-              Connected Folders
-            </span>
-
-            {workspaces.length === 0 ? (
-              <div
-                onClick={() =>
-                  handleSelectWorkspace({
-                    id: 'default-vault',
-                    name: 'Local Vault',
-                    mode: 'indexeddb',
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                  })
-                }
-                className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs hover:bg-[var(--foreground)]/10 cursor-pointer"
-              >
-                <div className="flex items-center gap-2 truncate">
-                  <Database className="w-3.5 h-3.5 text-[var(--accent)]" />
-                  <span className="truncate">Local Vault</span>
-                </div>
-                <Check className="w-3.5 h-3.5 text-[var(--accent)]" />
-              </div>
-            ) : (
-              workspaces.map((ws) => {
-                const isActive = ws.id === activeWorkspaceId;
-                return (
-                  <div
-                    key={ws.id}
-                    onClick={() => handleSelectWorkspace(ws)}
-                    className={`group flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
-                      isActive
-                        ? 'bg-[var(--background)] font-semibold text-[var(--foreground)] border border-[var(--border)]'
-                        : 'text-[var(--foreground)]/70 hover:bg-[var(--foreground)]/10'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 truncate">
-                      {ws.mode === 'filesystem' ? (
-                        <HardDrive className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" />
-                      ) : (
-                        <Database className="w-3.5 h-3.5 text-[var(--foreground)]/50 shrink-0" />
-                      )}
-                      <span className="truncate">{ws.name}</span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      {isActive && <Check className="w-3.5 h-3.5 text-[var(--accent)]" />}
-                      {ws.id !== 'default-vault' && (
-                        <button
-                          onClick={(e) => handleDisconnect(e, ws.id)}
-                          className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-[var(--foreground)]/40 hover:text-red-500 transition-opacity"
-                          title="Disconnect workspace"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-
-          {/* Action: Mount New Disk Folder */}
-          <div className="pt-1 border-t border-[var(--border)]">
-            <button
-              onClick={handleMountNewWorkspace}
-              className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg bg-[var(--background)] hover:bg-[var(--foreground)]/10 text-[var(--foreground)] border border-[var(--border)] text-xs font-medium transition-colors cursor-pointer"
-            >
-              <div className="flex items-center gap-2">
-                <FolderPlus className="w-3.5 h-3.5 text-[var(--accent)]" />
-                <span>Mount Disk Folder</span>
-              </div>
-              <ChevronRight className="w-3 h-3 text-[var(--foreground)]/50" />
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+      {/* Workspace Creation Modal */}
+      <CreateWorkspaceModal />
+    </>
   );
 }
