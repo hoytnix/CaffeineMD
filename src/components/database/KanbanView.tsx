@@ -17,22 +17,38 @@ export function KanbanView({ files, groupKey = 'status', onRefresh }: KanbanView
   const [activeColumnForNew, setActiveColumnForNew] = useState<string | null>(null);
 
   // Group files by groupKey
-  const defaultColumns = ['Planning', 'In Progress', 'Completed', 'Backlog'];
+  // Canonical columns: ToDO (first in order), Doing, Someday / Maybe, Completed, Won't Do
+  const defaultColumns = ['ToDO', 'Doing', 'Someday / Maybe', 'Completed', "Won't Do"];
 
-  // Discover existing values
+  const normalizeStatus = (raw: any): string => {
+    if (!raw) return 'ToDO';
+    const s = String(raw).trim();
+    if (s.toLowerCase() === 'in progress') return 'Doing';
+    if (s.toLowerCase() === 'planning') return 'Someday / Maybe';
+    if (s.toLowerCase() === 'backlog') return "Won't Do";
+    if (s.toLowerCase() === 'todo' || s.toLowerCase() === 'to do') return 'ToDO';
+    return s;
+  };
+
+  // Discover existing custom values beyond defaults
   const discoveredValues = new Set<string>();
   files.forEach((f) => {
-    const val = f.frontmatter?.[groupKey];
-    if (val) discoveredValues.add(String(val));
+    const val = f.frontmatter?.[groupKey] || (f as any)[groupKey];
+    if (val) {
+      const norm = normalizeStatus(val);
+      if (!defaultColumns.includes(norm)) {
+        discoveredValues.add(norm);
+      }
+    }
   });
 
-  const columns = Array.from(new Set([...defaultColumns, ...Array.from(discoveredValues)]));
+  const columns = [...defaultColumns, ...Array.from(discoveredValues)];
 
   const getFilesForColumn = (col: string) => {
     return files.filter((f) => {
-      const val = f.frontmatter?.[groupKey];
-      if (!val && col === 'Backlog') return true;
-      return String(val).toLowerCase() === col.toLowerCase();
+      const val = f.frontmatter?.[groupKey] || (f as any)[groupKey];
+      const norm = normalizeStatus(val);
+      return norm.toLowerCase() === col.toLowerCase();
     });
   };
 
@@ -49,6 +65,7 @@ export function KanbanView({ files, groupKey = 'status', onRefresh }: KanbanView
       content: `---
 title: ${newCardTitle.trim()}
 ${groupKey}: ${col}
+eisenhower: urgent_immediate
 ---
 
 # ${newCardTitle.trim()}
@@ -56,8 +73,10 @@ ${groupKey}: ${col}
       frontmatter: {
         title: newCardTitle.trim(),
         [groupKey]: col,
+        eisenhower: 'urgent_immediate',
       },
       tags: [],
+      eisenhower: 'urgent_immediate',
       isBinary: false,
       size: 80,
       createdAt: Date.now(),

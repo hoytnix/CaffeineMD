@@ -44,7 +44,7 @@ export function BacklinksPanel({ currentFile, onUpdateFile }: BacklinksPanelProp
       const filteredLinked = linked.filter((l) => l.sourcePath !== currentFile?.path);
 
       // 2. Unlinked references from other files containing noteTitle
-      const allFiles = await db.files.where('isBinary').equals(0).toArray();
+      const allFiles = await db.files.filter((f) => !f.isBinary && !f.isTrash).toArray();
       const unlinked: { file: VaultFile; snippet: string }[] = [];
 
       const linkedSourcePaths = new Set(filteredLinked.map((l) => l.sourcePath));
@@ -152,10 +152,10 @@ export function BacklinksPanel({ currentFile, onUpdateFile }: BacklinksPanelProp
               className="flex-1 px-2 py-1 text-xs rounded bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700/80 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-indigo-500 cursor-pointer"
             >
               <option value="">None (Unassigned)</option>
-              <option value="urgent_important">🔴 Urgent & Immediate (Do First)</option>
-              <option value="not_urgent_important">🟡 Urgent & Not Immediate (Schedule)</option>
-              <option value="urgent_not_important">🔵 Not Urgent & Immediate (Delegate / Quick)</option>
-              <option value="not_urgent_not_important">⚪ Not Urgent & Not Immediate (Don't / Backlog)</option>
+              <option value="urgent_immediate">🔴 Urgent & Immediate (Do First)</option>
+              <option value="urgent_not_immediate">🟡 Urgent & Not Immediate (Schedule)</option>
+              <option value="not_urgent_immediate">🔵 Not Urgent & Immediate (Delegate / Quick)</option>
+              <option value="not_urgent_not_immediate">⚪ Not Urgent & Not Immediate (Don&apos;t / Backlog)</option>
             </select>
           </div>
 

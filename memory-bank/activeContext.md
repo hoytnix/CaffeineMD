@@ -1,36 +1,33 @@
 # Active Context: Kite Workspace
 
 ## Current Focus
-Implemented Code Block Syntax Highlighting with Automatic Language Detection via lowlight and highlight.js, fixed Note Deletion across IndexedDB and live disk handles with affirmative toast confirmations, corrected Task/Checkbox vertical alignment, built the dedicated Tag Cloud View with 400-character clean plaintext excerpts and interactive hashtag links, and added the Eisenhower Matrix priority system across Note Properties, Table, Kanban, List, File Tree, and Graph views.
+Completed full implementation of all user-requested features: Draggable thumb-reach bottom toolbar in Editor with Copy All to Clipboard, Ephemeral Trash retention system with auto-purge and custom retention days setting (7, 14, 30, 60, 90), double-confirmation delete modal, empty views Dexie index boolean fix, Kanban board default `ToDO` column with updated status taxonomy, theme-wide styling and syntax highlighting, and task checkbox alignment.
 
 ## Key Changes
-1. **Code Block Syntax Highlighting & Auto Language Detection**:
-   - Installed `@tiptap/extension-code-block-lowlight`, `lowlight`, and `highlight.js`.
-   - Configured `CodeBlockLowlight` in `TiptapEditor.tsx` with common programming languages (TypeScript, JavaScript, Python, Rust, Go, Bash, JSON, YAML, HTML, CSS, SQL, Markdown).
-   - Smart language detection in `markdownToHtml.ts` and `TiptapEditor.tsx` via `lowlight.highlightAuto()` on mount/changes when code blocks lack explicit language attributes.
-   - Theme-aware syntax CSS variables (`--syntax-keyword`, `--syntax-string`, `--syntax-function`, `--syntax-comment`, `--syntax-variable`, `--syntax-number`, `--syntax-operator`, `--syntax-bg`) mapped to hljs classes in `app/globals.css`.
-   - Updated all 14 theme definitions + Custom in `src/lib/themes/themeDefinitions.ts` with tailored palette syntax colors.
-2. **Note Deletion & Trash Can Fix**:
-   - Implemented `deleteNote(path)` in `src/stores/workspaceStore.ts` and `deleteVaultFile(path)` in `src/lib/storage/db.ts`.
-   - Prunes backlinks, removes entries from IndexedDB, and deletes physical files from mounted disk directories via `NativeFileSystemAdapter.removeFileFromDisk(path)`.
-   - Safely closes active tabs, switches editor focus to the next open tab (or empty state), and presents an affirmative toast notification (`"Note deleted"`).
-   - Added trash can delete buttons to `EditorHeader.tsx` and hover actions in `FileTreeItem.tsx`.
-3. **Task / Checkbox Vertical Alignment**:
-   - Corrected task list item styling in `app/globals.css` with `align-items: flex-start`, flex gap `0.625rem`, label `padding-top: 0.18rem`, and `accent-color: var(--accent)` for perfect vertical alignment with line-height cap-height of body text.
-4. **Tag Cloud View & Interactive Tag Linking**:
-   - Built `src/components/tags/TagCloudView.tsx` with top tag navigation pill cloud showing count badges (e.g. `#project (8)`).
-   - Searchable and filterable grid of note cards displaying title, path, date, Eisenhower urgency dot/indicator, full list of secondary tags, and first 400 characters of clean plaintext body preview (stripping YAML, markdown headers, links, and formatting).
-   - Interactive tag badges in `EditorHeader.tsx` and Note Properties drawer that immediately switch views to the Tag Cloud view with that tag filtered.
-5. **Eisenhower Matrix Priority & Cross-View Indicators**:
-   - Added `EisenhowerQuadrant` type and configuration (`EISENHOWER_CONFIG`) in `src/lib/storage/db.ts`, `src/lib/markdown/frontmatter.ts`, and `src/hooks/useDatabaseSchema.ts`.
-   - Dedicated dropdown selector in Note Properties drawer (`BacklinksPanel.tsx`):
-     - 🔴 Urgent & Immediate (Do First)
-     - 🟡 Urgent & Not Immediate (Schedule)
-     - 🔵 Not Urgent & Immediate (Delegate / Quick)
-     - ⚪ Not Urgent & Not Immediate (Don't / Backlog)
-   - Visual indicators across all views:
-     - Table View: Eisenhower column with colored pill dots and quick selector.
-     - Kanban View: Quadrant color badge on card headers.
-     - List View: Prefix colored quadrant dot on each row.
-     - Sidebar File Tree: Subtle quadrant dot next to note icons.
-     - Graph View: Colored note rings/halos with toggle in Graph Controls.
+1. **Thumb-Reach Reorderable Bottom Toolbar**:
+   - Built [EditorBottomToolbar.tsx](file:///home/oloty/Dev/Kite/src/components/editor/EditorBottomToolbar.tsx) mounted in [TiptapEditor.tsx](file:///home/oloty/Dev/Kite/src/components/editor/TiptapEditor.tsx).
+   - First icon is **Copy All to Clipboard** (`copy-all`), copying the current note content as markdown with a visual checkmark and affirmative toast.
+   - Comprehensive actions: H1, H2, H3, Bold, Italic, Underline (`@tiptap/extension-underline`), Strikethrough, Code, Code Block, Bullet List, Numbered List, Task List, Blockquote, Link, Image, Table, Horizontal Rule, Undo, Redo.
+   - Integrated HTML5 drag-and-drop reordering with persistent order in `localStorage` (`kite-editor-toolbar-order`).
+   - Lossless Markdown serialization for `<u>` in [htmlToMarkdown.ts](file:///home/oloty/Dev/Kite/src/lib/markdown/htmlToMarkdown.ts).
+2. **Ephemeral Trash Can & Double-Confirmation Modal**:
+   - Implemented [DeleteConfirmModal.tsx](file:///home/oloty/Dev/Kite/src/components/common/DeleteConfirmModal.tsx) replacing native browser popups with double-confirmation dialog.
+   - Added ephemeral trash system in [db.ts](file:///home/oloty/Dev/Kite/src/lib/storage/db.ts) and [workspaceStore.ts](file:///home/oloty/Dev/Kite/src/stores/workspaceStore.ts) tracking `isTrash`, `deletedAt`, and `originalPath`.
+   - Dedicated collapsible Ephemeral Trash section in [FileTree.tsx](file:///home/oloty/Dev/Kite/src/components/sidebar/FileTree.tsx) with note restore and permanent delete actions.
+   - Configurable retention periods (7, 14, 30, 60, 90 days; default 30) with auto-purge on launch and manual purge in [Settings](file:///home/oloty/Dev/Kite/app/settings/page.tsx).
+3. **Empty Views Dexie Type Fix**:
+   - Resolved key mismatch bug where `.where('isBinary').equals(0)` returned empty arrays for notes stored with boolean `isBinary: false`.
+   - Updated queries across [DatabaseView.tsx](file:///home/oloty/Dev/Kite/src/components/database/DatabaseView.tsx), [useGraphData.ts](file:///home/oloty/Dev/Kite/src/hooks/useGraphData.ts), [TagCloudView.tsx](file:///home/oloty/Dev/Kite/src/components/tags/TagCloudView.tsx), [QuickSearchModal.tsx](file:///home/oloty/Dev/Kite/src/components/search/QuickSearchModal.tsx), and [BacklinksPanel.tsx](file:///home/oloty/Dev/Kite/src/components/editor/BacklinksPanel.tsx) to filter active notes safely (`!f.isBinary && !f.isTrash`).
+4. **Kanban Taxonomy & UI Cleanup**:
+   - Added `ToDO` as first board column in [KanbanView.tsx](file:///home/oloty/Dev/Kite/src/components/database/KanbanView.tsx).
+   - Renamed columns: Planning -> `Someday / Maybe`, In Progress -> `Doing`, Backlog -> `Won't Do`.
+   - New notes default status to `ToDO`.
+   - Removed redundant Table/Board/List switch buttons from [DatabaseToolbar.tsx](file:///home/oloty/Dev/Kite/src/components/database/DatabaseToolbar.tsx).
+5. **Checkbox Alignment & Theme-Wide Styling**:
+   - Fixed checkbox vertical alignment in [globals.css](file:///home/oloty/Dev/Kite/app/globals.css) with strict label height `1.5rem` and zero margin on task list item paragraph tags.
+   - Replaced hardcoded Solarized inline code styling with CSS variables `var(--card)`, `var(--accent)`, and `var(--border)` for global theme coherence.
+6. **Code Block Syntax Highlighting & Auto-Detection**:
+   - Installed lowlight and highlight.js in [TiptapEditor.tsx](file:///home/oloty/Dev/Kite/src/components/editor/TiptapEditor.tsx) with automatic language detection on untagged blocks.
+   - Theme palette variables mapped to `.hljs-*` classes.
+7. **Eisenhower Matrix Priority**:
+   - Added Eisenhower quadrants across Note Properties drawer, Table, Kanban, List, File Tree, and Quick Search.

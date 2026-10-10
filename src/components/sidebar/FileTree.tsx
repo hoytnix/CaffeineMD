@@ -8,7 +8,7 @@ import { scanDroppedItems, runIngestionPipeline } from '@/src/lib/storage/import
 import { useTreeStructure } from '@/src/hooks/useTreeStructure';
 import { FileTreeItem } from './FileTreeItem';
 import { NewNoteModal } from './NewNoteModal';
-import { Plus, Search, FolderUp, X, Settings } from 'lucide-react';
+import { Plus, Search, FolderUp, X, Settings, Trash2, Undo2, ChevronDown, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { WorkspacePopover } from '@/src/components/workspace/WorkspacePopover';
 
@@ -16,6 +16,7 @@ export function FileTree() {
   const rawFiles = useLiveQuery(() => db.files.toArray());
   const files = useMemo(() => rawFiles ?? [], [rawFiles]);
   const [openFolders, setOpenFolders] = useState<Set<string>>(new Set(['Projects', 'Engineering']));
+  const [isTrashOpen, setIsTrashOpen] = useState(false);
   const [isDragOverTree, setIsDragOverTree] = useState(false);
   const [filterQuery, setFilterQuery] = useState('');
   const [newNoteModal, setNewNoteModal] = useState(false);
@@ -28,10 +29,22 @@ export function FileTree() {
     activeView,
     setActiveView,
     setImportModalOpen,
+    promptDeleteNote,
     deleteNote,
+    restoreNote,
+    emptyTrashAll,
+    purgeExpiredTrashNotes,
   } = useWorkspaceStore();
 
-  const treeData = useTreeStructure(files, filterQuery);
+  // Run auto-purge of expired trash notes on mount
+  React.useEffect(() => {
+    purgeExpiredTrashNotes();
+  }, [purgeExpiredTrashNotes]);
+
+  const activeFiles = useMemo(() => files.filter((f) => !f.isTrash), [files]);
+  const trashFiles = useMemo(() => files.filter((f) => f.isTrash), [files]);
+
+  const treeData = useTreeStructure(activeFiles, filterQuery);
 
   const toggleFolder = (path: string) => {
     setOpenFolders((prev) => {
@@ -66,11 +79,9 @@ export function FileTree() {
     }
   };
 
-  const handleDeleteFile = async (e: React.MouseEvent, path: string) => {
+  const handleDeleteFile = (e: React.MouseEvent, path: string) => {
     e.stopPropagation();
-    if (confirm(`Delete ${path}?`)) {
-      await deleteNote(path);
-    }
+    promptDeleteNote(path);
   };
 
   return (
@@ -78,12 +89,12 @@ export function FileTree() {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`w-64 h-full flex flex-col bg-neutral-50/70 dark:bg-neutral-900/50 border-r border-neutral-200 dark:border-neutral-800 text-neutral-800 dark:text-neutral-200 select-none transition-all ${
+      className={`w-64 h-full flex flex-col bg-[var(--card)] border-r border-[var(--border)] text-[var(--foreground)] select-none transition-all ${
         isDragOverTree ? 'ring-2 ring-indigo-500 bg-indigo-50/20' : ''
       }`}
     >
       {/* Top Vault Brand & Actions */}
-      <div className="p-2.5 border-b border-neutral-200/80 dark:border-neutral-800">
+      <div className="p-2.5 border-b border-[var(--border)]">
         <div className="flex items-center justify-between mb-1.5">
           <div className="flex items-center gap-1.5 truncate">
             <WorkspacePopover />
@@ -91,7 +102,7 @@ export function FileTree() {
           </div>
           <button
             onClick={() => setNewNoteModal(true)}
-            className="p-1 rounded-md text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 hover:bg-neutral-200/60 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+            className="p-1 rounded-md text-neutral-400 hover:text-[var(--foreground)] hover:bg-neutral-800/40 transition-colors cursor-pointer"
             title="Create new note"
           >
             <Plus className="w-4 h-4" />
@@ -101,17 +112,17 @@ export function FileTree() {
 
       {/* Filter / Search input */}
       <div className="px-3 py-2">
-        <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800/80 border border-neutral-200/60 dark:border-neutral-700/60 text-xs">
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[var(--background)] border border-[var(--border)] text-xs">
           <Search className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
           <input
             type="text"
             placeholder="Filter files..."
             value={filterQuery}
             onChange={(e) => setFilterQuery(e.target.value)}
-            className="w-full bg-transparent border-none outline-none text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 text-xs"
+            className="w-full bg-transparent border-none outline-none text-[var(--foreground)] placeholder-neutral-400 text-xs"
           />
           {filterQuery && (
-            <button onClick={() => setFilterQuery('')} className="text-neutral-400 hover:text-neutral-600 cursor-pointer">
+            <button onClick={() => setFilterQuery('')} className="text-neutral-400 hover:text-neutral-200 cursor-pointer">
               <X className="w-3 h-3" />
             </button>
           )}
@@ -141,11 +152,90 @@ export function FileTree() {
         )}
       </div>
 
+      {/* Ephemeral Trash Folder Section */}
+      <div className="border-t border-[var(--border)] px-1.5 py-1">
+        <div
+          onClick={() => setIsTrashOpen((prev) => !prev)}
+          className="flex items-center justify-between py-1 px-2 rounded-md hover:bg-neutral-800/30 cursor-pointer text-xs font-medium text-neutral-400 hover:text-[var(--foreground)] transition-colors select-none group"
+        >
+          <div className="flex items-center gap-1.5">
+            {isTrashOpen ? (
+              <ChevronDown className="w-3 h-3 text-neutral-400 shrink-0" />
+            ) : (
+              <ChevronRight className="w-3 h-3 text-neutral-400 shrink-0" />
+            )}
+            <Trash2 className="w-3.5 h-3.5 text-rose-400/80 shrink-0" />
+            <span>Trash</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {trashFiles.length > 0 && (
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-500/10 text-rose-400 font-mono">
+                {trashFiles.length}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {isTrashOpen && (
+          <div className="pl-4 pr-1 py-1 space-y-1">
+            {trashFiles.length === 0 ? (
+              <div className="text-[11px] text-neutral-500 py-1 pl-2">Trash is empty</div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between px-2 py-0.5 text-[10px] text-neutral-500">
+                  <span>{trashFiles.length} item{trashFiles.length === 1 ? '' : 's'}</span>
+                  <button
+                    onClick={() => {
+                      if (confirm('Permanently delete all notes in Trash?')) {
+                        emptyTrashAll();
+                      }
+                    }}
+                    className="text-rose-400 hover:text-rose-300 transition-colors cursor-pointer"
+                  >
+                    Empty
+                  </button>
+                </div>
+                {trashFiles.map((tf) => (
+                  <div
+                    key={tf.path}
+                    className="flex items-center justify-between py-1 px-2 rounded-md bg-neutral-900/30 text-xs text-neutral-400 group hover:text-[var(--foreground)]"
+                  >
+                    <span className="truncate text-[11px] line-through opacity-75">
+                      {tf.title || tf.name}
+                    </span>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => restoreNote(tf.path)}
+                        title="Restore note"
+                        className="p-1 rounded hover:bg-neutral-800 text-neutral-300 hover:text-emerald-400 transition-colors cursor-pointer"
+                      >
+                        <Undo2 className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm(`Permanently delete "${tf.title || tf.name}"?`)) {
+                            deleteNote(tf.path);
+                          }
+                        }}
+                        title="Delete permanently"
+                        className="p-1 rounded hover:bg-neutral-800 text-neutral-400 hover:text-rose-400 transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Bottom Quick-Import & Settings Action Bar */}
-      <div className="p-2 border-t border-neutral-200/80 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/30 flex items-center gap-1.5">
+      <div className="p-2 border-t border-[var(--border)] bg-[var(--card)]/50 flex items-center gap-1.5">
         <button
           onClick={() => setImportModalOpen(true)}
-          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md bg-neutral-100 hover:bg-neutral-200/80 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 font-medium text-xs transition-colors cursor-pointer truncate"
+          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md bg-[var(--background)] hover:bg-neutral-800 text-neutral-300 font-medium text-xs transition-colors cursor-pointer truncate"
           title="Import or Mount Vault"
         >
           <FolderUp className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
@@ -153,7 +243,7 @@ export function FileTree() {
         </button>
         <Link
           href="/settings"
-          className="p-1.5 rounded-md bg-neutral-100 hover:bg-neutral-200/80 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 transition-colors cursor-pointer shrink-0"
+          className="p-1.5 rounded-md bg-[var(--background)] hover:bg-neutral-800 text-neutral-400 hover:text-[var(--foreground)] transition-colors cursor-pointer shrink-0"
           title="Settings"
         >
           <Settings className="w-4 h-4" />

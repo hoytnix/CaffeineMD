@@ -6,7 +6,13 @@ import {
   DEFAULT_CUSTOM_THEME,
   applyThemeToDocument,
 } from '../lib/themes/themeDefinitions';
-import { deleteVaultFile } from '../lib/storage/db';
+import {
+  deleteVaultFile,
+  moveToTrash as dbMoveToTrash,
+  restoreFromTrash as dbRestoreFromTrash,
+  emptyTrash as dbEmptyTrash,
+  purgeExpiredTrash as dbPurgeExpiredTrash,
+} from '../lib/storage/db';
 import { NativeFileSystemAdapter } from '../lib/storage/fileSystem';
 
 export interface TabItem {
@@ -52,6 +58,19 @@ export interface WorkspaceState {
   setTheme: (themeId: string) => void;
   updateCustomTheme: (tokens: Partial<ThemeDefinition>) => void;
 
+  // Trash & Deletion Modal
+  isDeleteModalOpen: boolean;
+  deleteModalTarget: { path: string; title: string } | null;
+  trashRetentionDays: number;
+  promptDeleteNote: (path: string, title?: string) => void;
+  closeDeleteModal: () => void;
+  confirmDeleteNote: () => Promise<void>;
+  moveToTrash: (path: string) => Promise<boolean>;
+  restoreNote: (path: string) => Promise<boolean>;
+  emptyTrashAll: () => Promise<void>;
+  setTrashRetentionDays: (days: number) => void;
+  purgeExpiredTrashNotes: () => Promise<number>;
+
   // Actions
   setActiveFilePath: (path: string | null) => void;
   openFileTab: (path: string, title?: string) => void;
@@ -91,6 +110,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   sidebarCollapsed: false,
   rightPanelOpen: true,
   databaseViewMode: 'table',
+
+  // Trash State & Deletion Modal
+  isDeleteModalOpen: false,
+  deleteModalTarget: null,
+  trashRetentionDays: typeof window !== 'undefined' ? parseInt(localStorage.getItem('kite-trash-retention-days') || '30', 10) : 30,
 
   // Global Toast
   toastMessage: null,
@@ -184,6 +208,95 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     });
   },
 
+  promptDeleteNote: (path: string, title?: string) => {
+    set({
+      isDeleteModalOpen: true,
+      deleteModalTarget: { path, title: title || path.replace(/\.[^/.]+$/, '').split('/').pop() || path },
+    });
+  },
+
+  closeDeleteModal: () => {
+    set({ isDeleteModalOpen: false, deleteModalTarget: null });
+  },
+
+  confirmDeleteNote: async () => {
+    const target = get().deleteModalTarget;
+    if (!target) return;
+    set({ isDeleteModalOpen: false, deleteModalTarget: null });
+    await get().moveToTrash(target.path);
+  },
+
+  moveToTrash: async (path: string) => {
+    try {
+      const ok = await dbMoveToTrash(path);
+      if (!ok) {
+        get().showToast('Failed to move note to Trash');
+        return false;
+      }
+
+      // Close tab if opened
+      const state = get();
+      const newTabs = state.openTabs.filter((t) => t.path !== path);
+      let nextActive = state.activeFilePath;
+      if (state.activeFilePath === path) {
+        nextActive = newTabs.length > 0 ? newTabs[newTabs.length - 1].path : null;
+      }
+
+      set({
+        openTabs: newTabs,
+        activeFilePath: nextActive,
+      });
+
+      state.showToast('Note moved to Trash');
+      return true;
+    } catch (err) {
+      console.error('Failed to move note to trash:', err);
+      get().showToast('Error moving note to Trash');
+      return false;
+    }
+  },
+
+  restoreNote: async (path: string) => {
+    try {
+      const ok = await dbRestoreFromTrash(path);
+      if (ok) {
+        get().showToast('Note restored from Trash');
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Failed to restore note:', err);
+      get().showToast('Failed to restore note');
+      return false;
+    }
+  },
+
+  emptyTrashAll: async () => {
+    try {
+      const count = await dbEmptyTrash();
+      get().showToast(`Emptied ${count} note${count === 1 ? '' : 's'} from Trash`);
+    } catch (err) {
+      console.error('Failed to empty trash:', err);
+      get().showToast('Failed to empty Trash');
+    }
+  },
+
+  setTrashRetentionDays: (days: number) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('kite-trash-retention-days', days.toString());
+    }
+    set({ trashRetentionDays: days });
+  },
+
+  purgeExpiredTrashNotes: async () => {
+    const days = get().trashRetentionDays;
+    const purged = await dbPurgeExpiredTrash(days);
+    if (purged > 0) {
+      get().showToast(`Purged ${purged} expired note${purged === 1 ? '' : 's'} from Trash`);
+    }
+    return purged;
+  },
+
   deleteNote: async (path: string) => {
     try {
       // 1. Remove from Dexie IndexedDB and prune backlinks and tags
@@ -206,7 +319,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       });
 
       // 4. Affirmative toast confirmation
-      state.showToast('Note deleted');
+      state.showToast('Note permanently deleted');
       return true;
     } catch (err) {
       console.error('Failed to delete note:', err);

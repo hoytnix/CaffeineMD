@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { db, VaultFile } from '@/src/lib/storage/db';
+import { db, VaultFile, EISENHOWER_CONFIG, EisenhowerQuadrant } from '@/src/lib/storage/db';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { Search, FileText, Tag, ArrowRight, X } from 'lucide-react';
 
@@ -38,11 +38,11 @@ export function QuickSearchModal() {
     if (!query.trim()) {
       // Show recent notes
       db.files
-        .where('isBinary')
-        .equals(0)
-        .reverse()
-        .sortBy('updatedAt')
-        .then((recent) => {
+        .toArray()
+        .then((all) => {
+          const recent = all
+            .filter((f) => !f.isBinary && !f.isTrash)
+            .sort((a, b) => b.updatedAt - a.updatedAt);
           setResults(
             recent.slice(0, 8).map((f) => ({
               file: f,
@@ -55,13 +55,12 @@ export function QuickSearchModal() {
 
     const qLower = query.toLowerCase();
     db.files
-      .where('isBinary')
-      .equals(0)
       .toArray()
       .then((allFiles) => {
         const matches: { file: VaultFile; snippet: string; score: number }[] = [];
+        const active = allFiles.filter((f) => !f.isBinary && !f.isTrash);
 
-        for (const file of allFiles) {
+        for (const file of active) {
           const title = (file.title || file.name).toLowerCase();
           const content = (file.content || '').toLowerCase();
           const tags = (file.tags || []).join(' ').toLowerCase();
@@ -148,32 +147,43 @@ export function QuickSearchModal() {
               No matching notes found for &quot;{query}&quot;
             </div>
           ) : (
-            results.map(({ file, snippet }, idx) => (
-              <div
-                key={file.path}
-                onClick={() => handleSelect(file)}
-                onMouseEnter={() => setSelectedIndex(idx)}
-                className={`p-2.5 rounded-lg flex items-center justify-between cursor-pointer transition-colors ${
-                  idx === selectedIndex
-                    ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
-                    : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/50 text-neutral-700 dark:text-neutral-300'
-                }`}
-              >
-                <div className="truncate flex-1 pr-3">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-                    <span className="text-xs font-semibold truncate">{file.title || file.name}</span>
-                    <span className="text-[11px] text-neutral-400 font-mono truncate">{file.path}</span>
-                  </div>
-                  {snippet && (
-                    <div className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1 truncate pl-5 font-mono">
-                      {snippet}
+            results.map(({ file, snippet }, idx) => {
+              const rawQuadrant = (file.eisenhower || file.frontmatter?.eisenhower) as EisenhowerQuadrant | undefined;
+              const eqOpt = rawQuadrant && EISENHOWER_CONFIG[rawQuadrant] ? EISENHOWER_CONFIG[rawQuadrant] : null;
+
+              return (
+                <div
+                  key={file.path}
+                  onClick={() => handleSelect(file)}
+                  onMouseEnter={() => setSelectedIndex(idx)}
+                  className={`p-2.5 rounded-lg flex items-center justify-between cursor-pointer transition-colors ${
+                    idx === selectedIndex
+                      ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
+                      : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/50 text-neutral-700 dark:text-neutral-300'
+                  }`}
+                >
+                  <div className="truncate flex-1 pr-3">
+                    <div className="flex items-center gap-2">
+                      {eqOpt && (
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${eqOpt.dotBg}`}
+                          title={`Eisenhower: ${eqOpt.label}`}
+                        />
+                      )}
+                      <FileText className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                      <span className="text-xs font-semibold truncate">{file.title || file.name}</span>
+                      <span className="text-[11px] text-neutral-400 font-mono truncate">{file.path}</span>
                     </div>
-                  )}
+                    {snippet && (
+                      <div className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1 truncate pl-5 font-mono">
+                        {snippet}
+                      </div>
+                    )}
+                  </div>
+                  <ArrowRight className="w-3.5 h-3.5 text-neutral-400 shrink-0 opacity-0 group-hover:opacity-100" />
                 </div>
-                <ArrowRight className="w-3.5 h-3.5 text-neutral-400 shrink-0 opacity-0 group-hover:opacity-100" />
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>

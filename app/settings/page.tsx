@@ -22,7 +22,10 @@ import {
   Info,
   ShieldCheck,
   Zap,
+  Trash2,
 } from 'lucide-react';
+import { db } from '@/src/lib/storage/db';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import {
   THEME_PRESETS,
@@ -48,7 +51,13 @@ export default function SettingsPage() {
     updateCustomTheme,
     vaultName,
     mountedMode,
+    trashRetentionDays,
+    setTrashRetentionDays,
+    emptyTrashAll,
   } = useWorkspaceStore();
+
+  const rawFiles = useLiveQuery(() => db.files.toArray());
+  const trashCount = rawFiles?.filter((f) => f.isTrash).length || 0;
 
   // AI Theme Generation state
   const [vibePrompt, setVibePrompt] = useState('');
@@ -185,9 +194,9 @@ export default function SettingsPage() {
   const customPreset = THEME_PRESETS.find((t) => t.id === 'custom') || DEFAULT_CUSTOM_THEME;
 
   return (
-    <div className="min-h-screen bg-neutral-100 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 flex flex-col font-sans transition-colors duration-200">
+    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col font-sans transition-colors duration-200">
       {/* iOS Top Navigation Bar */}
-      <header className="sticky top-0 z-40 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-b border-neutral-200/80 dark:border-neutral-800/80 px-4 py-3 select-none">
+      <header className="sticky top-0 z-40 bg-[var(--card)]/80 backdrop-blur-xl border-b border-[var(--border)] px-4 py-3 select-none">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <Link
             href="/"
@@ -686,7 +695,63 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Section 5: Universal Shortcuts & About */}
+        {/* Section 5: Trash & Ephemeral Retention Settings */}
+        <div>
+          <div className="px-3 mb-2 flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+              Trash &amp; Ephemeral Retention
+            </span>
+          </div>
+
+          <div className="rounded-2xl bg-[var(--card)] border border-[var(--border)] divide-y divide-[var(--border)] overflow-hidden shadow-xs">
+            <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div>
+                <span className="text-[var(--foreground)] font-medium block">
+                  Automatic Trash Purge Retention
+                </span>
+                <span className="text-neutral-400 text-[11px]">
+                  Files in the trash will be automatically purged permanently after this period.
+                </span>
+              </div>
+              <select
+                value={trashRetentionDays}
+                onChange={(e) => setTrashRetentionDays(parseInt(e.target.value, 10))}
+                className="px-3 py-1.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] outline-none cursor-pointer"
+              >
+                <option value={7}>7 Days</option>
+                <option value={14}>14 Days</option>
+                <option value={30}>30 Days (Default)</option>
+                <option value={60}>60 Days</option>
+                <option value={90}>90 Days</option>
+              </select>
+            </div>
+
+            <div className="p-4 flex items-center justify-between text-xs">
+              <div>
+                <span className="text-[var(--foreground)] font-medium block">
+                  Items in Ephemeral Trash
+                </span>
+                <span className="text-neutral-400 text-[11px]">
+                  Currently holding {trashCount} deleted note{trashCount === 1 ? '' : 's'}.
+                </span>
+              </div>
+              <button
+                disabled={trashCount === 0}
+                onClick={() => {
+                  if (confirm(`Permanently delete all ${trashCount} notes in the Trash?`)) {
+                    emptyTrashAll();
+                  }
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-rose-500 hover:text-white bg-rose-500/10 hover:bg-rose-600 disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Empty Trash Now</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Section 6: Universal Shortcuts & About */}
         <div>
           <div className="px-3 mb-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">

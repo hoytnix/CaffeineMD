@@ -36,6 +36,8 @@ import { BinaryAssetPreview } from './BinaryAssetPreview';
 import { PlaintextMarkdownEditor } from './modes/PlaintextMarkdownEditor';
 import { FloatingSlashMenu } from './menus/FloatingSlashMenu';
 import { FloatingWikiLinkMenu } from './menus/FloatingWikiLinkMenu';
+import Underline from '@tiptap/extension-underline';
+import { EditorBottomToolbar } from './EditorBottomToolbar';
 import { FileQuestion } from 'lucide-react';
 
 interface TiptapEditorProps {
@@ -146,6 +148,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
         Placeholder.configure({
           placeholder: 'Type "/" for commands, "[[" to link notes...',
         }),
+        Underline,
         TaskList,
         TaskItem.configure({ nested: true }),
         Table.configure({ resizable: true }),
@@ -177,7 +180,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
               onUpdate: async (props: any) => {
                 const clientRect = props.clientRect?.();
                 const q = props.query ? props.query.toLowerCase() : '';
-                const allFiles = await db.files.where('isBinary').equals(0).toArray();
+                const allFiles = await db.files.filter((f) => !f.isBinary && !f.isTrash).toArray();
                 let matches = allFiles.filter(
                   (f) =>
                     (f.title && f.title.toLowerCase().includes(q)) ||
@@ -426,7 +429,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
       }
     }
     setEditorMode('rich');
-  }, [editor, file, rawMarkdown, handleSaveRaw]);
+  }, [editor, file, rawMarkdown, handleSaveRaw, autoDetectUnlabeledCodeBlocks]);
 
   // Commands & WikiLink execution
   const filteredCommands = useMemo(() => {
@@ -598,6 +601,10 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
           }}
         />
       </div>
+
+      {editorMode === 'rich' && editor && !editor.isDestroyed && (
+        <EditorBottomToolbar editor={editor} />
+      )}
 
       <FloatingSlashMenu
         isOpen={slashMenu.isOpen}

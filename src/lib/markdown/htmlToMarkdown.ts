@@ -104,6 +104,8 @@ export function editorHtmlToMarkdown(html: string): string {
       case 's':
       case 'del':
         return `~~${childrenText}~~`;
+      case 'u':
+        return `<u>${childrenText}</u>`;
       case 'code':
         if (el.parentElement?.tagName.toLowerCase() === 'pre') {
           return el.textContent || '';

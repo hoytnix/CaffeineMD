@@ -52,7 +52,7 @@ export function extractCleanExcerpt(content: string, maxLength = 400): string {
 }
 
 export function TagCloudView() {
-  const rawFiles = useLiveQuery(() => db.files.where('isBinary').equals(0).toArray());
+  const rawFiles = useLiveQuery(() => db.files.filter((f) => !f.isBinary && !f.isTrash).toArray());
   const files = useMemo(() => rawFiles ?? [], [rawFiles]);
 
   const {
@@ -106,9 +106,9 @@ export function TagCloudView() {
   }, [files, activeTag, searchQuery]);
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-auto bg-neutral-50/50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100">
+    <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[var(--background)] text-[var(--foreground)]">
       {/* Header Bar */}
-      <div className="sticky top-0 z-20 px-8 py-5 bg-white/90 dark:bg-neutral-950/90 backdrop-blur-md border-b border-neutral-200/80 dark:border-neutral-800 flex flex-col gap-4">
+      <div className="sticky top-0 z-20 px-8 py-5 bg-[var(--card)]/90 backdrop-blur-md border-b border-[var(--border)] flex flex-col gap-4">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">

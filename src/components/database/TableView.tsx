@@ -91,6 +91,16 @@ export function TableView({ files, columns, onRefresh }: TableViewProps) {
                     onClick={() => openFileTab(file.path, file.title)}
                     className="flex items-center gap-2 text-neutral-900 dark:text-neutral-100 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer truncate"
                   >
+                    {(() => {
+                      const rawQuadrant = (file.eisenhower || file.frontmatter?.eisenhower) as EisenhowerQuadrant | undefined;
+                      const opt = rawQuadrant && EISENHOWER_CONFIG[rawQuadrant] ? EISENHOWER_CONFIG[rawQuadrant] : null;
+                      return opt ? (
+                        <span
+                          className={`w-2 h-2 rounded-full shrink-0 ${opt.dotBg}`}
+                          title={`Eisenhower: ${opt.label}`}
+                        />
+                      ) : null;
+                    })()}
                     <FileText className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                     <span className="truncate">{file.title || file.name}</span>
                   </div>

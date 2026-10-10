@@ -13,7 +13,7 @@ import { useDatabaseSchema } from '@/src/hooks/useDatabaseSchema';
 export function DatabaseView({ mode }: { mode?: 'table' | 'board' | 'list' }) {
   const { databaseViewMode, setDatabaseViewMode, openFileTab, setActiveView } = useWorkspaceStore();
   const currentMode = mode || databaseViewMode;
-  const rawFiles = useLiveQuery(() => db.files.where('isBinary').equals(0).toArray());
+  const rawFiles = useLiveQuery(() => db.files.filter((f) => !f.isBinary && !f.isTrash).toArray());
   const files = useMemo(() => rawFiles ?? [], [rawFiles]);
 
   const [filterFolder, setFilterFolder] = useState<string>('all');
@@ -41,8 +41,9 @@ export function DatabaseView({ mode }: { mode?: 'table' | 'board' | 'list' }) {
       extension: 'md',
       content: `---
 title: New Note ${timestamp.toString().slice(-4)}
-status: Planning
+status: ToDO
 priority: Medium
+eisenhower: urgent_immediate
 tags: [${filterTag !== 'all' ? filterTag : 'note'}]
 ---
 
@@ -50,11 +51,13 @@ tags: [${filterTag !== 'all' ? filterTag : 'note'}]
 `,
       frontmatter: {
         title: `New Note ${timestamp.toString().slice(-4)}`,
-        status: 'Planning',
+        status: 'ToDO',
         priority: 'Medium',
+        eisenhower: 'urgent_immediate',
         tags: filterTag !== 'all' ? [filterTag] : ['note'],
       },
       tags: filterTag !== 'all' ? [filterTag] : ['note'],
+      eisenhower: 'urgent_immediate',
       isBinary: false,
       size: 120,
       createdAt: timestamp,
@@ -67,7 +70,7 @@ tags: [${filterTag !== 'all' ? filterTag : 'note'}]
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-auto bg-neutral-50/50 dark:bg-neutral-950 p-8 text-neutral-900 dark:text-neutral-100">
+    <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[var(--background)] p-8 text-[var(--foreground)]">
       <DatabaseToolbar
         databaseViewMode={currentMode}
         onSetViewMode={(m) => {

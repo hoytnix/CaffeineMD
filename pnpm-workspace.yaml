@@ -1,0 +1,7 @@
+allowBuilds:
+  '@firebase/util': true
+  '@google/genai': true
+  '@tailwindcss/oxide': true
+  protobufjs: true
+  re2: true
+  unrs-resolver: true

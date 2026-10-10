@@ -51,47 +51,11 @@ export function DatabaseToolbar({
           </p>
         </div>
 
-        {/* View Switcher & New Note Button */}
+        {/* Action Button: New Note / Row */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center bg-neutral-200/60 dark:bg-neutral-800 p-0.5 rounded-lg border border-neutral-200 dark:border-neutral-700">
-            <button
-              onClick={() => onSetViewMode('table')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
-                databaseViewMode === 'table'
-                  ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 shadow-xs'
-                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900'
-              }`}
-            >
-              <TableIcon className="w-3.5 h-3.5" />
-              <span>Table</span>
-            </button>
-            <button
-              onClick={() => onSetViewMode('board')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
-                databaseViewMode === 'board'
-                  ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 shadow-xs'
-                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900'
-              }`}
-            >
-              <Kanban className="w-3.5 h-3.5" />
-              <span>Board</span>
-            </button>
-            <button
-              onClick={() => onSetViewMode('list')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
-                databaseViewMode === 'list'
-                  ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 shadow-xs'
-                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900'
-              }`}
-            >
-              <ListIcon className="w-3.5 h-3.5" />
-              <span>List</span>
-            </button>
-          </div>
-
           <button
             onClick={onCreateNewRow}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-xs cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-white bg-[var(--primary)] hover:opacity-90 rounded-lg transition-opacity shadow-xs cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>New Row</span>

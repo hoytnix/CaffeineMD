@@ -26,21 +26,19 @@ export function EditorHeader({
   onManualSave,
   isSaveDisabled,
 }: EditorHeaderProps) {
-  const { setActiveView, setSelectedTagFilter, deleteNote } = useWorkspaceStore();
+  const { setActiveView, setSelectedTagFilter, promptDeleteNote } = useWorkspaceStore();
 
   const handleTagClick = (tag: string) => {
     setSelectedTagFilter(tag);
     setActiveView('tags');
   };
 
-  const handleDelete = async () => {
-    if (confirm(`Are you sure you want to delete "${file.title || file.name}"?`)) {
-      await deleteNote(file.path);
-    }
+  const handleDelete = () => {
+    promptDeleteNote(file.path, file.title || file.name);
   };
 
   return (
-    <div className="sticky top-0 z-20 flex items-center justify-between px-8 py-3 bg-white/90 dark:bg-neutral-950/90 backdrop-blur-md border-b border-neutral-100 dark:border-neutral-900">
+    <div className="sticky top-0 z-20 flex items-center justify-between px-8 py-3 bg-[var(--background)]/90 backdrop-blur-md border-b border-[var(--border)]">
       <div className="flex items-center gap-2 text-xs text-neutral-500 truncate">
         <span className="truncate">{file.path}</span>
         {file.tags && file.tags.length > 0 && (

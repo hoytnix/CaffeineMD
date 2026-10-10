@@ -15,6 +15,7 @@ import { EmojiDrawer } from '@/src/components/emoji/EmojiDrawer';
 import { useEmojiDrawer } from '@/src/hooks/useEmojiDrawer';
 import { WorkspacePopover } from '@/src/components/workspace/WorkspacePopover';
 import { THEME_PRESETS, applyThemeToDocument } from '@/src/lib/themes/themeDefinitions';
+import { DeleteConfirmModal } from '@/src/components/common/DeleteConfirmModal';
 import {
   Search,
   PanelLeftClose,
@@ -76,9 +77,9 @@ export default function WorkspacePage() {
   }, [setTheme]);
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100">
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-[var(--background)] text-[var(--foreground)]">
       {/* 1. Universal Top Bar Contract: Cleaned, Zero Import Button, Zero IndexedDB Badge */}
-      <header className="flex items-center justify-between gap-4 px-4 py-2 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 z-30 select-none">
+      <header className="flex items-center justify-between gap-4 px-4 py-2 border-b border-[var(--border)] bg-[var(--card)] z-30 select-none">
         {/* Zone 1: Sidebar Toggle & 1:1 SVG Kite Logo with Workspace Popover */}
         <div className="flex items-center gap-2 shrink-0">
           <button
@@ -203,17 +204,17 @@ export default function WorkspacePage() {
 
       {/* 2. Workspace Document Tabs Bar (Shown in Editor View) */}
       {activeView === 'editor' && (
-        <div className="flex items-center bg-neutral-100/70 dark:bg-neutral-900/40 border-b border-neutral-200 dark:border-neutral-800 px-2 py-0 overflow-x-auto select-none">
+        <div className="flex items-center bg-[var(--card)]/50 border-b border-[var(--border)] px-2 py-0 overflow-x-auto select-none">
           {openTabs.map((tab) => {
             const isActive = tab.path === activeFilePath;
             return (
               <div
                 key={tab.path}
                 onClick={() => openFileTab(tab.path, tab.title)}
-                className={`group flex items-center gap-2 py-1.5 px-3 border-r border-neutral-200/80 dark:border-neutral-800 text-xs cursor-pointer transition-colors max-w-[200px] shrink-0 ${
+                className={`group flex items-center gap-2 py-1.5 px-3 border-r border-[var(--border)] text-xs cursor-pointer transition-colors max-w-[200px] shrink-0 ${
                   isActive
-                    ? 'bg-white dark:bg-neutral-950 font-semibold text-neutral-900 dark:text-neutral-100 border-t-2 border-t-indigo-600'
-                    : 'text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-300 hover:bg-neutral-200/40 dark:hover:bg-neutral-800/40'
+                    ? 'bg-[var(--background)] font-semibold text-[var(--foreground)] border-t-2 border-t-[var(--accent)]'
+                    : 'text-neutral-400 hover:text-[var(--foreground)] hover:bg-[var(--card)]'
                 }`}
               >
                 <FileText className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
@@ -223,7 +224,7 @@ export default function WorkspacePage() {
                     e.stopPropagation();
                     closeFileTab(tab.path);
                   }}
-                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-opacity ml-1"
+                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-neutral-800 text-neutral-400 hover:text-[var(--foreground)] transition-opacity ml-1"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -289,6 +290,7 @@ export default function WorkspacePage() {
       <ImportProgressModal />
       <QuickSearchModal />
       <EmojiDrawer />
+      <DeleteConfirmModal />
 
       {/* Floating Global Affirmative Toast */}
       {toastMessage && (
