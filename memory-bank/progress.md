@@ -9,6 +9,8 @@
 - [x] 3x enlarged thumb-reach reorderable bottom editor toolbar strictly confined within editor bounds (`w-[calc(100%-3rem)] max-w-2xl`), with invisible internal button overflow, mouse drag-to-scroll panning, and zero page scrollbars (`/src/components/editor/EditorBottomToolbar.tsx`, `/src/components/editor/TiptapEditor.tsx`, `/app/globals.css`).
 - [x] Complete editor & app theming: editor canvas, note title, blockquotes, links, WikiLinks, HR, tables, placeholders, mode switcher, and property inspector all dynamically themed via CSS variables (`/app/globals.css`, `/src/components/editor/TiptapEditor.tsx`, `/src/components/editor/EditorHeader.tsx`, `/src/components/editor/BacklinksPanel.tsx`, `/src/components/editor/modes/PlaintextMarkdownEditor.tsx`).
 - [x] Ephemeral Trash Can with double-confirmation modal, configurable retention days (7, 14, 30, 60, 90; default 30), auto-purge on launch, and dedicated collapsible sidebar section (`/src/components/common/DeleteConfirmModal.tsx`, `/src/lib/storage/db.ts`, `/src/stores/workspaceStore.ts`, `/src/components/sidebar/FileTree.tsx`, `/app/settings/page.tsx`).
+- [x] Netlify deployment configuration with Next.js plugin, build directives, and SPA redirects to avoid 404 errors (`/netlify.toml`).
+- [x] Regenerated pnpm lockfile resolving all peer dependency snapshots for `@tiptap/extension-underline` with frozen-lockfile verification (`/pnpm-lock.yaml`).
 - [x] Resolved Dexie IndexedDB boolean index type mismatch restoring notes across Knowledge Graph, Table, Board, List, Tag Cloud, and Search views.
 - [x] Kanban Board default `ToDO` column with updated column taxonomy (`ToDO`, `Doing`, `Someday / Maybe`, `Completed`, `Won't Do`) and removal of redundant view switch toolbar (`/src/components/database/KanbanView.tsx`, `/src/components/database/DatabaseToolbar.tsx`).
 - [x] Theme-aware styling across entire application and syntax highlighting tokens across all 14 presets and Custom (`/src/lib/themes/themeDefinitions.ts`, `/app/globals.css`).
@@ -33,3 +35,4 @@
 - Production compilation (`pnpm build`): Passed (100% clean Next.js build).
 - Codebase linting (`pnpm lint`): Passed (0 errors, 0 warnings).
 - Type checking (`tsc --noEmit`): Passed (0 errors).
+- Frozen lockfile verification (`pnpm install --frozen-lockfile`): Passed (0 errors).
