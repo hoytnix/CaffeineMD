@@ -1,0 +1,6 @@
+{
+  "name": "Kite Workspace - Local-First Knowledge & Notes",
+  "description": "High-performance local-first knowledge base with Tiptap markdown editor, recursive directory import, WikiLinks, interactive graph view, and Notion-style databases.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
