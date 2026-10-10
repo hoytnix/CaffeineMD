@@ -353,7 +353,7 @@ export function EditorBottomToolbar({ editor }: EditorBottomToolbarProps) {
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
       onWheel={handleWheel}
-      className="sticky bottom-6 z-30 mx-auto w-[calc(100%-3rem)] max-w-2xl overflow-x-auto scrollbar-none no-scrollbar py-2.5 px-4 rounded-3xl bg-[var(--card)]/95 backdrop-blur-xl border-2 border-[var(--border)] shadow-2xl flex items-center gap-2.5 select-none transition-all cursor-grab active:cursor-grabbing shrink-0"
+      className="sticky bottom-6 z-30 mx-auto w-[calc(100%-3rem)] max-w-2xl overflow-x-auto scrollbar-none no-scrollbar py-1 px-3 rounded-2xl bg-[var(--card)]/95 backdrop-blur-xl border border-[var(--border)] shadow-xl flex items-center gap-1.5 select-none transition-all cursor-grab active:cursor-grabbing shrink-0"
     >
       {buttonOrder.map((btnId, idx) => {
         const def = BUTTON_DEFINITIONS[btnId];
@@ -372,8 +372,8 @@ export function EditorBottomToolbar({ editor }: EditorBottomToolbarProps) {
             onDragOver={(e) => handleDragOver(e, idx)}
             onDragEnd={handleDragEnd}
             onDrop={(e) => handleDrop(e, idx)}
-            className={`relative flex items-center shrink-0 rounded-2xl transition-all ${
-              isDragOver ? 'scale-110 ring-4 ring-[var(--accent)]' : ''
+            className={`relative flex items-center shrink-0 rounded-lg transition-all ${
+              isDragOver ? 'scale-110 ring-2 ring-[var(--accent)]' : ''
             }`}
           >
             <button
@@ -393,15 +393,15 @@ export function EditorBottomToolbar({ editor }: EditorBottomToolbarProps) {
                 });
               }}
               title={`${def.label} (Drag icon to reorder, drag bar to scroll)`}
-              className={`p-3.5 rounded-2xl transition-all flex items-center justify-center cursor-pointer min-w-[52px] min-h-[52px] ${
+              className={`p-1 px-2 rounded-lg transition-all flex items-center justify-center cursor-pointer min-w-[26px] h-[26px] ${
                 active
-                  ? 'bg-[var(--accent)] text-white shadow-md'
+                  ? 'bg-[var(--accent)] text-white shadow-xs'
                   : isCopyBtn && copiedRecently
                   ? 'bg-emerald-500/20 text-emerald-400 font-medium'
                   : 'text-neutral-400 hover:text-[var(--foreground)] hover:bg-[var(--border)]/60'
               }`}
             >
-              <IconComponent className="w-7 h-7 shrink-0 stroke-[2.2] pointer-events-none" />
+              <IconComponent className="w-4 h-4 shrink-0 stroke-[2] pointer-events-none" />
             </button>
           </div>
         );

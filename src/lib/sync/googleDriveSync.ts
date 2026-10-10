@@ -64,19 +64,22 @@ export async function uploadSmallFile(
 
   if (!isUpdate && parentFolderId && !metadata.parents) {
     metadata.parents = [parentFolderId];
-  } else if (isUpdate) {
-    delete metadata.parents;
   }
 
   const mimeType = metadata.mimeType || fileBlob.type || 'application/octet-stream';
-  metadata.mimeType = mimeType;
+  if (isUpdate) {
+    delete metadata.parents;
+    delete metadata.mimeType;
+  } else {
+    metadata.mimeType = mimeType;
+  }
 
   const boundary = '-------KiteSyncBoundary' + Math.random().toString(36).slice(2);
   const delimiter = `\r\n--${boundary}\r\n`;
   const closeDelimiter = `\r\n--${boundary}--`;
 
   const metadataPart =
-    delimiter +
+    `--${boundary}\r\n` +
     'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
     JSON.stringify(metadata) +
     delimiter +
@@ -157,12 +160,15 @@ export async function uploadLargeFileResumable(
 
   if (!isUpdate && parentFolderId && !metadata.parents) {
     metadata.parents = [parentFolderId];
-  } else if (isUpdate) {
-    delete metadata.parents;
   }
 
   const mimeType = metadata.mimeType || fileBlob.type || 'application/octet-stream';
-  metadata.mimeType = mimeType;
+  if (isUpdate) {
+    delete metadata.parents;
+    delete metadata.mimeType;
+  } else {
+    metadata.mimeType = mimeType;
+  }
   const totalBytes = fileBlob.size;
 
   // Step 1: Initiate session with exponential backoff
@@ -344,6 +350,13 @@ export async function syncFileToDrive(
   }
 }
 
+export interface RemoteWorkspace {
+  id: string;
+  name: string;
+  folderName: string;
+  modifiedTime?: string;
+}
+
 export interface DriveSyncStatus {
   isConnected: boolean;
   isSyncing: boolean;
@@ -369,6 +382,47 @@ export class GoogleDriveSyncService {
   private static folderCache: Map<string, string> = new Map(); // workspaceName -> folderId
   private static lastSyncTime: number | null = null;
   private static cachedFolderId: string | null = null;
+
+  public static setWorkspaceFolder(workspaceName: string, folderId: string) {
+    const safeName = `Kite-${workspaceName.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+    this.folderCache.set(safeName, folderId);
+    this.folderCache.set(workspaceName, folderId);
+    this.cachedFolderId = folderId;
+  }
+
+  /**
+   * List all Kite workspace folders available in Google Drive
+   */
+  public static async listRemoteWorkspaces(): Promise<RemoteWorkspace[]> {
+    const token = await getAccessToken();
+    if (!token) return [];
+
+    try {
+      const query = encodeURIComponent(
+        `mimeType = 'application/vnd.google-apps.folder' and trashed = false and name contains 'Kite'`
+      );
+      const res = await this.driveFetch(
+        `files?q=${query}&fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc`
+      );
+      const data = await res.json();
+      const files: Array<{ id: string; name: string; modifiedTime?: string }> = data.files || [];
+
+      return files.map((f) => {
+        const cleanName = f.name.startsWith('Kite-')
+          ? f.name.replace(/^Kite-/, '').replace(/_/g, ' ')
+          : f.name;
+        return {
+          id: f.id,
+          folderName: f.name,
+          name: cleanName || f.name,
+          modifiedTime: f.modifiedTime,
+        };
+      });
+    } catch (err) {
+      console.error('Failed to list remote workspaces from Drive:', err);
+      return [];
+    }
+  }
 
   /**
    * Helper to make authenticated Google Drive API requests
@@ -441,7 +495,11 @@ export class GoogleDriveSyncService {
   /**
    * Perform bidirectional synchronization between local Dexie notes and Google Drive
    */
-  public static async syncNow(workspaceName: string): Promise<DriveSyncStatus> {
+  public static async syncNow(
+    workspaceName: string,
+    targetFolderId?: string,
+    targetWorkspaceId?: string
+  ): Promise<DriveSyncStatus> {
     const stats = { uploaded: 0, downloaded: 0, skipped: 0 };
 
     try {
@@ -450,7 +508,14 @@ export class GoogleDriveSyncService {
         throw new Error('Google Drive access token is not available. Please sign in with Google first.');
       }
 
-      const folderId = await this.getOrCreateWorkspaceFolder(workspaceName);
+      const folderId = targetFolderId || (await this.getOrCreateWorkspaceFolder(workspaceName));
+      this.setWorkspaceFolder(workspaceName, folderId);
+
+      const currentWorkspaceId =
+        targetWorkspaceId ||
+        (workspaceName === 'Local Vault'
+          ? 'default-vault'
+          : `drive-${workspaceName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`);
 
       // 1. Fetch remote files list in the folder
       const query = encodeURIComponent(`'${folderId}' in parents and trashed = false`);
@@ -467,8 +532,12 @@ export class GoogleDriveSyncService {
         });
       }
 
-      // 2. Fetch local notes
-      const localFiles = await db.files.toArray();
+      // 2. Fetch local notes for this workspace
+      const allLocal = await db.files.toArray();
+      const localFiles =
+        currentWorkspaceId === 'default-vault'
+          ? allLocal.filter((f) => !f.vaultId || f.vaultId === 'default-vault')
+          : allLocal.filter((f) => f.vaultId === currentWorkspaceId);
       const localMap = new Map<string, VaultFile>();
 
       // Push local files to Drive
@@ -548,7 +617,7 @@ export class GoogleDriveSyncService {
             size,
             createdAt: remoteInfo.modifiedTime,
             updatedAt: remoteInfo.modifiedTime,
-            vaultId: 'default-vault',
+            vaultId: currentWorkspaceId,
           };
 
           await db.files.put(noteRecord);

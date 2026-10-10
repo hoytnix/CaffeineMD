@@ -24,10 +24,43 @@ provider.addScope('email');
 provider.addScope('profile');
 provider.addScope('https://www.googleapis.com/auth/drive.file');
 
-// In-memory token cache (never stored in localStorage)
+const TOKEN_STORAGE_KEY = 'kite_gdrive_access_token';
+
+// In-memory & session-backed token cache
 let isSigningIn = false;
 let cachedAccessToken: string | null = null;
 let currentUser: User | null = null;
+
+export const setAccessToken = (token: string | null) => {
+  cachedAccessToken = token;
+  if (typeof window !== 'undefined') {
+    try {
+      if (token) {
+        sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
+      } else {
+        sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+      }
+    } catch {
+      // ignore
+    }
+  }
+};
+
+export const getAccessToken = async (): Promise<string | null> => {
+  if (cachedAccessToken) return cachedAccessToken;
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = sessionStorage.getItem(TOKEN_STORAGE_KEY);
+      if (stored) {
+        cachedAccessToken = stored;
+        return stored;
+      }
+    } catch {
+      // storage unavailable
+    }
+  }
+  return null;
+};
 
 export const initAuth = (
   onAuthSuccess?: (user: User, token: string) => void,
@@ -36,15 +69,15 @@ export const initAuth = (
   return onAuthStateChanged(auth, async (user: User | null) => {
     currentUser = user;
     if (user) {
-      if (cachedAccessToken) {
-        if (onAuthSuccess) onAuthSuccess(user, cachedAccessToken);
+      const token = await getAccessToken();
+      if (token) {
+        if (onAuthSuccess) onAuthSuccess(user, token);
       } else if (!isSigningIn) {
-        // If user is logged in but access token is not cached yet in memory,
-        // we can still trigger onAuthSuccess without token or retain session
+        // User is logged into Firebase, but Drive token is not yet in session
         if (onAuthSuccess) onAuthSuccess(user, '');
       }
     } else {
-      cachedAccessToken = null;
+      setAccessToken(null);
       if (onAuthFailure) onAuthFailure();
     }
   });
@@ -60,9 +93,9 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
       throw new Error('Could not obtain Google Drive access token from authentication result');
     }
 
-    cachedAccessToken = credential.accessToken;
+    setAccessToken(credential.accessToken);
     currentUser = result.user;
-    return { user: result.user, accessToken: cachedAccessToken };
+    return { user: result.user, accessToken: credential.accessToken };
   } catch (error: any) {
     console.error('Sign in error:', error);
     throw error;
@@ -71,20 +104,12 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
   }
 };
 
-export const getAccessToken = async (): Promise<string | null> => {
-  return cachedAccessToken;
-};
-
-export const setAccessToken = (token: string | null) => {
-  cachedAccessToken = token;
-};
-
 export const getCurrentUser = (): User | null => {
   return currentUser || auth.currentUser;
 };
 
 export const logoutGoogle = async () => {
   await signOut(auth);
-  cachedAccessToken = null;
+  setAccessToken(null);
   currentUser = null;
 };

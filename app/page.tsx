@@ -16,6 +16,7 @@ import { useEmojiDrawer } from '@/src/hooks/useEmojiDrawer';
 import { WorkspacePopover } from '@/src/components/workspace/WorkspacePopover';
 import { THEME_PRESETS, applyThemeToDocument } from '@/src/lib/themes/themeDefinitions';
 import { DeleteConfirmModal } from '@/src/components/common/DeleteConfirmModal';
+import Link from 'next/link';
 import {
   Search,
   PanelLeftClose,
@@ -30,6 +31,7 @@ import {
   Tag,
   Smile,
   Check,
+  Settings,
 } from 'lucide-react';
 
 export default function WorkspacePage() {
@@ -78,13 +80,13 @@ export default function WorkspacePage() {
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-[var(--background)] text-[var(--foreground)]">
-      {/* 1. Universal Top Bar Contract: Cleaned, Zero Import Button, Zero IndexedDB Badge */}
-      <header className="flex items-center justify-between gap-4 px-4 py-2 border-b border-[var(--border)] bg-[var(--card)] z-30 select-none">
+      {/* 1. Universal Top Bar Contract: Fully Theme-Adaptive */}
+      <header className="flex items-center justify-between gap-4 px-4 py-2 border-b border-[var(--border)] bg-[var(--card)] z-30 select-none text-[var(--foreground)]">
         {/* Zone 1: Sidebar Toggle & 1:1 SVG Kite Logo with Workspace Popover */}
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={toggleSidebar}
-            className="p-1.5 rounded-md text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+            className="p-1.5 rounded-md text-[var(--foreground)]/60 hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/10 transition-colors cursor-pointer"
             title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {sidebarCollapsed ? (
@@ -98,16 +100,16 @@ export default function WorkspacePage() {
           <WorkspacePopover />
         </div>
 
-        {/* Zone 2: 5 Icon-Only Peer View Tabs (STRICT REQUIREMENT: ZERO TEXT LABELS) */}
-        <nav className="flex items-center gap-1 bg-neutral-100/80 dark:bg-neutral-900/80 p-1 rounded-xl border border-neutral-200/60 dark:border-neutral-800/60">
+        {/* Zone 2: 6 Icon-Only Peer View Tabs (Fully Theme-Adaptive) */}
+        <nav className="flex items-center gap-1 bg-[var(--background)]/80 p-1 rounded-xl border border-[var(--border)] shadow-xs">
           {/* 1. Editor */}
           <button
             onClick={() => setActiveView('editor')}
             title="Editor Notes"
             className={`p-2 rounded-lg transition-all cursor-pointer ${
               activeView === 'editor'
-                ? 'bg-white dark:bg-neutral-800 text-indigo-600 dark:text-indigo-400 shadow-xs scale-105'
-                : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50'
+                ? 'bg-[var(--card)] text-[var(--accent)] shadow-xs scale-105 border border-[var(--border)] font-semibold'
+                : 'text-[var(--foreground)]/60 hover:text-[var(--foreground)] hover:bg-[var(--card)]/60'
             }`}
           >
             <FileText className="w-4 h-4" />
@@ -119,8 +121,8 @@ export default function WorkspacePage() {
             title="Knowledge Graph"
             className={`p-2 rounded-lg transition-all cursor-pointer ${
               activeView === 'graph'
-                ? 'bg-white dark:bg-neutral-800 text-indigo-600 dark:text-indigo-400 shadow-xs scale-105'
-                : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50'
+                ? 'bg-[var(--card)] text-[var(--accent)] shadow-xs scale-105 border border-[var(--border)] font-semibold'
+                : 'text-[var(--foreground)]/60 hover:text-[var(--foreground)] hover:bg-[var(--card)]/60'
             }`}
           >
             <Network className="w-4 h-4" />
@@ -132,8 +134,8 @@ export default function WorkspacePage() {
             title="Table View"
             className={`p-2 rounded-lg transition-all cursor-pointer ${
               activeView === 'table'
-                ? 'bg-white dark:bg-neutral-800 text-indigo-600 dark:text-indigo-400 shadow-xs scale-105'
-                : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50'
+                ? 'bg-[var(--card)] text-[var(--accent)] shadow-xs scale-105 border border-[var(--border)] font-semibold'
+                : 'text-[var(--foreground)]/60 hover:text-[var(--foreground)] hover:bg-[var(--card)]/60'
             }`}
           >
             <Table className="w-4 h-4" />
@@ -145,8 +147,8 @@ export default function WorkspacePage() {
             title="Kanban Board View"
             className={`p-2 rounded-lg transition-all cursor-pointer ${
               activeView === 'board'
-                ? 'bg-white dark:bg-neutral-800 text-indigo-600 dark:text-indigo-400 shadow-xs scale-105'
-                : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50'
+                ? 'bg-[var(--card)] text-[var(--accent)] shadow-xs scale-105 border border-[var(--border)] font-semibold'
+                : 'text-[var(--foreground)]/60 hover:text-[var(--foreground)] hover:bg-[var(--card)]/60'
             }`}
           >
             <Kanban className="w-4 h-4" />
@@ -158,8 +160,8 @@ export default function WorkspacePage() {
             title="List View"
             className={`p-2 rounded-lg transition-all cursor-pointer ${
               activeView === 'list'
-                ? 'bg-white dark:bg-neutral-800 text-indigo-600 dark:text-indigo-400 shadow-xs scale-105'
-                : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50'
+                ? 'bg-[var(--card)] text-[var(--accent)] shadow-xs scale-105 border border-[var(--border)] font-semibold'
+                : 'text-[var(--foreground)]/60 hover:text-[var(--foreground)] hover:bg-[var(--card)]/60'
             }`}
           >
             <List className="w-4 h-4" />
@@ -171,20 +173,20 @@ export default function WorkspacePage() {
             title="Tag Cloud & Registry"
             className={`p-2 rounded-lg transition-all cursor-pointer ${
               activeView === 'tags'
-                ? 'bg-white dark:bg-neutral-800 text-indigo-600 dark:text-indigo-400 shadow-xs scale-105'
-                : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50'
+                ? 'bg-[var(--card)] text-[var(--accent)] shadow-xs scale-105 border border-[var(--border)] font-semibold'
+                : 'text-[var(--foreground)]/60 hover:text-[var(--foreground)] hover:bg-[var(--card)]/60'
             }`}
           >
             <Tag className="w-4 h-4" />
           </button>
         </nav>
 
-        {/* Zone 3: Search & Emoji Triggers (No Import Vault button, No IndexedDB badge) */}
+        {/* Zone 3: Search, Emoji Drawer & Settings */}
         <div className="flex items-center gap-1.5 shrink-0">
           <button
             onClick={() => toggleEmojiDrawer()}
             title="Emoji Drawer (Shift + Space)"
-            className="p-1.5 rounded-lg text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-[var(--foreground)]/60 hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/10 transition-colors cursor-pointer"
           >
             <Smile className="w-4 h-4 text-amber-500" />
           </button>
@@ -192,19 +194,27 @@ export default function WorkspacePage() {
           <button
             onClick={() => setIsSearchOpen(true)}
             title="Quick Search (⌘K)"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer text-xs"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[var(--foreground)]/70 hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/10 border border-[var(--border)] transition-colors cursor-pointer text-xs bg-[var(--card)]/40"
           >
             <Search className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline font-mono text-[10px] text-neutral-400 border border-neutral-200 dark:border-neutral-800 px-1 py-0.5 rounded">
+            <span className="hidden sm:inline font-mono text-[10px] text-[var(--foreground)]/50 border border-[var(--border)] bg-[var(--background)]/60 px-1 py-0.5 rounded">
               ⌘K
             </span>
           </button>
+
+          <Link
+            href="/settings"
+            title="Settings & Themes"
+            className="p-1.5 rounded-lg text-[var(--foreground)]/60 hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/10 transition-colors cursor-pointer"
+          >
+            <Settings className="w-4 h-4" />
+          </Link>
         </div>
       </header>
 
       {/* 2. Workspace Document Tabs Bar (Shown in Editor View) */}
       {activeView === 'editor' && (
-        <div className="flex items-center bg-[var(--card)]/50 border-b border-[var(--border)] px-2 py-0 overflow-x-auto select-none">
+        <div className="flex items-center bg-[var(--card)]/60 border-b border-[var(--border)] px-2 py-0 overflow-x-auto select-none">
           {openTabs.map((tab) => {
             const isActive = tab.path === activeFilePath;
             return (
@@ -214,17 +224,17 @@ export default function WorkspacePage() {
                 className={`group flex items-center gap-2 py-1.5 px-3 border-r border-[var(--border)] text-xs cursor-pointer transition-colors max-w-[200px] shrink-0 ${
                   isActive
                     ? 'bg-[var(--background)] font-semibold text-[var(--foreground)] border-t-2 border-t-[var(--accent)]'
-                    : 'text-neutral-400 hover:text-[var(--foreground)] hover:bg-[var(--card)]'
+                    : 'text-[var(--foreground)]/60 hover:text-[var(--foreground)] hover:bg-[var(--card)]'
                 }`}
               >
-                <FileText className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                <FileText className="w-3.5 h-3.5 text-[var(--foreground)]/40 shrink-0" />
                 <span className="truncate">{tab.title}</span>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     closeFileTab(tab.path);
                   }}
-                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-neutral-800 text-neutral-400 hover:text-[var(--foreground)] transition-opacity ml-1"
+                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-[var(--foreground)]/10 text-[var(--foreground)]/40 hover:text-[var(--foreground)] transition-opacity ml-1"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -234,7 +244,7 @@ export default function WorkspacePage() {
 
           <button
             onClick={() => setImportModalOpen(true)}
-            className="p-1.5 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 ml-1 rounded hover:bg-neutral-200/50 transition-colors"
+            className="p-1.5 text-[var(--foreground)]/50 hover:text-[var(--foreground)] ml-1 rounded hover:bg-[var(--foreground)]/10 transition-colors"
             title="Import folder or notes"
           >
             <Plus className="w-3.5 h-3.5" />

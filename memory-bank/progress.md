@@ -31,6 +31,10 @@
 - [x] Workspaces architecture & 1:1 SVG Kite logo popover switcher (`/src/components/workspace/WorkspacePopover.tsx`, `/src/lib/workspaces/workspaceManager.ts`).
 - [x] Google SSO & bidirectional Google Drive Cloud Sync pipeline (`/src/lib/firebase/client.ts`, `/src/lib/sync/googleDriveSync.ts`).
 - [x] Upgraded Google Drive Sync Engine to 5 MB Resumable Chunking and single-roundtrip Multipart Small-File uploads (`/src/lib/sync/googleDriveSync.ts`).
+- [x] Resolved Google Drive "Sync Now" silent failure by adding token session persistence, automatic re-authentication handshakes, and visual error/stats badges (`/src/lib/firebase/client.ts`, `/app/settings/page.tsx`, `/src/lib/sync/googleDriveSync.ts`).
+- [x] Added Google Drive Workspace Discovery & Selection in Cloud Sync settings with automatic remote workspace scanning and one-click "Download & Sync" (`/src/lib/sync/googleDriveSync.ts`, `/app/settings/page.tsx`).
+- [x] Complete theming of top menu bar, 6 icon-only peer views, search/emoji triggers, settings navigation, open document tabs, and Workspace Popover switcher via CSS custom properties (`/app/page.tsx`, `/src/components/workspace/WorkspacePopover.tsx`).
+- [x] Resized bottom editor toolbox buttons to half height (`h-[26px]`, `w-4 h-4` icons, `py-1` container) with preserved drag reordering and horizontal wheel/mouse panning (`/src/components/editor/EditorBottomToolbar.tsx`).
 
 ## Verification Status
 - Production compilation (`pnpm build`): Passed (100% clean Next.js build).
