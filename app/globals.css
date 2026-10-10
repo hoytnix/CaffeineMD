@@ -183,16 +183,12 @@ ul[data-type="taskList"] li input[type="checkbox"],
 
 /* Blockquotes */
 .ProseMirror blockquote {
-  border-left: 3px solid #6366f1;
+  border-left: 3px solid var(--accent);
   padding: 0.5rem 0 0.5rem 1.125rem;
   margin: 1rem 0;
   font-style: italic;
-  color: #475569;
-}
-
-.dark .ProseMirror blockquote {
-  border-left-color: #818cf8;
-  color: #94a3b8;
+  color: var(--foreground);
+  opacity: 0.85;
 }
 
 .ProseMirror blockquote p {
@@ -306,40 +302,32 @@ pre code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-/* Standard Links (same font color as Wiki Links) */
+/* Standard Links */
 .ProseMirror a {
-  color: #4f46e5;
+  color: var(--accent);
   text-decoration: underline;
   text-underline-offset: 2px;
   cursor: pointer;
-  transition: color 0.15s ease;
+  transition: opacity 0.15s ease;
 }
 
 .ProseMirror a:hover {
-  color: #4338ca;
+  opacity: 0.8;
 }
 
-.dark .ProseMirror a {
-  color: #a5b4fc;
-}
-
-.dark .ProseMirror a:hover {
-  color: #c7d2fe;
-}
-
-/* WikiLink Badges (padding reduced by 50%) */
+/* WikiLink Badges */
 .ProseMirror .wiki-link,
 .wiki-link {
   display: inline-flex;
   align-items: center;
-  padding: 0.025rem 0.175rem;
+  padding: 0.025rem 0.25rem;
   margin: 0 0.1rem;
   border-radius: 0.375rem;
   font-weight: 500;
   font-size: 0.95em;
-  color: #4f46e5;
-  background-color: #eef2ff;
-  border: 1px solid #c7d2fe;
+  color: var(--accent);
+  background-color: color-mix(in srgb, var(--accent) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
   cursor: pointer;
   text-decoration: none;
   transition: all 0.15s ease;
@@ -347,21 +335,8 @@ pre code {
 
 .ProseMirror .wiki-link:hover,
 .wiki-link:hover {
-  background-color: #e0e7ff;
-  border-color: #a5b4fc;
-}
-
-.dark .ProseMirror .wiki-link,
-.dark .wiki-link {
-  color: #a5b4fc;
-  background-color: rgba(99, 102, 241, 0.15);
-  border-color: rgba(99, 102, 241, 0.3);
-}
-
-.dark .ProseMirror .wiki-link:hover,
-.dark .wiki-link:hover {
-  background-color: rgba(99, 102, 241, 0.25);
-  border-color: rgba(99, 102, 241, 0.45);
+  background-color: color-mix(in srgb, var(--accent) 25%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
 }
 
 /* Prevent WikiLinks from being prettified inside code blocks or inline code */
@@ -390,17 +365,14 @@ code [data-wikilink] {
 /* Horizontal Rules */
 .ProseMirror hr {
   border: none;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--border);
   margin: 1.75rem 0;
-}
-
-.dark .ProseMirror hr {
-  border-top-color: #262626;
 }
 
 /* Placeholder */
 .ProseMirror p.is-editor-empty:first-child::before {
-  color: #94a3b8;
+  color: var(--foreground);
+  opacity: 0.35;
   content: attr(data-placeholder);
   float: left;
   height: 0;
@@ -418,35 +390,41 @@ code [data-wikilink] {
 
 .ProseMirror table td,
 .ProseMirror table th {
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--border);
   box-sizing: border-box;
   min-width: 1em;
-  padding: 6px 8px;
+  padding: 8px 12px;
   position: relative;
   vertical-align: top;
 }
 
-.dark .ProseMirror table td,
-.dark .ProseMirror table th {
-  border-color: #334155;
-}
-
 .ProseMirror table th {
-  background-color: #f1f5f9;
+  background-color: color-mix(in srgb, var(--card) 85%, transparent);
   font-weight: 600;
   text-align: left;
-}
-
-.dark .ProseMirror table th {
-  background-color: #1e293b;
+  color: var(--foreground);
 }
 
 .ProseMirror .selectedCell:after {
-  background: rgba(99, 102, 241, 0.1);
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
   content: "";
   left: 0; right: 0; top: 0; bottom: 0;
   pointer-events: none;
   position: absolute;
   z-index: 2;
+}
+
+/* Invisible scrollbars with mouse/touch drag scrolling */
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.no-scrollbar,
+.scrollbar-none {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
 

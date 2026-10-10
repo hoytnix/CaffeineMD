@@ -523,7 +523,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-auto bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 relative">
+    <div className="flex-1 flex flex-col h-full overflow-y-auto overflow-x-hidden min-w-0 bg-[var(--background)] text-[var(--foreground)] relative">
       <EditorHeader
         file={file}
         isSaving={isSaving}
@@ -558,7 +558,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
                 if (file) setFile({ ...file, title: e.target.value });
               }}
               placeholder="Untitled Note"
-              className="w-full text-3xl sm:text-4xl font-bold tracking-tight bg-transparent border-none focus:outline-none mb-6 placeholder-neutral-300 dark:placeholder-neutral-700"
+              className="w-full text-3xl sm:text-4xl font-bold tracking-tight bg-transparent border-none focus:outline-none mb-6 placeholder-neutral-400 dark:placeholder-neutral-600 text-[var(--foreground)]"
             />
 
             {editor && !editor.isDestroyed && <BlockHandle editor={editor} />}

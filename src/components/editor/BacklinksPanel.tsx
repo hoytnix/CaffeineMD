@@ -108,16 +108,16 @@ export function BacklinksPanel({ currentFile, onUpdateFile }: BacklinksPanelProp
   return (
     <div className="mt-12 pt-6 border-t border-neutral-200 dark:border-neutral-800 text-neutral-800 dark:text-neutral-200 select-none">
       {/* Frontmatter Properties Card */}
-      <div className="mb-6 rounded-lg bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800/80 p-4">
+      <div className="mb-6 rounded-lg bg-[var(--card)] border border-[var(--border)] p-4">
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-neutral-500">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-neutral-400">
             <Tag className="w-3.5 h-3.5" />
             <span>Note Properties</span>
           </div>
           {!isAddingProp && (
             <button
               onClick={() => setIsAddingProp(true)}
-              className="flex items-center gap-1 text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+              className="flex items-center gap-1 text-[11px] text-[var(--accent)] hover:underline font-medium"
             >
               <Plus className="w-3 h-3" />
               <span>Add property</span>
@@ -128,8 +128,8 @@ export function BacklinksPanel({ currentFile, onUpdateFile }: BacklinksPanelProp
         {/* Existing Properties */}
         <div className="space-y-2 text-xs">
           {/* Dedicated Eisenhower Quadrant Selector */}
-          <div className="flex items-center justify-between group py-1 border-b border-neutral-200/50 dark:border-neutral-800/50 pb-2 mb-2">
-            <span className="w-28 text-neutral-500 font-medium truncate flex items-center gap-1.5">
+          <div className="flex items-center justify-between group py-1 border-b border-[var(--border)] pb-2 mb-2">
+            <span className="w-28 text-neutral-400 font-medium truncate flex items-center gap-1.5">
               <span>Eisenhower</span>
             </span>
             <select
@@ -149,7 +149,7 @@ export function BacklinksPanel({ currentFile, onUpdateFile }: BacklinksPanelProp
                   updatedAt: Date.now(),
                 });
               }}
-              className="flex-1 px-2 py-1 text-xs rounded bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700/80 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-indigo-500 cursor-pointer"
+              className="flex-1 px-2 py-1 text-xs rounded bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] focus:outline-none focus:border-[var(--accent)] cursor-pointer"
             >
               <option value="">None (Unassigned)</option>
               <option value="urgent_immediate">🔴 Urgent & Immediate (Do First)</option>
@@ -171,7 +171,7 @@ export function BacklinksPanel({ currentFile, onUpdateFile }: BacklinksPanelProp
                       type="text"
                       value={displayValue}
                       onChange={(e) => handlePropertyChange(key, e.target.value)}
-                      className="flex-1 px-2 py-1 text-xs rounded bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700/80 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-indigo-500"
+                      className="flex-1 px-2 py-1 text-xs rounded bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] focus:outline-none focus:border-[var(--accent)]"
                     />
                     <button
                       onClick={() => handleRemoveProperty(key)}
@@ -192,7 +192,7 @@ export function BacklinksPanel({ currentFile, onUpdateFile }: BacklinksPanelProp
                             setSelectedTagFilter(t);
                             setActiveView('tags');
                           }}
-                          className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-neutral-200/60 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors cursor-pointer"
+                          className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-[var(--background)] border border-[var(--border)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors cursor-pointer"
                         >
                           #{t}
                         </button>
@@ -205,13 +205,13 @@ export function BacklinksPanel({ currentFile, onUpdateFile }: BacklinksPanelProp
         </div>
 
         {isAddingProp && (
-          <form onSubmit={handleAddPropertySubmit} className="flex items-center gap-2 mt-3 pt-2 border-t border-neutral-200/60 dark:border-neutral-800">
+          <form onSubmit={handleAddPropertySubmit} className="flex items-center gap-2 mt-3 pt-2 border-t border-[var(--border)]">
             <input
               type="text"
               placeholder="property name"
               value={newPropKey}
               onChange={(e) => setNewPropKey(e.target.value)}
-              className="w-28 px-2 py-1 text-xs rounded bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 focus:outline-none focus:border-indigo-500"
+              className="w-28 px-2 py-1 text-xs rounded bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] focus:outline-none focus:border-[var(--accent)]"
               autoFocus
             />
             <input
@@ -219,18 +219,18 @@ export function BacklinksPanel({ currentFile, onUpdateFile }: BacklinksPanelProp
               placeholder="value"
               value={newPropValue}
               onChange={(e) => setNewPropValue(e.target.value)}
-              className="flex-1 px-2 py-1 text-xs rounded bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 focus:outline-none focus:border-indigo-500"
+              className="flex-1 px-2 py-1 text-xs rounded bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] focus:outline-none focus:border-[var(--accent)]"
             />
             <button
               type="submit"
-              className="px-2.5 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 font-medium"
+              className="px-2.5 py-1 text-xs bg-[var(--accent)] text-white rounded hover:opacity-90 font-medium"
             >
               Add
             </button>
             <button
               type="button"
               onClick={() => setIsAddingProp(false)}
-              className="px-2 py-1 text-xs text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+              className="px-2 py-1 text-xs text-neutral-400 hover:text-[var(--foreground)]"
             >
               Cancel
             </button>

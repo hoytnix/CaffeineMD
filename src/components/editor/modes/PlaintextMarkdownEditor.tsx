@@ -76,10 +76,10 @@ export function PlaintextMarkdownEditor({
   return (
     <div className="flex flex-col gap-4">
       {/* Plaintext Subheader & Markdown Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-neutral-200/80 dark:border-neutral-800/80">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border)]">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-neutral-100 dark:bg-neutral-900 text-[11px] font-mono text-neutral-600 dark:text-neutral-400">
-            <Code className="w-3.5 h-3.5 text-indigo-500" />
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--card)] border border-[var(--border)] text-[11px] font-mono text-[var(--foreground)]">
+            <Code className="w-3.5 h-3.5 text-[var(--accent)]" />
             <span>Plaintext Mode (Raw Markdown)</span>
           </div>
           <div className="text-[11px] font-mono text-neutral-400 flex items-center gap-2">
@@ -96,7 +96,7 @@ export function PlaintextMarkdownEditor({
           <button
             type="button"
             onClick={() => insertMarkdownSnippet('[[', 2)}
-            className="px-2 py-0.5 rounded text-[11px] font-mono bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+            className="px-2 py-0.5 rounded text-[11px] font-mono bg-[var(--card)] border border-[var(--border)] text-neutral-400 hover:text-[var(--accent)] hover:border-[var(--accent)] transition-colors cursor-pointer"
             title="Insert WikiLink [[Target]]"
           >
             [[WikiLink]]
@@ -104,7 +104,7 @@ export function PlaintextMarkdownEditor({
           <button
             type="button"
             onClick={() => insertMarkdownSnippet('# ')}
-            className="px-2 py-0.5 rounded text-[11px] font-mono bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+            className="px-2 py-0.5 rounded text-[11px] font-mono bg-[var(--card)] border border-[var(--border)] text-neutral-400 hover:text-[var(--foreground)] hover:border-[var(--border)] transition-colors cursor-pointer"
             title="Insert Heading"
           >
             # H1
@@ -112,7 +112,7 @@ export function PlaintextMarkdownEditor({
           <button
             type="button"
             onClick={() => insertMarkdownSnippet('## ')}
-            className="px-2 py-0.5 rounded text-[11px] font-mono bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+            className="px-2 py-0.5 rounded text-[11px] font-mono bg-[var(--card)] border border-[var(--border)] text-neutral-400 hover:text-[var(--foreground)] hover:border-[var(--border)] transition-colors cursor-pointer"
             title="Insert Subheading"
           >
             ## H2
@@ -120,7 +120,7 @@ export function PlaintextMarkdownEditor({
           <button
             type="button"
             onClick={() => insertMarkdownSnippet('- [ ] ')}
-            className="px-2 py-0.5 rounded text-[11px] font-mono bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+            className="px-2 py-0.5 rounded text-[11px] font-mono bg-[var(--card)] border border-[var(--border)] text-neutral-400 hover:text-[var(--foreground)] hover:border-[var(--border)] transition-colors cursor-pointer"
             title="Insert Task Checkbox"
           >
             - [ ] Task
@@ -128,7 +128,7 @@ export function PlaintextMarkdownEditor({
           <button
             type="button"
             onClick={() => insertMarkdownSnippet('**bold**', 6)}
-            className="px-2 py-0.5 rounded text-[11px] font-mono bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+            className="px-2 py-0.5 rounded text-[11px] font-mono bg-[var(--card)] border border-[var(--border)] text-neutral-400 hover:text-[var(--foreground)] hover:border-[var(--border)] transition-colors cursor-pointer"
             title="Insert Bold Text"
           >
             **Bold**
@@ -136,7 +136,7 @@ export function PlaintextMarkdownEditor({
           <button
             type="button"
             onClick={() => insertMarkdownSnippet('`code`', 5)}
-            className="px-2 py-0.5 rounded text-[11px] font-mono bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+            className="px-2 py-0.5 rounded text-[11px] font-mono bg-[var(--card)] border border-[var(--border)] text-neutral-400 hover:text-[var(--foreground)] hover:border-[var(--border)] transition-colors cursor-pointer"
             title="Insert Inline Code"
           >
             `Code`
@@ -144,7 +144,7 @@ export function PlaintextMarkdownEditor({
           <button
             type="button"
             onClick={() => insertMarkdownSnippet('> ')}
-            className="px-2 py-0.5 rounded text-[11px] font-mono bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+            className="px-2 py-0.5 rounded text-[11px] font-mono bg-[var(--card)] border border-[var(--border)] text-neutral-400 hover:text-[var(--foreground)] hover:border-[var(--border)] transition-colors cursor-pointer"
             title="Insert Quote"
           >
             &gt; Quote
@@ -153,11 +153,11 @@ export function PlaintextMarkdownEditor({
       </div>
 
       {/* Line Numbered Raw Markdown Editor */}
-      <div className="relative flex rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/30 overflow-hidden shadow-2xs focus-within:border-neutral-400 dark:focus-within:border-neutral-600 transition-colors">
+      <div className="relative flex rounded-xl border border-[var(--border)] bg-[var(--card)]/60 overflow-hidden shadow-2xs focus-within:border-[var(--accent)] transition-colors">
         {/* Line Numbers Gutter */}
         <div
           ref={gutterRef}
-          className="w-11 select-none py-4 pr-2.5 text-right font-mono text-[13px] leading-7 text-neutral-400/80 dark:text-neutral-600 border-r border-neutral-200/80 dark:border-neutral-800/80 bg-neutral-100/40 dark:bg-neutral-900/50 overflow-hidden shrink-0"
+          className="w-11 select-none py-4 pr-2.5 text-right font-mono text-[13px] leading-7 text-neutral-400 border-r border-[var(--border)] bg-[var(--card)] overflow-hidden shrink-0"
         >
           {rawMarkdown.split('\n').map((_, i) => (
             <div key={i} className="h-7">
@@ -178,7 +178,7 @@ export function PlaintextMarkdownEditor({
           autoCapitalize="off"
           autoComplete="off"
           autoCorrect="off"
-          className="flex-1 w-full resize-none p-4 font-mono text-[13.5px] leading-7 bg-transparent text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-600 focus:outline-none min-h-[480px]"
+          className="flex-1 w-full resize-none p-4 font-mono text-[13.5px] leading-7 bg-transparent text-[var(--foreground)] placeholder-neutral-400 dark:placeholder-neutral-600 focus:outline-none min-h-[480px]"
         />
       </div>
     </div>

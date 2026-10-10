@@ -257,6 +257,13 @@ export function EditorBottomToolbar({ editor }: EditorBottomToolbarProps) {
   const draggedItemRef = useRef<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
+  // Mouse drag-to-scroll support
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isMouseDownRef = useRef(false);
+  const mouseStartXRef = useRef(0);
+  const scrollLeftRef = useRef(0);
+  const hasDraggedDistRef = useRef(false);
+
   const saveOrder = (newOrder: string[]) => {
     setButtonOrder(newOrder);
     if (typeof window !== 'undefined') {
@@ -267,7 +274,6 @@ export function EditorBottomToolbar({ editor }: EditorBottomToolbarProps) {
   const handleDragStart = (e: React.DragEvent, index: number) => {
     draggedItemRef.current = index;
     e.dataTransfer.effectAllowed = 'move';
-    // Transparent drag image or default
     e.dataTransfer.setData('text/plain', buttonOrder[index]);
   };
 
@@ -293,7 +299,7 @@ export function EditorBottomToolbar({ editor }: EditorBottomToolbarProps) {
     }
 
     const updated = [...buttonOrder];
-    const [moved] = updated.splice(dragIndex, liquidIndex(dragIndex));
+    const [moved] = updated.splice(dragIndex, 1);
     updated.splice(dropIndex, 0, moved);
 
     draggedItemRef.current = null;
@@ -302,17 +308,52 @@ export function EditorBottomToolbar({ editor }: EditorBottomToolbarProps) {
     showToast('Toolbar reordered');
   };
 
-  function liquidIndex(idx: number) {
-    return 1;
-  }
+  // Horizontal pan/drag listeners on container
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Only primary button
+    if (e.button !== 0 || !containerRef.current) return;
+    // Don't initiate scroll if user is starting HTML5 drag on grip handle
+    isMouseDownRef.current = true;
+    mouseStartXRef.current = e.pageX - containerRef.current.offsetLeft;
+    scrollLeftRef.current = containerRef.current.scrollLeft;
+    hasDraggedDistRef.current = false;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isMouseDownRef.current || !containerRef.current) return;
+    const x = e.pageX - containerRef.current.offsetLeft;
+    const walk = (x - mouseStartXRef.current) * 1.5;
+    if (Math.abs(walk) > 5) {
+      hasDraggedDistRef.current = true;
+    }
+    containerRef.current.scrollLeft = scrollLeftRef.current - walk;
+  };
+
+  const handleMouseUp = () => {
+    isMouseDownRef.current = false;
+  };
+
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return;
+    if (Math.abs(e.deltaX) < Math.abs(e.deltaY)) {
+      // Convert vertical mouse scroll into smooth horizontal scroll
+      containerRef.current.scrollLeft += e.deltaY;
+    }
+  };
 
   if (!editor) return null;
 
   return (
     <div
+      ref={containerRef}
       role="toolbar"
       aria-label="Editor Formatting Toolbar"
-      className="sticky bottom-4 z-30 mx-auto w-fit max-w-[92vw] overflow-x-auto scrollbar-none py-1 px-2 rounded-2xl bg-[var(--card)]/90 backdrop-blur-md border border-[var(--border)] shadow-xl flex items-center gap-1 select-none transition-all"
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      onWheel={handleWheel}
+      className="sticky bottom-6 z-30 mx-auto w-[calc(100%-3rem)] max-w-2xl overflow-x-auto scrollbar-none no-scrollbar py-2.5 px-4 rounded-3xl bg-[var(--card)]/95 backdrop-blur-xl border-2 border-[var(--border)] shadow-2xl flex items-center gap-2.5 select-none transition-all cursor-grab active:cursor-grabbing shrink-0"
     >
       {buttonOrder.map((btnId, idx) => {
         const def = BUTTON_DEFINITIONS[btnId];
@@ -331,13 +372,18 @@ export function EditorBottomToolbar({ editor }: EditorBottomToolbarProps) {
             onDragOver={(e) => handleDragOver(e, idx)}
             onDragEnd={handleDragEnd}
             onDrop={(e) => handleDrop(e, idx)}
-            className={`relative flex items-center rounded-lg transition-all cursor-grab active:cursor-grabbing ${
-              isDragOver ? 'scale-110 ring-2 ring-[var(--accent)]' : ''
+            className={`relative flex items-center shrink-0 rounded-2xl transition-all ${
+              isDragOver ? 'scale-110 ring-4 ring-[var(--accent)]' : ''
             }`}
           >
             <button
               type="button"
-              onClick={() => {
+              onClick={(e) => {
+                // If user was dragging to pan/scroll, suppress button click
+                if (hasDraggedDistRef.current) {
+                  e.stopPropagation();
+                  return;
+                }
                 def.action(editor, (msg) => {
                   showToast(msg);
                   if (isCopyBtn) {
@@ -346,16 +392,16 @@ export function EditorBottomToolbar({ editor }: EditorBottomToolbarProps) {
                   }
                 });
               }}
-              title={`${def.label} (Drag to reorder)`}
-              className={`p-1.5 rounded-lg text-xs transition-colors flex items-center justify-center cursor-pointer ${
+              title={`${def.label} (Drag icon to reorder, drag bar to scroll)`}
+              className={`p-3.5 rounded-2xl transition-all flex items-center justify-center cursor-pointer min-w-[52px] min-h-[52px] ${
                 active
-                  ? 'bg-[var(--accent)] text-white shadow-xs'
+                  ? 'bg-[var(--accent)] text-white shadow-md'
                   : isCopyBtn && copiedRecently
                   ? 'bg-emerald-500/20 text-emerald-400 font-medium'
-                  : 'text-neutral-400 hover:text-[var(--foreground)] hover:bg-neutral-800/40'
+                  : 'text-neutral-400 hover:text-[var(--foreground)] hover:bg-[var(--border)]/60'
               }`}
             >
-              <IconComponent className="w-4 h-4 shrink-0" />
+              <IconComponent className="w-7 h-7 shrink-0 stroke-[2.2] pointer-events-none" />
             </button>
           </div>
         );

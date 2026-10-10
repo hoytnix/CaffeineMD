@@ -77,14 +77,14 @@ export function EditorHeader({
         )}
 
         {/* Mode Toggle: Rich Text Mode vs Plaintext Mode */}
-        <div className="flex items-center p-0.5 rounded-lg bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 text-xs shadow-2xs">
+        <div className="flex items-center p-0.5 rounded-lg bg-[var(--card)] border border-[var(--border)] text-xs shadow-2xs">
           <button
             type="button"
             onClick={onSwitchToRichText}
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
               editorMode === 'rich'
-                ? 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xs'
-                : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
+                ? 'bg-[var(--accent)] text-white shadow-xs'
+                : 'text-neutral-400 hover:text-[var(--foreground)]'
             }`}
             title="Rich Text Mode (WYSIWYG formatted editing)"
           >
@@ -96,8 +96,8 @@ export function EditorHeader({
             onClick={onSwitchToPlaintext}
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
               editorMode === 'plain'
-                ? 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xs'
-                : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
+                ? 'bg-[var(--accent)] text-white shadow-xs'
+                : 'text-neutral-400 hover:text-[var(--foreground)]'
             }`}
             title="Plaintext Mode (Raw Markdown editing)"
           >
@@ -110,17 +110,17 @@ export function EditorHeader({
         <button
           onClick={onManualSave}
           disabled={isSaveDisabled}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-neutral-100 dark:bg-neutral-900 hover:bg-neutral-200 dark:hover:bg-neutral-800 disabled:opacity-50 transition-colors cursor-pointer disabled:cursor-not-allowed"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-[var(--card)] hover:bg-[var(--border)]/60 text-[var(--foreground)] border border-[var(--border)] disabled:opacity-50 transition-colors cursor-pointer disabled:cursor-not-allowed"
           title="Save note (⌘S)"
         >
-          <Save className="w-3.5 h-3.5 text-neutral-500" />
+          <Save className="w-3.5 h-3.5 text-neutral-400" />
           <span>Save</span>
         </button>
 
         {/* Trash Can / Delete Note Button */}
         <button
           onClick={handleDelete}
-          className="p-1.5 rounded-md text-neutral-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+          className="p-1.5 rounded-md text-neutral-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
           title="Delete note"
         >
           <Trash2 className="w-4 h-4" />
