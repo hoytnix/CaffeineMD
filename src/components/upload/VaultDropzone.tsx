@@ -1,15 +1,9 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { useWorkspaceStore } from '@/src/stores/workspaceStore';
-import { NativeFileSystemAdapter } from '@/src/lib/storage/fileSystem';
-import {
-  scanDroppedItems,
-  processStandardFileInput,
-  runIngestionPipeline,
-  IngestedRawFile,
-} from '@/src/lib/storage/importPipeline';
-import { FolderUp, UploadCloud, Folder, FilePlus, Sparkles, X, HardDrive } from 'lucide-react';
+import { useVaultMounting } from '@/src/hooks/useVaultMounting';
+import { DropzoneUploadCards } from './DropzoneUploadCards';
+import { UploadCloud, X } from 'lucide-react';
 
 interface VaultDropzoneProps {
   isOpen: boolean;
@@ -23,100 +17,15 @@ export function VaultDropzone({ isOpen, onClose }: VaultDropzoneProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
-    setImportProgress,
-    setMountedMode,
-    setActiveFilePath,
-    openFileTab,
-  } = useWorkspaceStore();
+    handleOpenLocalDiskFolder,
+    handleFolderInputUpload,
+    handleFileInputUpload,
+    handleDroppedItems,
+  } = useVaultMounting({ onClose, setStatusMessage });
 
   if (!isOpen) return null;
 
-  // 1. Native Directory Picker (File System Access API)
-  const handleOpenLocalDiskFolder = async () => {
-    try {
-      setStatusMessage('Requesting local directory permission...');
-      const { handle, name } = await NativeFileSystemAdapter.pickDirectory();
-      setStatusMessage(`Scanning files in ${name}...`);
-
-      const diskFiles = await NativeFileSystemAdapter.scanDirectory(
-        handle,
-        '',
-        (count, current) => {
-          setStatusMessage(`Found ${count} files (${current})...`);
-        }
-      );
-
-      const rawFiles: IngestedRawFile[] = diskFiles.map((df) => ({
-        relativePath: df.path,
-        name: df.name,
-        file: df.file,
-      }));
-
-      setMountedMode('filesystem', name);
-      setStatusMessage(`Ingesting ${rawFiles.length} files...`);
-
-      const result = await runIngestionPipeline(rawFiles, 'default-vault', (progress) => {
-        setImportProgress(progress);
-      });
-
-      if (rawFiles.length > 0) {
-        openFileTab(rawFiles[0].relativePath, rawFiles[0].name.replace(/\.[^/.]+$/, ''));
-      }
-
-      onClose();
-    } catch (err: any) {
-      if (err.name !== 'AbortError') {
-        alert(err.message || 'Could not mount directory');
-      }
-      setStatusMessage(null);
-    }
-  };
-
-  // 2. Standard Folder Upload (webkitdirectory fallback)
-  const handleFolderInputUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    setStatusMessage(`Preparing ${files.length} folder files...`);
-    const rawFiles = processStandardFileInput(files);
-
-    const firstFolder = rawFiles[0]?.relativePath.split('/')[0] || 'Imported Vault';
-    setMountedMode('indexeddb', firstFolder);
-
-    await runIngestionPipeline(rawFiles, 'default-vault', (progress) => {
-      setImportProgress(progress);
-    });
-
-    if (rawFiles.length > 0) {
-      openFileTab(rawFiles[0].relativePath, rawFiles[0].name.replace(/\.[^/.]+$/, ''));
-    }
-
-    onClose();
-  };
-
-  // 3. Standard Multiple Files Upload
-  const handleFileInputUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    const rawFiles: IngestedRawFile[] = Array.from(files).map((f) => ({
-      relativePath: f.name,
-      name: f.name,
-      file: f,
-    }));
-
-    await runIngestionPipeline(rawFiles, 'default-vault', (progress) => {
-      setImportProgress(progress);
-    });
-
-    if (rawFiles.length > 0) {
-      openFileTab(rawFiles[0].relativePath, rawFiles[0].name.replace(/\.[^/.]+$/, ''));
-    }
-
-    onClose();
-  };
-
-  // 4. Drag & Drop Area Handlers
+  // Drag & Drop Area Handlers
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -137,29 +46,7 @@ export function VaultDropzone({ isOpen, onClose }: VaultDropzoneProps) {
     const items = e.dataTransfer.items;
     if (!items || items.length === 0) return;
 
-    setStatusMessage('Traversing dropped folder hierarchy...');
-    const rawFiles = await scanDroppedItems(items, (count, current) => {
-      setStatusMessage(`Discovered ${count} files: ${current}...`);
-    });
-
-    if (rawFiles.length === 0) {
-      setStatusMessage('No supported markdown or attachment files found.');
-      return;
-    }
-
-    const firstPath = rawFiles[0].relativePath;
-    const folderName = firstPath.includes('/') ? firstPath.split('/')[0] : 'Dropped Files';
-    setMountedMode('indexeddb', folderName);
-
-    await runIngestionPipeline(rawFiles, 'default-vault', (progress) => {
-      setImportProgress(progress);
-    });
-
-    if (rawFiles.length > 0) {
-      openFileTab(rawFiles[0].relativePath, rawFiles[0].name.replace(/\.[^/.]+$/, ''));
-    }
-
-    onClose();
+    await handleDroppedItems(items);
   };
 
   return (
@@ -167,7 +54,7 @@ export function VaultDropzone({ isOpen, onClose }: VaultDropzoneProps) {
       <div className="w-full max-w-xl rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-2xl p-6 text-neutral-900 dark:text-neutral-100 relative">
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-1 rounded-md text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+          className="absolute top-5 right-5 p-1 rounded-md text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
         >
           <X className="w-4 h-4" />
         </button>
@@ -208,68 +95,12 @@ export function VaultDropzone({ isOpen, onClose }: VaultDropzoneProps) {
         </div>
 
         {/* Ingestion Method Action Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
-          {/* Method 1: File System Access API */}
-          <button
-            onClick={handleOpenLocalDiskFolder}
-            className="flex flex-col items-start p-3.5 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 text-left transition-colors group"
-          >
-            <div className="p-2 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 group-hover:text-indigo-600 mb-2.5">
-              <HardDrive className="w-4 h-4" />
-            </div>
-            <div className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">Live Disk Folder</div>
-            <div className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5 leading-snug">
-              Direct File System API with in-place saving
-            </div>
-          </button>
-
-          {/* Method 2: Folder Upload via webkitdirectory */}
-          <button
-            onClick={() => folderInputRef.current?.click()}
-            className="flex flex-col items-start p-3.5 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 text-left transition-colors group"
-          >
-            <div className="p-2 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 group-hover:text-indigo-600 mb-2.5">
-              <FolderUp className="w-4 h-4" />
-            </div>
-            <div className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">Upload Folder</div>
-            <div className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5 leading-snug">
-              Select any local directory tree from disk
-            </div>
-          </button>
-
-          {/* Method 3: File Multi-select */}
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="flex flex-col items-start p-3.5 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 text-left transition-colors group"
-          >
-            <div className="p-2 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 group-hover:text-indigo-600 mb-2.5">
-              <FilePlus className="w-4 h-4" />
-            </div>
-            <div className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">Import Notes</div>
-            <div className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5 leading-snug">
-              Batch select individual .md or asset files
-            </div>
-          </button>
-        </div>
-
-        {/* Hidden File Inputs */}
-        <input
-          type="file"
-          ref={folderInputRef}
-          // @ts-ignore
-          webkitdirectory="true"
-          directory=""
-          multiple
-          onChange={handleFolderInputUpload}
-          className="hidden"
-        />
-        <input
-          type="file"
-          ref={fileInputRef}
-          multiple
-          accept=".md,.markdown,.txt,image/*,.pdf"
-          onChange={handleFileInputUpload}
-          className="hidden"
+        <DropzoneUploadCards
+          onOpenLocalDiskFolder={handleOpenLocalDiskFolder}
+          folderInputRef={folderInputRef}
+          fileInputRef={fileInputRef}
+          onFolderInputUpload={handleFolderInputUpload}
+          onFileInputUpload={handleFileInputUpload}
         />
       </div>
     </div>
