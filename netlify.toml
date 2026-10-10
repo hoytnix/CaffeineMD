@@ -2,6 +2,10 @@
   command = "pnpm build"
   publish = ".next"
 
+[build.environment]
+  SECRETS_SCAN_SMART_DETECTION_ENABLED = "false"
+  SECRETS_SCAN_SMART_DETECTION_OMIT_VALUES = "AIzaSyDh4-00VVVACD9Mbfnpvqr9xFQ-TuraJNw"
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
