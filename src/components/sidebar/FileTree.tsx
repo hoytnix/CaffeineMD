@@ -8,7 +8,9 @@ import { scanDroppedItems, runIngestionPipeline } from '@/src/lib/storage/import
 import { useTreeStructure } from '@/src/hooks/useTreeStructure';
 import { FileTreeItem } from './FileTreeItem';
 import { NewNoteModal } from './NewNoteModal';
-import { Plus, Search, FolderUp, X } from 'lucide-react';
+import { Plus, Search, FolderUp, X, Settings } from 'lucide-react';
+import Link from 'next/link';
+import { WorkspacePopover } from '@/src/components/workspace/WorkspacePopover';
 
 export function FileTree() {
   const rawFiles = useLiveQuery(() => db.files.toArray());
@@ -81,9 +83,10 @@ export function FileTree() {
       }`}
     >
       {/* Top Vault Brand & Actions */}
-      <div className="p-3 border-b border-neutral-200/80 dark:border-neutral-800">
-        <div className="flex items-center justify-between mb-2">
+      <div className="p-2.5 border-b border-neutral-200/80 dark:border-neutral-800">
+        <div className="flex items-center justify-between mb-1.5">
           <div className="flex items-center gap-1.5 truncate">
+            <WorkspacePopover />
             <span className="font-semibold text-xs tracking-tight truncate">{vaultName}</span>
           </div>
           <button
@@ -92,40 +95,6 @@ export function FileTree() {
             title="Create new note"
           >
             <Plus className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Workspace Views Switcher */}
-        <div className="grid grid-cols-3 gap-1 p-0.5 bg-neutral-200/60 dark:bg-neutral-800 rounded-md text-xs">
-          <button
-            onClick={() => setActiveView('editor')}
-            className={`py-1 rounded text-[11px] font-medium transition-colors cursor-pointer ${
-              activeView === 'editor'
-                ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 shadow-xs'
-                : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200'
-            }`}
-          >
-            Editor
-          </button>
-          <button
-            onClick={() => setActiveView('graph')}
-            className={`py-1 rounded text-[11px] font-medium transition-colors cursor-pointer ${
-              activeView === 'graph'
-                ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 shadow-xs'
-                : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200'
-            }`}
-          >
-            Graph
-          </button>
-          <button
-            onClick={() => setActiveView('database')}
-            className={`py-1 rounded text-[11px] font-medium transition-colors cursor-pointer ${
-              activeView === 'database'
-                ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 shadow-xs'
-                : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200'
-            }`}
-          >
-            Database
           </button>
         </div>
       </div>
@@ -172,15 +141,23 @@ export function FileTree() {
         )}
       </div>
 
-      {/* Bottom Quick-Import Action Bar */}
-      <div className="p-2 border-t border-neutral-200/80 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/30">
+      {/* Bottom Quick-Import & Settings Action Bar */}
+      <div className="p-2 border-t border-neutral-200/80 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/30 flex items-center gap-1.5">
         <button
           onClick={() => setImportModalOpen(true)}
-          className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md bg-neutral-100 hover:bg-neutral-200/80 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 font-medium text-xs transition-colors cursor-pointer"
+          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md bg-neutral-100 hover:bg-neutral-200/80 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 font-medium text-xs transition-colors cursor-pointer truncate"
+          title="Import or Mount Vault"
         >
-          <FolderUp className="w-3.5 h-3.5 text-indigo-500" />
-          <span>Import / Mount Vault</span>
+          <FolderUp className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+          <span className="truncate">Import / Mount Vault</span>
         </button>
+        <Link
+          href="/settings"
+          className="p-1.5 rounded-md bg-neutral-100 hover:bg-neutral-200/80 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 transition-colors cursor-pointer shrink-0"
+          title="Settings"
+        >
+          <Settings className="w-4 h-4" />
+        </Link>
       </div>
 
       <NewNoteModal isOpen={newNoteModal} onClose={() => setNewNoteModal(false)} />

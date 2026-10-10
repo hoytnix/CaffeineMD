@@ -38,11 +38,23 @@ export interface VaultMetadata {
   value: any;
 }
 
+export interface WorkspaceRecord {
+  id: string; // e.g. "default-vault" or "ws-123456"
+  name: string; // "Local Vault" or directory name
+  mode: 'indexeddb' | 'filesystem';
+  handle?: any; // FileSystemDirectoryHandle stored natively in IndexedDB
+  driveFolderId?: string;
+  lastSyncedAt?: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export class KiteVaultDatabase extends Dexie {
   files!: Table<VaultFile, string>;
   backlinks!: Table<BacklinkRecord, string>;
   tags!: Table<TagRecord, string>;
   settings!: Table<VaultMetadata, string>;
+  workspaces!: Table<WorkspaceRecord, string>;
 
   constructor() {
     super('KiteVaultDatabase');
@@ -51,6 +63,13 @@ export class KiteVaultDatabase extends Dexie {
       backlinks: 'id, sourcePath, sourceTitle, targetTitle, targetPath, vaultId',
       tags: 'name, count',
       settings: 'key',
+    });
+    this.version(2).stores({
+      files: 'id, path, name, title, extension, isBinary, *tags, vaultId, updatedAt',
+      backlinks: 'id, sourcePath, sourceTitle, targetTitle, targetPath, vaultId',
+      tags: 'name, count',
+      settings: 'key',
+      workspaces: 'id, name, mode, updatedAt',
     });
   }
 }

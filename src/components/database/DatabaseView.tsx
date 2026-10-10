@@ -10,8 +10,9 @@ import { ListView } from './ListView';
 import { DatabaseToolbar } from './DatabaseToolbar';
 import { useDatabaseSchema } from '@/src/hooks/useDatabaseSchema';
 
-export function DatabaseView() {
-  const { databaseViewMode, setDatabaseViewMode, openFileTab } = useWorkspaceStore();
+export function DatabaseView({ mode }: { mode?: 'table' | 'board' | 'list' }) {
+  const { databaseViewMode, setDatabaseViewMode, openFileTab, setActiveView } = useWorkspaceStore();
+  const currentMode = mode || databaseViewMode;
   const rawFiles = useLiveQuery(() => db.files.where('isBinary').equals(0).toArray());
   const files = useMemo(() => rawFiles ?? [], [rawFiles]);
 
@@ -68,8 +69,11 @@ tags: [${filterTag !== 'all' ? filterTag : 'note'}]
   return (
     <div className="flex-1 flex flex-col h-full overflow-y-auto bg-neutral-50/50 dark:bg-neutral-950 p-8 text-neutral-900 dark:text-neutral-100">
       <DatabaseToolbar
-        databaseViewMode={databaseViewMode}
-        onSetViewMode={setDatabaseViewMode}
+        databaseViewMode={currentMode}
+        onSetViewMode={(m) => {
+          setDatabaseViewMode(m);
+          setActiveView(m);
+        }}
         onCreateNewRow={handleCreateNewNote}
         searchFilter={searchFilter}
         onSearchChange={setSearchFilter}
@@ -82,15 +86,15 @@ tags: [${filterTag !== 'all' ? filterTag : 'note'}]
         recordCount={filteredFiles.length}
       />
 
-      {databaseViewMode === 'table' && (
+      {currentMode === 'table' && (
         <TableView files={filteredFiles} columns={columns} onRefresh={() => {}} />
       )}
 
-      {databaseViewMode === 'board' && (
+      {currentMode === 'board' && (
         <KanbanView files={filteredFiles} groupKey="status" onRefresh={() => {}} />
       )}
 
-      {databaseViewMode === 'list' && (
+      {currentMode === 'list' && (
         <ListView files={filteredFiles} />
       )}
     </div>

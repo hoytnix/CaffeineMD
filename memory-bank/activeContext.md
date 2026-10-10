@@ -1,18 +1,30 @@
 # Active Context: Kite Workspace
 
 ## Current Focus
-Aligned link font colors with WikiLinks, reduced WikiLink badge padding by 50%, and applied Solarized Light theme to code blocks across the rich text editor and markdown parser.
+Implemented the Universal Emoji Drawer (`Shift + Space`), cleaned top navbar to 5 icon-only peer view tabs, created dedicated iOS-style settings page, integrated 14 theme presets with Gemini 3.5 Flash-Lite AI Theme Generator, established 1-to-1 Live Disk Folder workspace architecture with popover switcher, and built Google SSO with bidirectional Google Drive sync.
 
 ## Key Changes
-1. **Link & WikiLink Color Alignment**:
-   - Styled `.ProseMirror a` in `app/globals.css` with `#4f46e5` (`text-indigo-600`) in light mode and `#a5b4fc` (`dark:text-indigo-400`) in dark mode, matching WikiLink font colors.
-   - Updated markdown link renderer in `src/lib/markdown/markdownToHtml.ts` to include matching Tailwind classes (`text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300`).
-2. **WikiLink 50% Padding Reduction**:
-   - Reduced `.wiki-link` padding in `app/globals.css` from `0.05rem 0.35rem` to `0.025rem 0.175rem`.
-   - Reduced Tailwind classes in `WikiLink.ts` from `px-1 py-0.5` to `px-0.5 py-[1px]`.
-3. **Solarized Light Code Block Scheme**:
-   - Updated `.ProseMirror pre` background to `#fdf6e3` (Solarized base3 cream), text color to `#586e75` (Solarized base01 slate), and border to `#eee8d5`.
-   - Set `.ProseMirror pre code` with `background: transparent !important` and `color: #586e75 !important` so code text has high contrast and is never hidden against the background.
-   - Added full Solarized Light syntax highlighting palette for tokens (keywords `#859900`, strings `#2aa198`, constants `#b58900`, functions `#268bd2`, comments `#93a1a1`).
-4. **WikiLink Code Block Isolation (Prior Work)**:
-   - Preserved WikiLink code block isolation in `markdownToHtml.ts`, `WikiLink.ts`, and `TiptapEditor.tsx`.
+1. **Universal Emoji Engine & Drawer**:
+   - Color emoji font fallback rules in `app/globals.css`.
+   - Global keyboard hook `useEmojiDrawer` (`Shift + Spacebar`) with scroll prevention.
+   - Comprehensive multi-category emoji dataset in `src/lib/emoji/emojiData.ts`.
+   - Accessible keyboard-navigable drawer in `src/components/emoji/EmojiDrawer.tsx` inserting directly into active Tiptap caret, focused inputs, or clipboard with toast.
+2. **Navbar Cleanup & 5 Icon-Only Peer Views**:
+   - Removed `Import Vault` button and `IndexedDB` status badge from top navbar.
+   - Restructured views into 5 top-level peer view tabs in `workspaceStore`: Editor (`FileText`), Graph (`Network`), Table (`Table`), Board (`Kanban`), and List (`List`).
+   - Icon-only triggers with accessible titles and zero visible text labels.
+3. **Dedicated iOS-Style Settings Page**:
+   - Sidebar footer features `Settings` gear button navigating to standalone `/settings` page (`app/settings/page.tsx`) with iOS back button returning to `/`.
+   - Inset list cards, discrete rows, toggle controls, and clean typography.
+4. **Theme Engine & AI Theme Generator**:
+   - `src/lib/themes/themeDefinitions.ts` with 14 presets (Dark, Light, Solarized Light, Solarized Dark, Monokai, Forest, Seahorse, Deep Sea, Microsoft, Hacker, Spring, Summer, Autumn, Winter) plus Custom.
+   - Dynamic CSS variable application (`--background`, `--foreground`, `--card`, `--border`, `--accent`, `--primary`, `--font-family`, `--bg-image`).
+   - 2-4 column responsive theme selector grid in Settings with Custom pinned as final card.
+   - Next.js API route `app/api/theme/generate/route.ts` powered by Gemini 3.5 Flash-Lite with structured JSON schema.
+5. **Workspaces & 1:1 Kite SVG Logo**:
+   - Replaced plain text wordmark with crisp geometric 1:1 SVG Kite logo mark (`src/components/workspace/WorkspacePopover.tsx`).
+   - Popover for active workspace indicator, connected disk folders list, mount disk folder action, and disconnect action.
+   - Live disk directory handle persistence in IndexedDB (`db.workspaces`).
+6. **Google SSO & Google Drive Cloud Sync**:
+   - Client-side Google SSO with scope `https://www.googleapis.com/auth/drive.file`.
+   - `src/lib/sync/googleDriveSync.ts` managing 1 root folder per workspace (`Kite-[workspace-name]`) with bidirectional sync and timestamp/hash detection.

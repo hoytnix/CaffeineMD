@@ -10,17 +10,22 @@ import { DatabaseView } from '@/src/components/database/DatabaseView';
 import { VaultDropzone } from '@/src/components/upload/VaultDropzone';
 import { ImportProgressModal } from '@/src/components/upload/ImportProgressModal';
 import { QuickSearchModal } from '@/src/components/search/QuickSearchModal';
+import { EmojiDrawer } from '@/src/components/emoji/EmojiDrawer';
+import { useEmojiDrawer } from '@/src/hooks/useEmojiDrawer';
+import { WorkspacePopover } from '@/src/components/workspace/WorkspacePopover';
+import { THEME_PRESETS, applyThemeToDocument } from '@/src/lib/themes/themeDefinitions';
 import {
-  FolderUp,
   Search,
   PanelLeftClose,
   PanelLeftOpen,
   X,
   Plus,
   FileText,
-  HardDrive,
-  Database,
-  Share2,
+  Network,
+  Table,
+  Kanban,
+  List,
+  Smile,
 } from 'lucide-react';
 
 export default function WorkspacePage() {
@@ -36,27 +41,45 @@ export default function WorkspacePage() {
     isImportModalOpen,
     setImportModalOpen,
     setIsSearchOpen,
-    mountedMode,
-    vaultName,
+    setTheme,
+    toggleEmojiDrawer,
   } = useWorkspaceStore();
+
+  // Activate universal emoji drawer global listener (Shift + Space)
+  useEmojiDrawer();
 
   const [hasInitialized, setHasInitialized] = useState(false);
 
+  // Initial vault seed and theme rehydration
   useEffect(() => {
     seedInitialVaultIfEmpty().then(() => {
       setHasInitialized(true);
     });
-  }, []);
+
+    if (typeof window !== 'undefined') {
+      try {
+        const savedThemeId = localStorage.getItem('kite-theme-id');
+        const savedCustom = localStorage.getItem('kite-custom-theme');
+        if (savedThemeId) {
+          setTheme(savedThemeId);
+        } else {
+          applyThemeToDocument(THEME_PRESETS[0]);
+        }
+      } catch (err) {
+        console.warn('Theme hydration error:', err);
+      }
+    }
+  }, [setTheme]);
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100">
-      {/* 1. Universal Top Bar Contract (Zone 1: Wordmark, Zone 2: Nav, Zone 3: Primary Action) */}
-      <header className="flex items-center justify-between gap-8 px-6 py-2.5 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 z-30 select-none">
-        {/* Zone 1: Single text element wordmark */}
-        <div className="flex items-center gap-3 shrink-0">
+      {/* 1. Universal Top Bar Contract: Cleaned, Zero Import Button, Zero IndexedDB Badge */}
+      <header className="flex items-center justify-between gap-4 px-4 py-2 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 z-30 select-none">
+        {/* Zone 1: Sidebar Toggle & 1:1 SVG Kite Logo with Workspace Popover */}
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={toggleSidebar}
-            className="p-1.5 rounded-md text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            className="p-1.5 rounded-md text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
             title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {sidebarCollapsed ? (
@@ -66,69 +89,102 @@ export default function WorkspacePage() {
             )}
           </button>
 
-          <span className="text-base font-bold tracking-tight text-neutral-900 dark:text-neutral-100 whitespace-nowrap">
-            Kite Workspace
-          </span>
-
-          <span className="text-[11px] font-mono text-neutral-400 border border-neutral-200 dark:border-neutral-800 rounded px-1.5 py-0.5">
-            {mountedMode === 'filesystem' ? 'Live Disk' : 'IndexedDB'}
-          </span>
+          {/* 1:1 Kite SVG Logo Mark with Workspace Popover */}
+          <WorkspacePopover />
         </div>
 
-        {/* Zone 2: Clean single-line text navigation links */}
-        <nav className="hidden md:flex items-center gap-6 text-xs font-medium text-neutral-600 dark:text-neutral-400">
+        {/* Zone 2: 5 Icon-Only Peer View Tabs (STRICT REQUIREMENT: ZERO TEXT LABELS) */}
+        <nav className="flex items-center gap-1 bg-neutral-100/80 dark:bg-neutral-900/80 p-1 rounded-xl border border-neutral-200/60 dark:border-neutral-800/60">
+          {/* 1. Editor */}
           <button
             onClick={() => setActiveView('editor')}
-            className={`whitespace-nowrap transition-colors ${
+            title="Editor Notes"
+            className={`p-2 rounded-lg transition-all cursor-pointer ${
               activeView === 'editor'
-                ? 'text-indigo-600 dark:text-indigo-400 font-semibold'
-                : 'hover:text-neutral-900 dark:hover:text-neutral-100'
+                ? 'bg-white dark:bg-neutral-800 text-indigo-600 dark:text-indigo-400 shadow-xs scale-105'
+                : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50'
             }`}
           >
-            Editor Notes
+            <FileText className="w-4 h-4" />
           </button>
+
+          {/* 2. Knowledge Graph */}
           <button
             onClick={() => setActiveView('graph')}
-            className={`whitespace-nowrap transition-colors ${
+            title="Knowledge Graph"
+            className={`p-2 rounded-lg transition-all cursor-pointer ${
               activeView === 'graph'
-                ? 'text-indigo-600 dark:text-indigo-400 font-semibold'
-                : 'hover:text-neutral-900 dark:hover:text-neutral-100'
+                ? 'bg-white dark:bg-neutral-800 text-indigo-600 dark:text-indigo-400 shadow-xs scale-105'
+                : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50'
             }`}
           >
-            Knowledge Graph
+            <Network className="w-4 h-4" />
           </button>
+
+          {/* 3. Table Database View */}
           <button
-            onClick={() => setActiveView('database')}
-            className={`whitespace-nowrap transition-colors ${
-              activeView === 'database'
-                ? 'text-indigo-600 dark:text-indigo-400 font-semibold'
-                : 'hover:text-neutral-900 dark:hover:text-neutral-100'
+            onClick={() => setActiveView('table')}
+            title="Table View"
+            className={`p-2 rounded-lg transition-all cursor-pointer ${
+              activeView === 'table'
+                ? 'bg-white dark:bg-neutral-800 text-indigo-600 dark:text-indigo-400 shadow-xs scale-105'
+                : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50'
             }`}
           >
-            Databases
+            <Table className="w-4 h-4" />
           </button>
+
+          {/* 4. Board / Kanban View */}
           <button
-            onClick={() => setIsSearchOpen(true)}
-            className="flex items-center gap-1.5 text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors whitespace-nowrap"
+            onClick={() => setActiveView('board')}
+            title="Kanban Board View"
+            className={`p-2 rounded-lg transition-all cursor-pointer ${
+              activeView === 'board'
+                ? 'bg-white dark:bg-neutral-800 text-indigo-600 dark:text-indigo-400 shadow-xs scale-105'
+                : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50'
+            }`}
           >
-            <Search className="w-3.5 h-3.5" />
-            <span>Search (⌘K)</span>
+            <Kanban className="w-4 h-4" />
+          </button>
+
+          {/* 5. List View */}
+          <button
+            onClick={() => setActiveView('list')}
+            title="List View"
+            className={`p-2 rounded-lg transition-all cursor-pointer ${
+              activeView === 'list'
+                ? 'bg-white dark:bg-neutral-800 text-indigo-600 dark:text-indigo-400 shadow-xs scale-105'
+                : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50'
+            }`}
+          >
+            <List className="w-4 h-4" />
           </button>
         </nav>
 
-        {/* Zone 3: 1 Primary Action */}
-        <div className="flex items-center gap-3 shrink-0">
+        {/* Zone 3: Search & Emoji Triggers (No Import Vault button, No IndexedDB badge) */}
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
-            onClick={() => setImportModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-white bg-neutral-900 dark:bg-neutral-100 dark:text-neutral-900 rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors whitespace-nowrap shrink-0 shadow-xs"
+            onClick={() => toggleEmojiDrawer()}
+            title="Emoji Drawer (Shift + Space)"
+            className="p-1.5 rounded-lg text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
           >
-            <FolderUp className="w-3.5 h-3.5" />
-            <span>Import Vault</span>
+            <Smile className="w-4 h-4 text-amber-500" />
+          </button>
+
+          <button
+            onClick={() => setIsSearchOpen(true)}
+            title="Quick Search (⌘K)"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer text-xs"
+          >
+            <Search className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline font-mono text-[10px] text-neutral-400 border border-neutral-200 dark:border-neutral-800 px-1 py-0.5 rounded">
+              ⌘K
+            </span>
           </button>
         </div>
       </header>
 
-      {/* 2. Workspace Document Tabs Bar */}
+      {/* 2. Workspace Document Tabs Bar (Shown in Editor View) */}
       {activeView === 'editor' && (
         <div className="flex items-center bg-neutral-100/70 dark:bg-neutral-900/40 border-b border-neutral-200 dark:border-neutral-800 px-2 py-0 overflow-x-auto select-none">
           {openTabs.map((tab) => {
@@ -186,11 +242,11 @@ export default function WorkspacePage() {
                     No note open
                   </h3>
                   <p className="text-xs text-neutral-400 mt-1 max-w-sm">
-                    Select a note from the file tree, press ⌘K to search, or import an Obsidian vault folder.
+                    Select a note from the file tree, press ⌘K to search, or mount a local disk folder.
                   </p>
                   <button
                     onClick={() => setImportModalOpen(true)}
-                    className="mt-4 px-4 py-2 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+                    className="mt-4 px-4 py-2 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors cursor-pointer"
                   >
                     Open or Import Vault
                   </button>
@@ -201,7 +257,11 @@ export default function WorkspacePage() {
 
           {activeView === 'graph' && <GraphView />}
 
-          {activeView === 'database' && <DatabaseView />}
+          {activeView === 'table' && <DatabaseView mode="table" />}
+
+          {activeView === 'board' && <DatabaseView mode="board" />}
+
+          {activeView === 'list' && <DatabaseView mode="list" />}
         </main>
       </div>
 
@@ -209,6 +269,7 @@ export default function WorkspacePage() {
       <VaultDropzone isOpen={isImportModalOpen} onClose={() => setImportModalOpen(false)} />
       <ImportProgressModal />
       <QuickSearchModal />
+      <EmojiDrawer />
     </div>
   );
 }

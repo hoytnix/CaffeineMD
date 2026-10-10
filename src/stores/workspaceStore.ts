@@ -1,15 +1,22 @@
 import { create } from 'zustand';
 import { ImportProgress } from '../lib/storage/importPipeline';
+import {
+  ThemeDefinition,
+  THEME_PRESETS,
+  DEFAULT_CUSTOM_THEME,
+  applyThemeToDocument,
+} from '../lib/themes/themeDefinitions';
 
 export interface TabItem {
   path: string;
   title: string;
 }
 
-export type ActiveWorkspaceView = 'editor' | 'graph' | 'database';
+export type ActiveWorkspaceView = 'editor' | 'graph' | 'table' | 'board' | 'list';
 
 export interface WorkspaceState {
   vaultName: string;
+  activeWorkspaceId: string;
   mountedMode: 'indexeddb' | 'filesystem';
   mountedFolderName: string | null;
   activeFilePath: string | null;
@@ -23,6 +30,21 @@ export interface WorkspaceState {
   sidebarCollapsed: boolean;
   rightPanelOpen: boolean;
   databaseViewMode: 'table' | 'board' | 'list';
+
+  // Emoji Drawer
+  isEmojiDrawerOpen: boolean;
+  setEmojiDrawerOpen: (open: boolean) => void;
+  toggleEmojiDrawer: () => void;
+
+  // Active Editor instance reference
+  activeEditor: any | null;
+  setActiveEditor: (editor: any | null) => void;
+
+  // Theme Management
+  themeId: string;
+  customTheme: ThemeDefinition;
+  setTheme: (themeId: string) => void;
+  updateCustomTheme: (tokens: Partial<ThemeDefinition>) => void;
 
   // Actions
   setActiveFilePath: (path: string | null) => void;
@@ -39,11 +61,13 @@ export interface WorkspaceState {
   setRightPanelOpen: (open: boolean) => void;
   toggleRightPanel: () => void;
   setMountedMode: (mode: 'indexeddb' | 'filesystem', folderName?: string) => void;
+  setActiveWorkspaceId: (id: string, name?: string) => void;
   setDatabaseViewMode: (mode: 'table' | 'board' | 'list') => void;
 }
 
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   vaultName: 'Local Vault',
+  activeWorkspaceId: 'default-vault',
   mountedMode: 'indexeddb',
   mountedFolderName: null,
   activeFilePath: 'Welcome to Kite.md',
@@ -60,6 +84,48 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   sidebarCollapsed: false,
   rightPanelOpen: true,
   databaseViewMode: 'table',
+
+  // Emoji
+  isEmojiDrawerOpen: false,
+  setEmojiDrawerOpen: (open) => set({ isEmojiDrawerOpen: open }),
+  toggleEmojiDrawer: () => set((state) => ({ isEmojiDrawerOpen: !state.isEmojiDrawerOpen })),
+
+  // Active Editor
+  activeEditor: null,
+  setActiveEditor: (editor) => set({ activeEditor: editor }),
+
+  // Theme
+  themeId: 'dark',
+  customTheme: DEFAULT_CUSTOM_THEME,
+  setTheme: (themeId) => {
+    set({ themeId });
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('kite-theme-id', themeId);
+      } catch {}
+    }
+    const currentCustom = get().customTheme;
+    const target =
+      themeId === 'custom'
+        ? currentCustom
+        : THEME_PRESETS.find((t) => t.id === themeId) || THEME_PRESETS[0];
+    applyThemeToDocument(target);
+  },
+  updateCustomTheme: (tokens) => {
+    const updated: ThemeDefinition = {
+      ...get().customTheme,
+      ...tokens,
+      id: 'custom',
+    };
+    set({ customTheme: updated, themeId: 'custom' });
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('kite-custom-theme', JSON.stringify(updated));
+        localStorage.setItem('kite-theme-id', 'custom');
+      } catch {}
+    }
+    applyThemeToDocument(updated);
+  },
 
   setActiveFilePath: (path) => {
     set({ activeFilePath: path });
@@ -100,7 +166,13 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     });
   },
 
-  setActiveView: (view) => set({ activeView: view }),
+  setActiveView: (view) => {
+    set({ activeView: view });
+    if (view === 'table' || view === 'board' || view === 'list') {
+      set({ databaseViewMode: view });
+    }
+  },
+
   setImportModalOpen: (open) => set({ isImportModalOpen: open }),
   setImportProgress: (progress) => set({ importProgress: progress }),
   setIsSearchOpen: (open) => set({ isSearchOpen: open }),
@@ -115,6 +187,13 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       mountedMode: mode,
       mountedFolderName: folderName || null,
       vaultName: folderName ? folderName : 'Local Vault',
+    }),
+  setActiveWorkspaceId: (id, name) =>
+    set({
+      activeWorkspaceId: id,
+      vaultName: name || 'Workspace',
+      activeFilePath: null,
+      openTabs: [],
     }),
   setDatabaseViewMode: (mode) => set({ databaseViewMode: mode }),
 }));

@@ -13,14 +13,14 @@
 - [x] Memoized recursive file tree navigation (`/src/components/sidebar/FileTree.tsx`, `/src/hooks/useTreeStructure.ts`, `/src/components/sidebar/FileTreeItem.tsx`, `/src/components/sidebar/NewNoteModal.tsx`).
 - [x] Full-text and tag fuzzy search modal with `⌘K` shortcut (`/src/components/search/QuickSearchModal.tsx`).
 - [x] Decoupled vault dropzone and mounting hooks (`/src/components/upload/VaultDropzone.tsx`, `/src/hooks/useVaultMounting.ts`, `/src/components/upload/DropzoneUploadCards.tsx`, `/src/components/upload/ImportProgressModal.tsx`).
-- [x] Rich Text Mode / Plaintext Mode toggle with lossless round-trip synchronization and line-numbered editor.
-- [x] Consecutive blank line preservation (`<p><br></p>`), Markdown tables, and typography hierarchy.
-- [x] WikiLink code block isolation: WikiLinks within fenced code blocks (` ``` `) and inline code (`` `...` ``) remain raw monospaced text and are never prettified into interactive badges in Rich Text mode.
-- [x] Standard links font color aligned with WikiLinks (`#4f46e5` / `text-indigo-600` light, `#a5b4fc` / `dark:text-indigo-400` dark).
-- [x] WikiLink badge padding reduced by 50% (`0.025rem 0.175rem` / `px-0.5 py-[1px]`).
-- [x] Code block scheme converted to Solarized Light (`#fdf6e3` base, `#586e75` text, `#eee8d5` border) with high-contrast readable code text.
+- [x] Universal Emoji Drawer (`Shift + Spacebar`) with search, categories, keyboard arrows + Enter navigation, and active caret insertion (`/src/components/emoji/EmojiDrawer.tsx`, `/src/hooks/useEmojiDrawer.ts`, `/src/lib/emoji/emojiData.ts`).
+- [x] Top navbar cleanup: removed `Import Vault` button & `IndexedDB` badge; 5 icon-only peer view tabs (`Editor`, `Graph`, `Table`, `Board`, `List`).
+- [x] Dedicated iOS-style Settings page (`/app/settings/page.tsx`) with inset cards, toggle controls, and iOS back button.
+- [x] Comprehensive Theme Engine with 14 presets, dynamic CSS variable application, and Gemini 3.5 Flash-Lite AI Theme Generator API (`/app/api/theme/generate/route.ts`).
+- [x] Workspaces architecture & 1:1 SVG Kite logo popover switcher (`/src/components/workspace/WorkspacePopover.tsx`, `/src/lib/workspaces/workspaceManager.ts`).
+- [x] Google SSO & bidirectional Google Drive Cloud Sync pipeline (`/src/lib/firebase/client.ts`, `/src/lib/sync/googleDriveSync.ts`).
 
 ## Verification Status
 - Production compilation (`compile_applet`): Passed.
 - Codebase linting (`lint_applet`): Passed (0 errors, 0 warnings).
-- Target LOC discipline: All major components and services refactored into the 100–250 LOC modular target range.
+- Target LOC discipline: Modular components across all subsystems.

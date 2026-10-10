@@ -38,7 +38,7 @@ interface TiptapEditorProps {
 }
 
 export function TiptapEditor({ filePath }: TiptapEditorProps) {
-  const { openFileTab } = useWorkspaceStore();
+  const { openFileTab, setActiveEditor } = useWorkspaceStore();
 
   const {
     file,
@@ -328,6 +328,16 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
       }
     }
   }, [file, editor]);
+
+  // Register editor instance for emoji drawer insertion
+  useEffect(() => {
+    if (editor) {
+      setActiveEditor(editor);
+    }
+    return () => {
+      setActiveEditor(null);
+    };
+  }, [editor, setActiveEditor]);
 
   // Mode switching
   const switchToPlaintext = useCallback(() => {
