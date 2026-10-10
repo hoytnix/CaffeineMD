@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import * as d3 from 'd3-force';
-import { db } from '@/src/lib/storage/db';
+import { db, EisenhowerQuadrant } from '@/src/lib/storage/db';
 
 export interface GraphNode extends d3.SimulationNodeDatum {
   id: string;
@@ -11,6 +11,7 @@ export interface GraphNode extends d3.SimulationNodeDatum {
   tags: string[];
   linkCount: number;
   radius: number;
+  eisenhower?: EisenhowerQuadrant;
 }
 
 export interface GraphLink extends d3.SimulationLinkDatum<GraphNode> {
@@ -57,6 +58,7 @@ export function useGraphData({ filterTag, showOrphans }: UseGraphDataOptions) {
       let graphNodes: GraphNode[] = files.map((f) => {
         const title = f.title || f.name.replace(/\.[^/.]+$/, '');
         const count = linkCounts.get(title.toLowerCase()) || linkCounts.get(f.path.toLowerCase()) || 0;
+        const eq = (f.eisenhower || f.frontmatter?.eisenhower) as EisenhowerQuadrant | undefined;
         return {
           id: f.path,
           title,
@@ -64,6 +66,7 @@ export function useGraphData({ filterTag, showOrphans }: UseGraphDataOptions) {
           tags: f.tags || [],
           linkCount: count,
           radius: Math.min(18, Math.max(5, 5 + count * 2.5)),
+          eisenhower: eq,
         };
       });
 

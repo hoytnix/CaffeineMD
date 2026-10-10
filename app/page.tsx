@@ -7,6 +7,7 @@ import { FileTree } from '@/src/components/sidebar/FileTree';
 import { TiptapEditor } from '@/src/components/editor/TiptapEditor';
 import { GraphView } from '@/src/components/graph/GraphView';
 import { DatabaseView } from '@/src/components/database/DatabaseView';
+import { TagCloudView } from '@/src/components/tags/TagCloudView';
 import { VaultDropzone } from '@/src/components/upload/VaultDropzone';
 import { ImportProgressModal } from '@/src/components/upload/ImportProgressModal';
 import { QuickSearchModal } from '@/src/components/search/QuickSearchModal';
@@ -25,7 +26,9 @@ import {
   Table,
   Kanban,
   List,
+  Tag,
   Smile,
+  Check,
 } from 'lucide-react';
 
 export default function WorkspacePage() {
@@ -43,6 +46,7 @@ export default function WorkspacePage() {
     setIsSearchOpen,
     setTheme,
     toggleEmojiDrawer,
+    toastMessage,
   } = useWorkspaceStore();
 
   // Activate universal emoji drawer global listener (Shift + Space)
@@ -159,6 +163,19 @@ export default function WorkspacePage() {
           >
             <List className="w-4 h-4" />
           </button>
+
+          {/* 6. Tags View */}
+          <button
+            onClick={() => setActiveView('tags')}
+            title="Tag Cloud & Registry"
+            className={`p-2 rounded-lg transition-all cursor-pointer ${
+              activeView === 'tags'
+                ? 'bg-white dark:bg-neutral-800 text-indigo-600 dark:text-indigo-400 shadow-xs scale-105'
+                : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50'
+            }`}
+          >
+            <Tag className="w-4 h-4" />
+          </button>
         </nav>
 
         {/* Zone 3: Search & Emoji Triggers (No Import Vault button, No IndexedDB badge) */}
@@ -262,6 +279,8 @@ export default function WorkspacePage() {
           {activeView === 'board' && <DatabaseView mode="board" />}
 
           {activeView === 'list' && <DatabaseView mode="list" />}
+
+          {activeView === 'tags' && <TagCloudView />}
         </main>
       </div>
 
@@ -270,6 +289,14 @@ export default function WorkspacePage() {
       <ImportProgressModal />
       <QuickSearchModal />
       <EmojiDrawer />
+
+      {/* Floating Global Affirmative Toast */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-neutral-900/95 dark:bg-white/95 text-white dark:text-neutral-900 shadow-2xl backdrop-blur-md text-xs font-medium animate-in fade-in slide-in-from-bottom-2">
+          <Check className="w-4 h-4 text-emerald-400 dark:text-emerald-600" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
     </div>
   );
 }

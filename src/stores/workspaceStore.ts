@@ -6,13 +6,15 @@ import {
   DEFAULT_CUSTOM_THEME,
   applyThemeToDocument,
 } from '../lib/themes/themeDefinitions';
+import { deleteVaultFile } from '../lib/storage/db';
+import { NativeFileSystemAdapter } from '../lib/storage/fileSystem';
 
 export interface TabItem {
   path: string;
   title: string;
 }
 
-export type ActiveWorkspaceView = 'editor' | 'graph' | 'table' | 'board' | 'list';
+export type ActiveWorkspaceView = 'editor' | 'graph' | 'table' | 'board' | 'list' | 'tags';
 
 export interface WorkspaceState {
   vaultName: string;
@@ -30,6 +32,10 @@ export interface WorkspaceState {
   sidebarCollapsed: boolean;
   rightPanelOpen: boolean;
   databaseViewMode: 'table' | 'board' | 'list';
+
+  // Global Toast
+  toastMessage: string | null;
+  showToast: (msg: string) => void;
 
   // Emoji Drawer
   isEmojiDrawerOpen: boolean;
@@ -50,6 +56,7 @@ export interface WorkspaceState {
   setActiveFilePath: (path: string | null) => void;
   openFileTab: (path: string, title?: string) => void;
   closeFileTab: (path: string) => void;
+  deleteNote: (path: string) => Promise<boolean>;
   setActiveView: (view: ActiveWorkspaceView) => void;
   setImportModalOpen: (open: boolean) => void;
   setImportProgress: (progress: ImportProgress | null) => void;
@@ -84,6 +91,17 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   sidebarCollapsed: false,
   rightPanelOpen: true,
   databaseViewMode: 'table',
+
+  // Global Toast
+  toastMessage: null,
+  showToast: (msg: string) => {
+    set({ toastMessage: msg });
+    setTimeout(() => {
+      if (get().toastMessage === msg) {
+        set({ toastMessage: null });
+      }
+    }, 2400);
+  },
 
   // Emoji
   isEmojiDrawerOpen: false,
@@ -164,6 +182,37 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       openTabs: newTabs,
       activeFilePath: nextActive,
     });
+  },
+
+  deleteNote: async (path: string) => {
+    try {
+      // 1. Remove from Dexie IndexedDB and prune backlinks and tags
+      await deleteVaultFile(path);
+
+      // 2. Remove from live filesystem handle if mounted
+      await NativeFileSystemAdapter.removeFileFromDisk(path);
+
+      // 3. Close tab and evict from tree
+      const state = get();
+      const newTabs = state.openTabs.filter((t) => t.path !== path);
+      let nextActive = state.activeFilePath;
+      if (state.activeFilePath === path) {
+        nextActive = newTabs.length > 0 ? newTabs[newTabs.length - 1].path : null;
+      }
+
+      set({
+        openTabs: newTabs,
+        activeFilePath: nextActive,
+      });
+
+      // 4. Affirmative toast confirmation
+      state.showToast('Note deleted');
+      return true;
+    } catch (err) {
+      console.error('Failed to delete note:', err);
+      get().showToast('Failed to delete note');
+      return false;
+    }
   },
 
   setActiveView: (view) => {

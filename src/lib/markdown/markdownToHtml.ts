@@ -1,3 +1,37 @@
+import { createLowlight, all } from 'lowlight';
+
+const lowlightInstance = createLowlight(all);
+
+const COMMON_LANGUAGES = [
+  'typescript',
+  'javascript',
+  'python',
+  'rust',
+  'go',
+  'bash',
+  'json',
+  'yaml',
+  'xml',
+  'css',
+  'sql',
+  'markdown',
+];
+
+export function detectCodeLanguage(code: string): string {
+  if (!code || !code.trim()) return 'plaintext';
+  try {
+    const res = lowlightInstance.highlightAuto(code, { subset: COMMON_LANGUAGES });
+    const lang = res?.data?.language;
+    if (lang && lang !== 'plaintext') {
+      return lang === 'xml' ? 'html' : lang;
+    }
+    const full = lowlightInstance.highlightAuto(code);
+    return full?.data?.language || 'plaintext';
+  } catch {
+    return 'plaintext';
+  }
+}
+
 /**
  * Convert markdown to simplified HTML for initial Tiptap document loading,
  * preserving WikiLinks, single line breaks (<br>), multiple consecutive blank lines,
@@ -99,9 +133,11 @@ export function markdownToEditorHtml(markdown: string): string {
     // Inside fenced code block
     if (inCodeBlock) {
       if (trimmed.startsWith('```')) {
+        const codeText = codeBlockLines.join('\n');
+        const lang = codeBlockLang || detectCodeLanguage(codeText);
         htmlParts.push(
-          `<pre><code class="${codeBlockLang ? `language-${codeBlockLang}` : ''}">${escapeHtml(
-            codeBlockLines.join('\n')
+          `<pre><code class="${lang && lang !== 'plaintext' ? `language-${lang}` : ''}">${escapeHtml(
+            codeText
           )}</code></pre>`
         );
         inCodeBlock = false;
@@ -240,9 +276,11 @@ export function markdownToEditorHtml(markdown: string): string {
   closeAllBlocks();
 
   if (inCodeBlock && codeBlockLines.length > 0) {
+    const codeText = codeBlockLines.join('\n');
+    const lang = codeBlockLang || detectCodeLanguage(codeText);
     htmlParts.push(
-      `<pre><code class="${codeBlockLang ? `language-${codeBlockLang}` : ''}">${escapeHtml(
-        codeBlockLines.join('\n')
+      `<pre><code class="${lang && lang !== 'plaintext' ? `language-${lang}` : ''}">${escapeHtml(
+        codeText
       )}</code></pre>`
     );
   }

@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { VaultFile } from '@/src/lib/storage/db';
-import { FileText, Code, Save, Check } from 'lucide-react';
+import { useWorkspaceStore } from '@/src/stores/workspaceStore';
+import { FileText, Code, Save, Check, Trash2 } from 'lucide-react';
 
 interface EditorHeaderProps {
   file: VaultFile;
@@ -25,6 +26,19 @@ export function EditorHeader({
   onManualSave,
   isSaveDisabled,
 }: EditorHeaderProps) {
+  const { setActiveView, setSelectedTagFilter, deleteNote } = useWorkspaceStore();
+
+  const handleTagClick = (tag: string) => {
+    setSelectedTagFilter(tag);
+    setActiveView('tags');
+  };
+
+  const handleDelete = async () => {
+    if (confirm(`Are you sure you want to delete "${file.title || file.name}"?`)) {
+      await deleteNote(file.path);
+    }
+  };
+
   return (
     <div className="sticky top-0 z-20 flex items-center justify-between px-8 py-3 bg-white/90 dark:bg-neutral-950/90 backdrop-blur-md border-b border-neutral-100 dark:border-neutral-900">
       <div className="flex items-center gap-2 text-xs text-neutral-500 truncate">
@@ -34,9 +48,15 @@ export function EditorHeader({
             <span aria-hidden="true">·</span>
             <div className="flex items-center gap-1.5 truncate">
               {file.tags.map((tag) => (
-                <span key={tag} className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200">
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => handleTagClick(tag)}
+                  className="px-1.5 py-0.5 rounded text-neutral-500 hover:text-indigo-600 dark:text-neutral-400 dark:hover:text-indigo-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                  title={`View notes tagged #${tag}`}
+                >
                   #{tag}
-                </span>
+                </button>
               ))}
             </div>
           </>
@@ -97,6 +117,15 @@ export function EditorHeader({
         >
           <Save className="w-3.5 h-3.5 text-neutral-500" />
           <span>Save</span>
+        </button>
+
+        {/* Trash Can / Delete Note Button */}
+        <button
+          onClick={handleDelete}
+          className="p-1.5 rounded-md text-neutral-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+          title="Delete note"
+        >
+          <Trash2 className="w-4 h-4" />
         </button>
       </div>
     </div>

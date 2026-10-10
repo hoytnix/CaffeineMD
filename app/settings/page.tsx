@@ -160,6 +160,14 @@ export default function SettingsPage() {
         fontFamilyGoogleUrl: generated.fontFamilyGoogleUrl,
         backgroundImageUrl: generated.backgroundImageUrl || '',
         isDark: true, // or compute luminance
+        syntaxBg: generated.card || '#1c1c26',
+        syntaxKeyword: generated.accent || '#c084fc',
+        syntaxString: '#a7f3d0',
+        syntaxFunction: generated.primary || '#60a5fa',
+        syntaxComment: '#71717a',
+        syntaxVariable: generated.foreground || '#f472b6',
+        syntaxNumber: '#fb923c',
+        syntaxOperator: generated.accent || '#818cf8',
       };
 
       updateCustomTheme(newCustom);

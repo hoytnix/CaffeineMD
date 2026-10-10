@@ -13,6 +13,16 @@ export interface ThemeDefinition {
   fontFamilyGoogleUrl?: string;
   backgroundImageUrl?: string;
   bgOpacity?: number;
+
+  // Code Block Syntax Highlighting Tokens
+  syntaxBg: string;
+  syntaxKeyword: string;
+  syntaxString: string;
+  syntaxFunction: string;
+  syntaxComment: string;
+  syntaxVariable: string;
+  syntaxNumber: string;
+  syntaxOperator: string;
 }
 
 export const THEME_PRESETS: ThemeDefinition[] = [
@@ -28,6 +38,14 @@ export const THEME_PRESETS: ThemeDefinition[] = [
     accent: '#6366f1',
     primary: '#4f46e5',
     fontFamily: 'system-ui, -apple-system, sans-serif',
+    syntaxBg: '#12131a',
+    syntaxKeyword: '#c084fc',
+    syntaxString: '#a7f3d0',
+    syntaxFunction: '#60a5fa',
+    syntaxComment: '#6b7280',
+    syntaxVariable: '#f472b6',
+    syntaxNumber: '#fb923c',
+    syntaxOperator: '#818cf8',
   },
   {
     id: 'light',
@@ -41,6 +59,14 @@ export const THEME_PRESETS: ThemeDefinition[] = [
     accent: '#4f46e5',
     primary: '#4338ca',
     fontFamily: 'system-ui, -apple-system, sans-serif',
+    syntaxBg: '#f8fafc',
+    syntaxKeyword: '#7c3aed',
+    syntaxString: '#059669',
+    syntaxFunction: '#2563eb',
+    syntaxComment: '#64748b',
+    syntaxVariable: '#db2777',
+    syntaxNumber: '#ea580c',
+    syntaxOperator: '#4f46e5',
   },
   {
     id: 'solarized-light',
@@ -54,6 +80,14 @@ export const THEME_PRESETS: ThemeDefinition[] = [
     accent: '#268bd2',
     primary: '#2aa198',
     fontFamily: "'SF Pro Text', -apple-system, sans-serif",
+    syntaxBg: '#eee8d5',
+    syntaxKeyword: '#859900',
+    syntaxString: '#2aa198',
+    syntaxFunction: '#268bd2',
+    syntaxComment: '#93a1a1',
+    syntaxVariable: '#cb4b16',
+    syntaxNumber: '#b58900',
+    syntaxOperator: '#6c71c4',
   },
   {
     id: 'solarized-dark',
@@ -67,6 +101,14 @@ export const THEME_PRESETS: ThemeDefinition[] = [
     accent: '#2aa198',
     primary: '#268bd2',
     fontFamily: "'SF Pro Text', -apple-system, sans-serif",
+    syntaxBg: '#073642',
+    syntaxKeyword: '#859900',
+    syntaxString: '#2aa198',
+    syntaxFunction: '#268bd2',
+    syntaxComment: '#586e75',
+    syntaxVariable: '#cb4b16',
+    syntaxNumber: '#b58900',
+    syntaxOperator: '#6c71c4',
   },
   {
     id: 'monokai',
@@ -80,6 +122,14 @@ export const THEME_PRESETS: ThemeDefinition[] = [
     accent: '#a6e22e',
     primary: '#f92672',
     fontFamily: "'Fira Code', 'JetBrains Mono', monospace",
+    syntaxBg: '#1e1f1c',
+    syntaxKeyword: '#f92672',
+    syntaxString: '#e6db74',
+    syntaxFunction: '#a6e22e',
+    syntaxComment: '#75715e',
+    syntaxVariable: '#fd971f',
+    syntaxNumber: '#ae81ff',
+    syntaxOperator: '#f92672',
   },
   {
     id: 'forest',
@@ -93,6 +143,14 @@ export const THEME_PRESETS: ThemeDefinition[] = [
     accent: '#34d399',
     primary: '#10b981',
     fontFamily: 'system-ui, sans-serif',
+    syntaxBg: '#13281f',
+    syntaxKeyword: '#34d399',
+    syntaxString: '#a7f3d0',
+    syntaxFunction: '#6ee7b7',
+    syntaxComment: '#4b7361',
+    syntaxVariable: '#fcd34d',
+    syntaxNumber: '#fbbf24',
+    syntaxOperator: '#10b981',
   },
   {
     id: 'seahorse',
@@ -106,6 +164,14 @@ export const THEME_PRESETS: ThemeDefinition[] = [
     accent: '#38bdf8',
     primary: '#f472b6',
     fontFamily: 'system-ui, sans-serif',
+    syntaxBg: '#162838',
+    syntaxKeyword: '#f472b6',
+    syntaxString: '#38bdf8',
+    syntaxFunction: '#818cf8',
+    syntaxComment: '#52728c',
+    syntaxVariable: '#fb7185',
+    syntaxNumber: '#34d399',
+    syntaxOperator: '#38bdf8',
   },
   {
     id: 'deep-sea',
@@ -119,6 +185,14 @@ export const THEME_PRESETS: ThemeDefinition[] = [
     accent: '#06b6d4',
     primary: '#3b82f6',
     fontFamily: 'system-ui, sans-serif',
+    syntaxBg: '#0f1d33',
+    syntaxKeyword: '#06b6d4',
+    syntaxString: '#7dd3fc',
+    syntaxFunction: '#60a5fa',
+    syntaxComment: '#47678e',
+    syntaxVariable: '#a5b4fc',
+    syntaxNumber: '#38bdf8',
+    syntaxOperator: '#0ea5e9',
   },
   {
     id: 'microsoft',
@@ -132,6 +206,14 @@ export const THEME_PRESETS: ThemeDefinition[] = [
     accent: '#0078d4',
     primary: '#107c41',
     fontFamily: "'Segoe UI', -apple-system, sans-serif",
+    syntaxBg: '#f8fafc',
+    syntaxKeyword: '#0078d4',
+    syntaxString: '#107c41',
+    syntaxFunction: '#5c2d91',
+    syntaxComment: '#605e5c',
+    syntaxVariable: '#d83b01',
+    syntaxNumber: '#b4009e',
+    syntaxOperator: '#2b579a',
   },
   {
     id: 'hacker',
@@ -145,6 +227,14 @@ export const THEME_PRESETS: ThemeDefinition[] = [
     accent: '#22c55e',
     primary: '#10b981',
     fontFamily: "'JetBrains Mono', 'Courier New', monospace",
+    syntaxBg: '#08170e',
+    syntaxKeyword: '#00ff66',
+    syntaxString: '#86efac',
+    syntaxFunction: '#22c55e',
+    syntaxComment: '#166534',
+    syntaxVariable: '#4ade80',
+    syntaxNumber: '#bbf7d0',
+    syntaxOperator: '#00ff66',
   },
   {
     id: 'spring',
@@ -158,6 +248,14 @@ export const THEME_PRESETS: ThemeDefinition[] = [
     accent: '#16a34a',
     primary: '#84cc16',
     fontFamily: 'system-ui, sans-serif',
+    syntaxBg: '#edf5eb',
+    syntaxKeyword: '#15803d',
+    syntaxString: '#047857',
+    syntaxFunction: '#0284c7',
+    syntaxComment: '#65a30d',
+    syntaxVariable: '#b45309',
+    syntaxNumber: '#c2410c',
+    syntaxOperator: '#16a34a',
   },
   {
     id: 'summer',
@@ -171,6 +269,14 @@ export const THEME_PRESETS: ThemeDefinition[] = [
     accent: '#ea580c',
     primary: '#f59e0b',
     fontFamily: 'system-ui, sans-serif',
+    syntaxBg: '#fef7dc',
+    syntaxKeyword: '#c2410c',
+    syntaxString: '#b45309',
+    syntaxFunction: '#ca8a04',
+    syntaxComment: '#854d0e',
+    syntaxVariable: '#ea580c',
+    syntaxNumber: '#d97706',
+    syntaxOperator: '#9a3412',
   },
   {
     id: 'autumn',
@@ -184,6 +290,14 @@ export const THEME_PRESETS: ThemeDefinition[] = [
     accent: '#f97316',
     primary: '#ea580c',
     fontFamily: 'system-ui, sans-serif',
+    syntaxBg: '#271c16',
+    syntaxKeyword: '#f97316',
+    syntaxString: '#fde047',
+    syntaxFunction: '#fb923c',
+    syntaxComment: '#78533c',
+    syntaxVariable: '#ef4444',
+    syntaxNumber: '#f59e0b',
+    syntaxOperator: '#ea580c',
   },
   {
     id: 'winter',
@@ -197,6 +311,14 @@ export const THEME_PRESETS: ThemeDefinition[] = [
     accent: '#38bdf8',
     primary: '#60a5fa',
     fontFamily: 'system-ui, sans-serif',
+    syntaxBg: '#111f32',
+    syntaxKeyword: '#38bdf8',
+    syntaxString: '#93c5fd',
+    syntaxFunction: '#60a5fa',
+    syntaxComment: '#4b6584',
+    syntaxVariable: '#c084fc',
+    syntaxNumber: '#7dd3fc',
+    syntaxOperator: '#67e8f9',
   },
   {
     id: 'custom',
@@ -210,6 +332,14 @@ export const THEME_PRESETS: ThemeDefinition[] = [
     accent: '#a855f7',
     primary: '#8b5cf6',
     fontFamily: 'system-ui, sans-serif',
+    syntaxBg: '#1c1c26',
+    syntaxKeyword: '#c084fc',
+    syntaxString: '#a7f3d0',
+    syntaxFunction: '#60a5fa',
+    syntaxComment: '#71717a',
+    syntaxVariable: '#f472b6',
+    syntaxNumber: '#fb923c',
+    syntaxOperator: '#818cf8',
   },
 ];
 
@@ -225,6 +355,14 @@ export const DEFAULT_CUSTOM_THEME: ThemeDefinition = {
   accent: '#a855f7',
   primary: '#8b5cf6',
   fontFamily: 'system-ui, sans-serif',
+  syntaxBg: '#1c1c26',
+  syntaxKeyword: '#c084fc',
+  syntaxString: '#a7f3d0',
+  syntaxFunction: '#60a5fa',
+  syntaxComment: '#71717a',
+  syntaxVariable: '#f472b6',
+  syntaxNumber: '#fb923c',
+  syntaxOperator: '#818cf8',
   backgroundImageUrl: '',
   bgOpacity: 0.25,
 };
@@ -254,6 +392,16 @@ export function applyThemeToDocument(theme: ThemeDefinition) {
   root.style.setProperty('--accent', theme.accent);
   root.style.setProperty('--primary', theme.primary);
   root.style.setProperty('--font-family', theme.fontFamily);
+
+  // Set Syntax Highlighting custom properties
+  root.style.setProperty('--syntax-bg', theme.syntaxBg || theme.card);
+  root.style.setProperty('--syntax-keyword', theme.syntaxKeyword || theme.primary);
+  root.style.setProperty('--syntax-string', theme.syntaxString || theme.accent);
+  root.style.setProperty('--syntax-function', theme.syntaxFunction || theme.accent);
+  root.style.setProperty('--syntax-comment', theme.syntaxComment || '#6b7280');
+  root.style.setProperty('--syntax-variable', theme.syntaxVariable || theme.foreground);
+  root.style.setProperty('--syntax-number', theme.syntaxNumber || '#fb923c');
+  root.style.setProperty('--syntax-operator', theme.syntaxOperator || theme.accent);
 
   if (theme.backgroundImageUrl) {
     root.style.setProperty('--bg-image', `url("${theme.backgroundImageUrl}")`);

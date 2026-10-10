@@ -1,8 +1,10 @@
 import * as yaml from 'js-yaml';
+import { EisenhowerQuadrant } from '../storage/db';
 
 export interface ParsedMarkdownNote {
   title: string;
   frontmatter: Record<string, any>;
+  eisenhower?: EisenhowerQuadrant;
   body: string;
   tags: string[];
   wikiLinks: Array<{
@@ -93,6 +95,7 @@ export function parseMarkdownContent(rawText: string, fallbackTitle = 'Untitled'
   return {
     title,
     frontmatter,
+    eisenhower: (frontmatter.eisenhower as EisenhowerQuadrant) || undefined,
     body,
     tags: Array.from(tagsSet),
     wikiLinks,

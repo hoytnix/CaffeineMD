@@ -10,6 +10,14 @@
   --accent: #6366f1;
   --primary: #4f46e5;
   --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji";
+  --syntax-bg: #12131a;
+  --syntax-keyword: #c084fc;
+  --syntax-string: #a7f3d0;
+  --syntax-function: #60a5fa;
+  --syntax-comment: #6b7280;
+  --syntax-variable: #f472b6;
+  --syntax-number: #fb923c;
+  --syntax-operator: #818cf8;
 }
 
 body {
@@ -122,6 +130,7 @@ body {
 }
 
 /* Task Lists */
+ul[data-type="taskList"],
 .ProseMirror ul[data-type="taskList"] {
   list-style: none;
   padding: 0;
@@ -129,26 +138,42 @@ body {
   margin-bottom: 0.85rem;
 }
 
+ul[data-type="taskList"] li,
 .ProseMirror ul[data-type="taskList"] li {
   display: flex;
-  align-items: flex-start;
+  align-items: flex-start; /* or center when single line */
   gap: 0.625rem;
-  margin-top: 0.35rem;
-  margin-bottom: 0.35rem;
-  line-height: 1.75;
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
 }
 
-.ProseMirror ul[data-type="taskList"] li > p {
+ul[data-type="taskList"] li > label,
+.ProseMirror ul[data-type="taskList"] li > label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   margin: 0;
-  min-height: unset;
-  line-height: 1.75;
-  flex: 1;
+  padding-top: 0.18rem; /* Align perfectly with line-height cap-height of body text */
+  user-select: none;
+  flex-shrink: 0;
 }
 
+ul[data-type="taskList"] li > div,
+.ProseMirror ul[data-type="taskList"] li > div,
+ul[data-type="taskList"] li > p,
+.ProseMirror ul[data-type="taskList"] li > p {
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.5;
+  margin: 0;
+}
+
+ul[data-type="taskList"] li input[type="checkbox"],
 .ProseMirror ul[data-type="taskList"] li input[type="checkbox"] {
-  margin-top: 0.35rem;
+  margin: 0;
+  vertical-align: middle;
+  accent-color: var(--accent);
   cursor: pointer;
-  accent-color: #4f46e5;
 }
 
 /* Blockquotes */
@@ -170,11 +195,12 @@ body {
   line-height: 1.8;
 }
 
-/* Code Blocks - Solarized Light */
-.ProseMirror pre {
-  background-color: #fdf6e3;
-  color: #586e75;
-  border: 1px solid #eee8d5;
+/* Theme-Aware Code Blocks */
+.ProseMirror pre,
+pre {
+  background-color: var(--syntax-bg, var(--card));
+  color: var(--foreground);
+  border: 1px solid var(--border);
   border-radius: 0.5rem;
   padding: 0.875rem 1.125rem;
   margin: 1rem 0;
@@ -184,9 +210,10 @@ body {
   line-height: 1.6;
 }
 
-.ProseMirror pre code {
+.ProseMirror pre code,
+pre code {
   background-color: transparent !important;
-  color: #586e75 !important;
+  color: inherit !important;
   padding: 0 !important;
   border: none !important;
   border-radius: 0 !important;
@@ -194,65 +221,73 @@ body {
   font-size: inherit !important;
 }
 
-.dark .ProseMirror pre {
-  background-color: #fdf6e3;
-  color: #586e75;
-  border-color: #eee8d5;
-}
-
-.dark .ProseMirror pre code {
-  background-color: transparent !important;
-  color: #586e75 !important;
-}
-
-/* Solarized Light syntax tokens */
-.ProseMirror pre .token.comment,
-.ProseMirror pre .token.prolog,
-.ProseMirror pre .token.doctype,
-.ProseMirror pre .token.cdata {
-  color: #93a1a1;
-  font-style: italic;
-}
-
-.ProseMirror pre .token.punctuation {
-  color: #586e75;
-}
-
-.ProseMirror pre .token.property,
-.ProseMirror pre .token.tag,
-.ProseMirror pre .token.boolean,
-.ProseMirror pre .token.number,
-.ProseMirror pre .token.constant,
-.ProseMirror pre .token.symbol {
-  color: #b58900;
-}
-
-.ProseMirror pre .token.selector,
-.ProseMirror pre .token.attr-name,
-.ProseMirror pre .token.string,
-.ProseMirror pre .token.char,
-.ProseMirror pre .token.builtin {
-  color: #2aa198;
-}
-
-.ProseMirror pre .token.operator,
-.ProseMirror pre .token.entity,
-.ProseMirror pre .token.url {
-  color: #6c71c4;
-}
-
-.ProseMirror pre .token.keyword {
-  color: #859900;
+/* HLJS Syntax Token Mappings to Theme CSS Variables */
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-subst,
+.hljs-tag,
+.hljs-name {
+  color: var(--syntax-keyword);
   font-weight: 600;
 }
 
-.ProseMirror pre .token.function,
-.ProseMirror pre .token.class-name {
-  color: #268bd2;
+.hljs-string,
+.hljs-attribute,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition,
+.hljs-doctag {
+  color: var(--syntax-string);
 }
 
-.ProseMirror pre .token.variable {
-  color: #cb4b16;
+.hljs-title,
+.hljs-title.function_,
+.hljs-function,
+.hljs-title.class_,
+.hljs-section {
+  color: var(--syntax-function);
+}
+
+.hljs-comment,
+.hljs-quote,
+.hljs-meta {
+  color: var(--syntax-comment);
+  font-style: italic;
+}
+
+.hljs-variable,
+.hljs-template-variable,
+.hljs-attr,
+.hljs-params {
+  color: var(--syntax-variable);
+}
+
+.hljs-number,
+.hljs-literal {
+  color: var(--syntax-number);
+}
+
+.hljs-operator,
+.hljs-punctuation {
+  color: var(--syntax-operator);
+}
+
+.hljs-built_in,
+.hljs-type,
+.hljs-class {
+  color: var(--syntax-function);
+}
+
+.hljs-deletion {
+  color: #ef4444;
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: 700;
 }
 
 /* Inline Code */

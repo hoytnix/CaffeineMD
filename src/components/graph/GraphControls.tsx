@@ -9,6 +9,8 @@ interface GraphControlsProps {
   availableTags: string[];
   showOrphans: boolean;
   onToggleOrphans: () => void;
+  colorByEisenhower: boolean;
+  onToggleColorByEisenhower: () => void;
   nodeCount: number;
   edgeCount: number;
   onZoomIn: () => void;
@@ -22,6 +24,8 @@ export function GraphControls({
   availableTags,
   showOrphans,
   onToggleOrphans,
+  colorByEisenhower,
+  onToggleColorByEisenhower,
   nodeCount,
   edgeCount,
   onZoomIn,
@@ -63,7 +67,21 @@ export function GraphControls({
           <span>{showOrphans ? 'Hide Orphans' : 'Show Orphans'}</span>
         </button>
 
-        <div className="h-4 w-px bg-neutral-200 dark:bg-neutral-800 mx-0.5" />
+        {/* Toggle Eisenhower Matrix Colors */}
+        <button
+          onClick={onToggleColorByEisenhower}
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
+            colorByEisenhower
+              ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-medium'
+              : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200'
+          }`}
+          title="Color note node rings by Eisenhower priority quadrant"
+        >
+          <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+          <span>Eisenhower Colors</span>
+        </button>
+
+        <div className="h-4 w-px bg-neutral-200 dark:border-neutral-800 mx-0.5" />
 
         {/* Zoom Controls */}
         <button

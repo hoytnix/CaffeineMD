@@ -28,6 +28,7 @@ export function FileTree() {
     activeView,
     setActiveView,
     setImportModalOpen,
+    deleteNote,
   } = useWorkspaceStore();
 
   const treeData = useTreeStructure(files, filterQuery);
@@ -68,8 +69,7 @@ export function FileTree() {
   const handleDeleteFile = async (e: React.MouseEvent, path: string) => {
     e.stopPropagation();
     if (confirm(`Delete ${path}?`)) {
-      await db.files.delete(path);
-      await db.backlinks.where('sourcePath').equals(path).delete();
+      await deleteNote(path);
     }
   };
 

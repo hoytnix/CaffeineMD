@@ -13,6 +13,7 @@ export function GraphView() {
 
   const [filterTag, setFilterTag] = useState<string>('all');
   const [showOrphans, setShowOrphans] = useState(true);
+  const [colorByEisenhower, setColorByEisenhower] = useState(true);
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
 
   const { nodes, links, availableTags, nodeCount, edgeCount } = useGraphData({
@@ -38,8 +39,9 @@ export function GraphView() {
       links: linksRef.current,
       hoveredNode,
       transform: transformRef.current,
+      colorByEisenhower,
     });
-  }, [hoveredNode]);
+  }, [hoveredNode, colorByEisenhower]);
 
   // Sync simulation when nodes/links change
   useEffect(() => {
@@ -177,6 +179,8 @@ export function GraphView() {
         availableTags={availableTags}
         showOrphans={showOrphans}
         onToggleOrphans={() => setShowOrphans((prev) => !prev)}
+        colorByEisenhower={colorByEisenhower}
+        onToggleColorByEisenhower={() => setColorByEisenhower((prev) => !prev)}
         nodeCount={nodeCount}
         edgeCount={edgeCount}
         onZoomIn={() => zoom(1.2)}

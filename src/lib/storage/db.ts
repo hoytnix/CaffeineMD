@@ -1,5 +1,65 @@
 import Dexie, { Table } from 'dexie';
 
+export type EisenhowerQuadrant =
+  | 'urgent_important' // Urgent & Immediate (Do First)
+  | 'not_urgent_important' // Urgent & Not Immediate (Schedule)
+  | 'urgent_not_important' // Not Urgent & Immediate (Delegate / Quick)
+  | 'not_urgent_not_important'; // Not Urgent & Not Immediate (Don't / Backlog)
+
+export interface EisenhowerOption {
+  key: EisenhowerQuadrant;
+  label: string;
+  shortLabel: string;
+  emoji: string;
+  color: string; // hex
+  dotBg: string; // tailwind class
+  badgeClass: string;
+  textColor: string;
+}
+
+export const EISENHOWER_CONFIG: Record<EisenhowerQuadrant, EisenhowerOption> = {
+  urgent_important: {
+    key: 'urgent_important',
+    label: 'Urgent & Immediate',
+    shortLabel: 'Do First',
+    emoji: '🔴',
+    color: '#ef4444',
+    dotBg: 'bg-red-500',
+    badgeClass: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',
+    textColor: 'text-red-500',
+  },
+  not_urgent_important: {
+    key: 'not_urgent_important',
+    label: 'Urgent & Not Immediate',
+    shortLabel: 'Schedule',
+    emoji: '🟡',
+    color: '#eab308',
+    dotBg: 'bg-yellow-500',
+    badgeClass: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20',
+    textColor: 'text-yellow-500',
+  },
+  urgent_not_important: {
+    key: 'urgent_not_important',
+    label: 'Not Urgent & Immediate',
+    shortLabel: 'Delegate',
+    emoji: '🔵',
+    color: '#3b82f6',
+    dotBg: 'bg-blue-500',
+    badgeClass: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+    textColor: 'text-blue-500',
+  },
+  not_urgent_not_important: {
+    key: 'not_urgent_not_important',
+    label: 'Not Urgent & Not Immediate',
+    shortLabel: 'Backlog',
+    emoji: '⚪',
+    color: '#9ca3af',
+    dotBg: 'bg-neutral-400',
+    badgeClass: 'bg-neutral-500/10 text-neutral-600 dark:text-neutral-400 border-neutral-500/20',
+    textColor: 'text-neutral-400',
+  },
+};
+
 export interface VaultFile {
   id: string; // usually normalized path e.g. "projects/launch.md"
   path: string; // normalized path
@@ -9,6 +69,7 @@ export interface VaultFile {
   content: string; // raw markdown or text
   frontmatter: Record<string, any>; // parsed YAML frontmatter properties
   tags: string[]; // list of tags e.g. ["project", "release"]
+  eisenhower?: EisenhowerQuadrant;
   isBinary: boolean;
   blob?: Blob; // stored binary blob for media
   mimeType?: string;
@@ -94,6 +155,7 @@ title: Welcome to Kite
 tags: [getting-started, guide]
 status: In Progress
 priority: High
+eisenhower: not_urgent_important
 author: Kite Team
 ---
 
@@ -118,9 +180,11 @@ Check out our [[Architecture Decisions]] and see the current [[Product Roadmap 2
         tags: ['getting-started', 'guide'],
         status: 'In Progress',
         priority: 'High',
+        eisenhower: 'not_urgent_important',
         author: 'Kite Team',
       },
       tags: ['getting-started', 'guide'],
+      eisenhower: 'not_urgent_important',
       isBinary: false,
       size: 1024,
       createdAt: Date.now() - 86400000 * 2,
@@ -137,6 +201,7 @@ title: Product Roadmap 2026
 tags: [project, roadmap, q1]
 status: Planning
 priority: Critical
+eisenhower: urgent_important
 targetDate: 2026-11-15
 assignee: Sarah Connor
 ---
@@ -159,10 +224,12 @@ Quarterly objectives and milestones for the Antigravity Knowledge Base runtime.
         tags: ['project', 'roadmap', 'q1'],
         status: 'Planning',
         priority: 'Critical',
+        eisenhower: 'urgent_important',
         targetDate: '2026-11-15',
         assignee: 'Sarah Connor',
       },
       tags: ['project', 'roadmap', 'q1'],
+      eisenhower: 'urgent_important',
       isBinary: false,
       size: 890,
       createdAt: Date.now() - 86400000,
@@ -179,6 +246,7 @@ title: Architecture Decisions
 tags: [engineering, architecture]
 status: Completed
 priority: Medium
+eisenhower: urgent_not_important
 lead: Alex Vance
 ---
 
@@ -199,9 +267,11 @@ Referenced by [[Welcome to Kite]] and [[Product Roadmap 2026]].`,
         tags: ['engineering', 'architecture'],
         status: 'Completed',
         priority: 'Medium',
+        eisenhower: 'urgent_not_important',
         lead: 'Alex Vance',
       },
       tags: ['engineering', 'architecture'],
+      eisenhower: 'urgent_not_important',
       isBinary: false,
       size: 1100,
       createdAt: Date.now() - 43200000,
@@ -218,6 +288,7 @@ title: Local-First Computing
 tags: [research, architecture]
 status: In Progress
 priority: Medium
+eisenhower: not_urgent_not_important
 rating: 5
 ---
 
@@ -236,9 +307,11 @@ Related work discussed in [[Architecture Decisions]].`,
         tags: ['research', 'architecture'],
         status: 'In Progress',
         priority: 'Medium',
+        eisenhower: 'not_urgent_not_important',
         rating: 5,
       },
       tags: ['research', 'architecture'],
+      eisenhower: 'not_urgent_not_important',
       isBinary: false,
       size: 720,
       createdAt: Date.now() - 21600000,
@@ -283,3 +356,38 @@ Related work discussed in [[Architecture Decisions]].`,
     }
   });
 }
+
+/**
+ * Permanently delete a note and prune associated backlinks and tag counts
+ */
+export async function deleteVaultFile(path: string): Promise<void> {
+  const file = await db.files.get(path);
+  if (file && file.tags && file.tags.length > 0) {
+    for (const tag of file.tags) {
+      const existing = await db.tags.get(tag);
+      if (existing) {
+        const newCount = existing.count - 1;
+        if (newCount <= 0) {
+          await db.tags.delete(tag);
+        } else {
+          await db.tags.put({ name: tag, count: newCount });
+        }
+      }
+    }
+  }
+
+  // Delete note from files table
+  await db.files.delete(path);
+  // Also clean up by id if id is different
+  if (file?.id && file.id !== path) {
+    await db.files.delete(file.id);
+  }
+
+  // Prune outgoing and incoming backlinks
+  await db.backlinks.where('sourcePath').equals(path).delete();
+  const title = file?.title || path.replace(/\.[^/.]+$/, '').split('/').pop() || '';
+  if (title) {
+    await db.backlinks.where('targetTitle').equalsIgnoreCase(title).delete();
+  }
+}
+

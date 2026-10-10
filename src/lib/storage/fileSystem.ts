@@ -146,4 +146,32 @@ export class NativeFileSystemAdapter {
       return false;
     }
   }
+
+  /**
+   * Delete a file from the mounted disk folder
+   */
+  public static async removeFileFromDisk(relativePath: string): Promise<boolean> {
+    if (!this.rootHandle) return false;
+
+    try {
+      const parts = relativePath.split('/');
+      let currentDir = this.rootHandle;
+
+      // Navigate down to the target directory
+      for (let i = 0; i < parts.length - 1; i++) {
+        const subDirName = parts[i];
+        if (!subDirName) continue;
+        currentDir = await currentDir.getDirectoryHandle(subDirName);
+      }
+
+      const fileName = parts[parts.length - 1];
+      // @ts-ignore
+      await currentDir.removeEntry(fileName);
+      this.fileHandlesMap.delete(relativePath);
+      return true;
+    } catch (err) {
+      console.warn(`Failed to remove disk file ${relativePath}:`, err);
+      return false;
+    }
+  }
 }

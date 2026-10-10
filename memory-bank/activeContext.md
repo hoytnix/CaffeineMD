@@ -1,30 +1,36 @@
 # Active Context: Kite Workspace
 
 ## Current Focus
-Implemented the Universal Emoji Drawer (`Shift + Space`), cleaned top navbar to 5 icon-only peer view tabs, created dedicated iOS-style settings page, integrated 14 theme presets with Gemini 3.5 Flash-Lite AI Theme Generator, established 1-to-1 Live Disk Folder workspace architecture with popover switcher, and built Google SSO with bidirectional Google Drive sync.
+Implemented Code Block Syntax Highlighting with Automatic Language Detection via lowlight and highlight.js, fixed Note Deletion across IndexedDB and live disk handles with affirmative toast confirmations, corrected Task/Checkbox vertical alignment, built the dedicated Tag Cloud View with 400-character clean plaintext excerpts and interactive hashtag links, and added the Eisenhower Matrix priority system across Note Properties, Table, Kanban, List, File Tree, and Graph views.
 
 ## Key Changes
-1. **Universal Emoji Engine & Drawer**:
-   - Color emoji font fallback rules in `app/globals.css`.
-   - Global keyboard hook `useEmojiDrawer` (`Shift + Spacebar`) with scroll prevention.
-   - Comprehensive multi-category emoji dataset in `src/lib/emoji/emojiData.ts`.
-   - Accessible keyboard-navigable drawer in `src/components/emoji/EmojiDrawer.tsx` inserting directly into active Tiptap caret, focused inputs, or clipboard with toast.
-2. **Navbar Cleanup & 5 Icon-Only Peer Views**:
-   - Removed `Import Vault` button and `IndexedDB` status badge from top navbar.
-   - Restructured views into 5 top-level peer view tabs in `workspaceStore`: Editor (`FileText`), Graph (`Network`), Table (`Table`), Board (`Kanban`), and List (`List`).
-   - Icon-only triggers with accessible titles and zero visible text labels.
-3. **Dedicated iOS-Style Settings Page**:
-   - Sidebar footer features `Settings` gear button navigating to standalone `/settings` page (`app/settings/page.tsx`) with iOS back button returning to `/`.
-   - Inset list cards, discrete rows, toggle controls, and clean typography.
-4. **Theme Engine & AI Theme Generator**:
-   - `src/lib/themes/themeDefinitions.ts` with 14 presets (Dark, Light, Solarized Light, Solarized Dark, Monokai, Forest, Seahorse, Deep Sea, Microsoft, Hacker, Spring, Summer, Autumn, Winter) plus Custom.
-   - Dynamic CSS variable application (`--background`, `--foreground`, `--card`, `--border`, `--accent`, `--primary`, `--font-family`, `--bg-image`).
-   - 2-4 column responsive theme selector grid in Settings with Custom pinned as final card.
-   - Next.js API route `app/api/theme/generate/route.ts` powered by Gemini 3.5 Flash-Lite with structured JSON schema.
-5. **Workspaces & 1:1 Kite SVG Logo**:
-   - Replaced plain text wordmark with crisp geometric 1:1 SVG Kite logo mark (`src/components/workspace/WorkspacePopover.tsx`).
-   - Popover for active workspace indicator, connected disk folders list, mount disk folder action, and disconnect action.
-   - Live disk directory handle persistence in IndexedDB (`db.workspaces`).
-6. **Google SSO & Google Drive Cloud Sync**:
-   - Client-side Google SSO with scope `https://www.googleapis.com/auth/drive.file`.
-   - `src/lib/sync/googleDriveSync.ts` managing 1 root folder per workspace (`Kite-[workspace-name]`) with bidirectional sync and timestamp/hash detection.
+1. **Code Block Syntax Highlighting & Auto Language Detection**:
+   - Installed `@tiptap/extension-code-block-lowlight`, `lowlight`, and `highlight.js`.
+   - Configured `CodeBlockLowlight` in `TiptapEditor.tsx` with common programming languages (TypeScript, JavaScript, Python, Rust, Go, Bash, JSON, YAML, HTML, CSS, SQL, Markdown).
+   - Smart language detection in `markdownToHtml.ts` and `TiptapEditor.tsx` via `lowlight.highlightAuto()` on mount/changes when code blocks lack explicit language attributes.
+   - Theme-aware syntax CSS variables (`--syntax-keyword`, `--syntax-string`, `--syntax-function`, `--syntax-comment`, `--syntax-variable`, `--syntax-number`, `--syntax-operator`, `--syntax-bg`) mapped to hljs classes in `app/globals.css`.
+   - Updated all 14 theme definitions + Custom in `src/lib/themes/themeDefinitions.ts` with tailored palette syntax colors.
+2. **Note Deletion & Trash Can Fix**:
+   - Implemented `deleteNote(path)` in `src/stores/workspaceStore.ts` and `deleteVaultFile(path)` in `src/lib/storage/db.ts`.
+   - Prunes backlinks, removes entries from IndexedDB, and deletes physical files from mounted disk directories via `NativeFileSystemAdapter.removeFileFromDisk(path)`.
+   - Safely closes active tabs, switches editor focus to the next open tab (or empty state), and presents an affirmative toast notification (`"Note deleted"`).
+   - Added trash can delete buttons to `EditorHeader.tsx` and hover actions in `FileTreeItem.tsx`.
+3. **Task / Checkbox Vertical Alignment**:
+   - Corrected task list item styling in `app/globals.css` with `align-items: flex-start`, flex gap `0.625rem`, label `padding-top: 0.18rem`, and `accent-color: var(--accent)` for perfect vertical alignment with line-height cap-height of body text.
+4. **Tag Cloud View & Interactive Tag Linking**:
+   - Built `src/components/tags/TagCloudView.tsx` with top tag navigation pill cloud showing count badges (e.g. `#project (8)`).
+   - Searchable and filterable grid of note cards displaying title, path, date, Eisenhower urgency dot/indicator, full list of secondary tags, and first 400 characters of clean plaintext body preview (stripping YAML, markdown headers, links, and formatting).
+   - Interactive tag badges in `EditorHeader.tsx` and Note Properties drawer that immediately switch views to the Tag Cloud view with that tag filtered.
+5. **Eisenhower Matrix Priority & Cross-View Indicators**:
+   - Added `EisenhowerQuadrant` type and configuration (`EISENHOWER_CONFIG`) in `src/lib/storage/db.ts`, `src/lib/markdown/frontmatter.ts`, and `src/hooks/useDatabaseSchema.ts`.
+   - Dedicated dropdown selector in Note Properties drawer (`BacklinksPanel.tsx`):
+     - 🔴 Urgent & Immediate (Do First)
+     - 🟡 Urgent & Not Immediate (Schedule)
+     - 🔵 Not Urgent & Immediate (Delegate / Quick)
+     - ⚪ Not Urgent & Not Immediate (Don't / Backlog)
+   - Visual indicators across all views:
+     - Table View: Eisenhower column with colored pill dots and quick selector.
+     - Kanban View: Quadrant color badge on card headers.
+     - List View: Prefix colored quadrant dot on each row.
+     - Sidebar File Tree: Subtle quadrant dot next to note icons.
+     - Graph View: Colored note rings/halos with toggle in Graph Controls.

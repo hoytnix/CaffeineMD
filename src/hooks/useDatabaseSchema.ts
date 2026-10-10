@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
-import { VaultFile } from '@/src/lib/storage/db';
+import { VaultFile, EisenhowerQuadrant, EISENHOWER_CONFIG } from '@/src/lib/storage/db';
+
+export type { EisenhowerQuadrant };
 
 export function useDatabaseSchema(
   files: VaultFile[],
@@ -20,7 +22,7 @@ export function useDatabaseSchema(
       f.tags?.forEach((t) => tagSet.add(t));
       if (f.frontmatter) {
         Object.keys(f.frontmatter).forEach((k) => {
-          if (!['title', 'tags'].includes(k)) {
+          if (!['title', 'tags', 'eisenhower'].includes(k)) {
             propKeys.add(k);
           }
         });

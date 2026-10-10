@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { TreeNode } from '@/src/hooks/useTreeStructure';
+import { EISENHOWER_CONFIG, EisenhowerQuadrant } from '@/src/lib/storage/db';
 import {
   Folder,
   FolderOpen,
@@ -80,6 +81,9 @@ export const FileTreeItem = React.memo(function FileTreeItem({
     node.file?.mimeType?.startsWith('image/') ||
     ['png', 'jpg', 'jpeg', 'webp', 'svg'].includes(node.file?.extension || '');
 
+  const rawQuadrant = (node.file?.eisenhower || node.file?.frontmatter?.eisenhower) as EisenhowerQuadrant | undefined;
+  const eisenhowerOpt = rawQuadrant && EISENHOWER_CONFIG[rawQuadrant] ? EISENHOWER_CONFIG[rawQuadrant] : null;
+
   return (
     <div
       onClick={() => onOpenFile(node.path, node.file?.title)}
@@ -91,6 +95,12 @@ export const FileTreeItem = React.memo(function FileTreeItem({
       }`}
     >
       <div className="flex items-center gap-2 truncate">
+        {eisenhowerOpt && (
+          <span
+            className={`w-1.5 h-1.5 rounded-full shrink-0 ${eisenhowerOpt.dotBg}`}
+            title={`Eisenhower: ${eisenhowerOpt.label}`}
+          />
+        )}
         {isImage ? (
           <ImageIcon className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
         ) : node.file?.isBinary ? (

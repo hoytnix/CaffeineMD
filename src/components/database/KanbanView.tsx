@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { VaultFile, db } from '@/src/lib/storage/db';
+import { VaultFile, db, EisenhowerQuadrant, EISENHOWER_CONFIG } from '@/src/lib/storage/db';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { Plus, MoreHorizontal, FileText } from 'lucide-react';
 
@@ -114,19 +114,33 @@ ${groupKey}: ${col}
 
             {/* Cards List */}
             <div className="space-y-2 flex-1 min-h-[100px]">
-              {columnFiles.map((file) => (
-                <div
-                  key={file.path}
-                  className="p-3 rounded-lg bg-white dark:bg-neutral-800/90 border border-neutral-200 dark:border-neutral-700/80 shadow-xs hover:border-neutral-300 dark:hover:border-neutral-600 transition-all group"
-                >
-                  <div className="flex items-start justify-between">
-                    <button
-                      onClick={() => openFileTab(file.path, file.title)}
-                      className="text-left font-medium text-xs text-neutral-900 dark:text-neutral-100 hover:text-indigo-600 dark:hover:text-indigo-400 truncate flex-1"
-                    >
-                      {file.title || file.name}
-                    </button>
-                  </div>
+              {columnFiles.map((file) => {
+                const rawQuadrant = (file.eisenhower || file.frontmatter?.eisenhower) as EisenhowerQuadrant | undefined;
+                const opt = rawQuadrant && EISENHOWER_CONFIG[rawQuadrant] ? EISENHOWER_CONFIG[rawQuadrant] : null;
+
+                return (
+                  <div
+                    key={file.path}
+                    className="p-3 rounded-lg bg-white dark:bg-neutral-800/90 border border-neutral-200 dark:border-neutral-700/80 shadow-xs hover:border-neutral-300 dark:hover:border-neutral-600 transition-all group"
+                  >
+                    <div className="flex items-start justify-between gap-1.5">
+                      <button
+                        onClick={() => openFileTab(file.path, file.title)}
+                        className="text-left font-medium text-xs text-neutral-900 dark:text-neutral-100 hover:text-indigo-600 dark:hover:text-indigo-400 truncate flex-1"
+                      >
+                        {file.title || file.name}
+                      </button>
+
+                      {opt && (
+                        <span
+                          className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full border shrink-0 flex items-center gap-1 ${opt.badgeClass}`}
+                          title={`Eisenhower: ${opt.label}`}
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full ${opt.dotBg}`} />
+                          <span>{opt.shortLabel}</span>
+                        </span>
+                      )}
+                    </div>
 
                   {/* Properties preview */}
                   {file.frontmatter?.priority && (
@@ -159,7 +173,8 @@ ${groupKey}: ${col}
                     </select>
                   </div>
                 </div>
-              ))}
+              );
+            })}
 
               {/* Add Card Form */}
               {activeColumnForNew === col ? (

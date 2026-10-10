@@ -6,11 +6,16 @@ import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import { Table } from '@tiptap/extension-table';
 import { TableRow } from '@tiptap/extension-table-row';
 import { TableCell } from '@tiptap/extension-table-cell';
 import { TableHeader } from '@tiptap/extension-table-header';
 import Image from '@tiptap/extension-image';
+import { createLowlight, all } from 'lowlight';
+import { detectCodeLanguage } from '@/src/lib/markdown/markdownToHtml';
+
+const lowlight = createLowlight(all);
 
 import { db, VaultFile } from '@/src/lib/storage/db';
 import {
@@ -92,12 +97,51 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
     suggestions: [],
   });
 
+  const autoDetectUnlabeledCodeBlocks = useCallback((currentEditor: any) => {
+    if (!currentEditor || currentEditor.isDestroyed || !currentEditor.state) return;
+    try {
+      const { doc, tr } = currentEditor.state;
+      let modified = false;
+
+      doc.descendants((node: any, pos: number) => {
+        if (node.type.name === 'codeBlock') {
+          const currentLang = node.attrs.language;
+          // Only auto-detect if code block is unlabeled or default 'plaintext'
+          if (!currentLang || currentLang === 'plaintext') {
+            const text = node.textContent;
+            if (text && text.trim().length >= 4) {
+              const detected = detectCodeLanguage(text);
+              if (detected && detected !== 'plaintext' && detected !== currentLang) {
+                tr.setNodeMarkup(pos, undefined, {
+                  ...node.attrs,
+                  language: detected,
+                });
+                modified = true;
+              }
+            }
+          }
+        }
+      });
+
+      if (modified) {
+        currentEditor.view.dispatch(tr);
+      }
+    } catch (err) {
+      console.warn('Language auto-detection error:', err);
+    }
+  }, []);
+
   const editor = useEditor(
     {
       immediatelyRender: false,
       extensions: [
         StarterKit.configure({
+          codeBlock: false,
           heading: { levels: [1, 2, 3] },
+        }),
+        CodeBlockLowlight.configure({
+          lowlight,
+          defaultLanguage: 'plaintext',
         }),
         Placeholder.configure({
           placeholder: 'Type "/" for commands, "[[" to link notes...',
@@ -294,6 +338,9 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
       onUpdate: ({ editor: currentEditor }) => {
         if (!file || !currentEditor || currentEditor.isDestroyed || !currentEditor.schema) return;
 
+        // Smart Language Detection on unlabeled code blocks
+        autoDetectUnlabeledCodeBlocks(currentEditor);
+
         if (saveTimeoutRef.current) {
           clearTimeout(saveTimeoutRef.current);
         }
@@ -310,7 +357,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
         }, 1200);
       },
     },
-    [filePath]
+    [filePath, autoDetectUnlabeledCodeBlocks]
   );
 
   // Sync Note Content to Tiptap when file loads or switches
@@ -322,12 +369,13 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
         const currentHtml = editor.getHTML();
         if (currentHtml === '<p></p>' || Math.abs(currentHtml.length - editorHtml.length) > 5) {
           editor.commands.setContent(editorHtml);
+          autoDetectUnlabeledCodeBlocks(editor);
         }
       } catch (err) {
         console.warn('Failed to parse note markdown for editor:', err);
       }
     }
-  }, [file, editor]);
+  }, [file, editor, autoDetectUnlabeledCodeBlocks]);
 
   // Register editor instance for emoji drawer insertion
   useEffect(() => {
@@ -371,6 +419,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
         const html = markdownToEditorHtml(parsed.body);
         if (editor && !editor.isDestroyed && editor.schema) {
           editor.commands.setContent(html);
+          autoDetectUnlabeledCodeBlocks(editor);
         }
       } catch (err) {
         console.warn('Error syncing to rich text:', err);

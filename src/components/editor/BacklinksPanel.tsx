@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { db, VaultFile, BacklinkRecord } from '@/src/lib/storage/db';
+import { db, VaultFile, BacklinkRecord, EisenhowerQuadrant, EISENHOWER_CONFIG } from '@/src/lib/storage/db';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { Link2, Unlink, ChevronDown, ChevronRight, Plus, Hash, Tag, FileText } from 'lucide-react';
 
@@ -18,7 +18,7 @@ export function BacklinksPanel({ currentFile, onUpdateFile }: BacklinksPanelProp
   const [newPropValue, setNewPropValue] = useState('');
   const [isAddingProp, setIsAddingProp] = useState(false);
 
-  const { openFileTab } = useWorkspaceStore();
+  const { openFileTab, setActiveView, setSelectedTagFilter } = useWorkspaceStore();
 
   useEffect(() => {
     let active = true;
@@ -127,27 +127,81 @@ export function BacklinksPanel({ currentFile, onUpdateFile }: BacklinksPanelProp
 
         {/* Existing Properties */}
         <div className="space-y-2 text-xs">
-          {Object.entries(currentFile.frontmatter || {}).map(([key, value]) => {
-            const displayValue = Array.isArray(value) ? value.join(', ') : String(value ?? '');
-            return (
-              <div key={key} className="flex items-center justify-between group py-0.5">
-                <span className="w-28 text-neutral-500 font-medium truncate">{key}</span>
-                <input
-                  type="text"
-                  value={displayValue}
-                  onChange={(e) => handlePropertyChange(key, e.target.value)}
-                  className="flex-1 px-2 py-1 text-xs rounded bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700/80 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-indigo-500"
-                />
-                <button
-                  onClick={() => handleRemoveProperty(key)}
-                  className="opacity-0 group-hover:opacity-100 text-neutral-400 hover:text-rose-500 p-1 ml-1 transition-opacity"
-                  title="Remove property"
-                >
-                  &times;
-                </button>
-              </div>
-            );
-          })}
+          {/* Dedicated Eisenhower Quadrant Selector */}
+          <div className="flex items-center justify-between group py-1 border-b border-neutral-200/50 dark:border-neutral-800/50 pb-2 mb-2">
+            <span className="w-28 text-neutral-500 font-medium truncate flex items-center gap-1.5">
+              <span>Eisenhower</span>
+            </span>
+            <select
+              value={currentFile.eisenhower || currentFile.frontmatter?.eisenhower || ''}
+              onChange={(e) => {
+                const val = e.target.value as EisenhowerQuadrant | '';
+                const updatedFrontmatter = { ...currentFile.frontmatter };
+                if (val) {
+                  updatedFrontmatter.eisenhower = val;
+                } else {
+                  delete updatedFrontmatter.eisenhower;
+                }
+                onUpdateFile({
+                  ...currentFile,
+                  eisenhower: val ? (val as EisenhowerQuadrant) : undefined,
+                  frontmatter: updatedFrontmatter,
+                  updatedAt: Date.now(),
+                });
+              }}
+              className="flex-1 px-2 py-1 text-xs rounded bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700/80 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-indigo-500 cursor-pointer"
+            >
+              <option value="">None (Unassigned)</option>
+              <option value="urgent_important">🔴 Urgent & Immediate (Do First)</option>
+              <option value="not_urgent_important">🟡 Urgent & Not Immediate (Schedule)</option>
+              <option value="urgent_not_important">🔵 Not Urgent & Immediate (Delegate / Quick)</option>
+              <option value="not_urgent_not_important">⚪ Not Urgent & Not Immediate (Don't / Backlog)</option>
+            </select>
+          </div>
+
+          {Object.entries(currentFile.frontmatter || {})
+            .filter(([key]) => key !== 'eisenhower')
+            .map(([key, value]) => {
+              const displayValue = Array.isArray(value) ? value.join(', ') : String(value ?? '');
+              return (
+                <div key={key} className="flex flex-col group py-0.5">
+                  <div className="flex items-center justify-between">
+                    <span className="w-28 text-neutral-500 font-medium truncate">{key}</span>
+                    <input
+                      type="text"
+                      value={displayValue}
+                      onChange={(e) => handlePropertyChange(key, e.target.value)}
+                      className="flex-1 px-2 py-1 text-xs rounded bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700/80 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-indigo-500"
+                    />
+                    <button
+                      onClick={() => handleRemoveProperty(key)}
+                      className="opacity-0 group-hover:opacity-100 text-neutral-400 hover:text-rose-500 p-1 ml-1 transition-opacity cursor-pointer"
+                      title="Remove property"
+                    >
+                      &times;
+                    </button>
+                  </div>
+
+                  {key === 'tags' && Array.isArray(value) && value.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1.5 pl-28">
+                      {value.map((t: string) => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => {
+                            setSelectedTagFilter(t);
+                            setActiveView('tags');
+                          }}
+                          className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-neutral-200/60 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors cursor-pointer"
+                        >
+                          #{t}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
         </div>
 
         {isAddingProp && (

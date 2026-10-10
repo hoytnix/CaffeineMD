@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { VaultFile, db } from '@/src/lib/storage/db';
+import { VaultFile, db, EisenhowerQuadrant, EISENHOWER_CONFIG } from '@/src/lib/storage/db';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { FileText, Plus, ChevronDown, Check } from 'lucide-react';
 
@@ -64,6 +64,9 @@ export function TableView({ files, columns, onRefresh }: TableViewProps) {
             <th className="py-2.5 px-3 w-40 border-r border-neutral-200 dark:border-neutral-800">
               Tags
             </th>
+            <th className="py-2.5 px-3 w-36 border-r border-neutral-200 dark:border-neutral-800">
+              Eisenhower
+            </th>
             {columns.map((col) => (
               <th
                 key={col}
@@ -120,6 +123,48 @@ export function TableView({ files, columns, onRefresh }: TableViewProps) {
                 ) : (
                   <span className="text-neutral-400 opacity-60">Empty</span>
                 )}
+              </td>
+
+              {/* Eisenhower Column */}
+              <td className="py-2 px-3 border-r border-neutral-200/80 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300">
+                {(() => {
+                  const rawQuadrant = (file.eisenhower || file.frontmatter?.eisenhower) as EisenhowerQuadrant | undefined;
+                  const opt = rawQuadrant && EISENHOWER_CONFIG[rawQuadrant] ? EISENHOWER_CONFIG[rawQuadrant] : null;
+                  return (
+                    <div className="flex items-center gap-1.5">
+                      <select
+                        value={rawQuadrant || ''}
+                        onChange={async (e) => {
+                          const val = e.target.value as EisenhowerQuadrant | '';
+                          const updated = {
+                            ...file,
+                            eisenhower: val ? val : undefined,
+                            frontmatter: {
+                              ...file.frontmatter,
+                              ...(val ? { eisenhower: val } : {}),
+                            },
+                            updatedAt: Date.now(),
+                          };
+                          if (!val) {
+                            delete updated.frontmatter.eisenhower;
+                          }
+                          await db.files.put(updated);
+                          onRefresh();
+                        }}
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium border cursor-pointer outline-none ${
+                          opt ? opt.badgeClass : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 border-neutral-200 dark:border-neutral-700'
+                        }`}
+                        title={opt ? opt.label : 'Assign Eisenhower priority'}
+                      >
+                        <option value="">⚪ Unassigned</option>
+                        <option value="urgent_important">🔴 Do First</option>
+                        <option value="not_urgent_important">🟡 Schedule</option>
+                        <option value="urgent_not_important">🔵 Delegate</option>
+                        <option value="not_urgent_not_important">⚪ Backlog</option>
+                      </select>
+                    </div>
+                  );
+                })()}
               </td>
 
               {/* Custom Columns */}
