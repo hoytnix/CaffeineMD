@@ -1,17 +1,21 @@
 # Active Context: Kite Workspace
 
 ## Current Focus
-Resolved Netlify secret scanning failure where Netlify's Smart Detection flagged client Firebase configuration (`AIza***` in `firebase-applet-config.json`). Configured `[build.environment]` in `netlify.toml` with `SECRETS_SCAN_SMART_DETECTION_ENABLED = "false"` and `SECRETS_SCAN_SMART_DETECTION_OMIT_VALUES`.
+Refactored Google Drive Cloud Synchronization engine in `/src/lib/sync/googleDriveSync.ts` to overcome throughput throttling (0.2 KB/s) by upgrading chunk mechanics to 5 MB blocks and separating large-file chunked resumable sessions from single-roundtrip small-file multipart uploads.
 
 ## Key Changes
-1. **Netlify Secret Scanning False Positive Resolution (`netlify.toml`)**:
-   - Added `[build.environment]` configuration:
-     - `SECRETS_SCAN_SMART_DETECTION_ENABLED = "false"`
-     - `SECRETS_SCAN_SMART_DETECTION_OMIT_VALUES = "AIzaSyDh4-00VVVACD9Mbfnpvqr9xFQ-TuraJNw"`
-   - Preserves client-side Firebase Auth / Drive synchronization while allowing Netlify CI build to succeed without non-zero exit code 2.
-2. **Next.js & Lockfile Integrity**:
-   - `pnpm-lock.yaml` synced with frozen-lockfile verification for `@tiptap/extension-underline`.
-   - `netlify.toml` preserves `@netlify/plugin-nextjs` and SPA fallback redirects.
-3. **Editor & Toolbar Integrity**:
-   - Retained 3x enlarged bottom formatting toolbar strictly constrained to `w-[calc(100%-3rem)] max-w-2xl` with invisible internal overflow and drag-to-pan scrolling.
-   - Retained theme-wide styling across canvas, headers, blockquotes, code, tables, and settings.
+1. **Strict Chunk Sizing Constants (`/src/lib/sync/googleDriveSync.ts`)**:
+   - `CHUNK_SIZE = 5 * 1024 * 1024` (5,242,880 bytes, exactly 20 * 256 KB blocks adhering to Google Drive Resumable Upload specification).
+   - `SMALL_FILE_THRESHOLD = 5 * 1024 * 1024` (5 MB threshold).
+2. **Multipart Single-Roundtrip Upload for Files < 5 MB (`uploadSmallFile`)**:
+   - Uses `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart` (POST) or `.../files/{id}?uploadType=multipart` (PATCH).
+   - Formats a single multipart/related MIME body containing metadata JSON (`name`, `mimeType`, `parents`) and the file binary/text content.
+   - Eliminates resumable session initiation overhead for markdown notes, settings, and small assets.
+3. **5 MB Resumable Chunking for Files >= 5 MB (`uploadLargeFileResumable`)**:
+   - Initiates resumable session via `uploadType=resumable` extracting session URI from `Location` response header.
+   - Slices and streams payloads in strict 5,242,880-byte increments with `Content-Range: bytes ${start}-${end - 1}/${totalBytes}`.
+   - Handles `308 Resume Incomplete` for advancing byte offsets, `200`/`201` for completion, and queries `bytes */${totalBytes}` for interruption recovery.
+   - Built-in exponential backoff retry for HTTP 429 rate limits, 5xx server errors, and network disconnects.
+4. **File Size Dispatcher Routing (`syncFileToDrive`)**:
+   - Inspects `fileBlob.size < SMALL_FILE_THRESHOLD` to route files to `uploadSmallFile` or `uploadLargeFileResumable`.
+   - Wired bidirectional sync (`syncNow`, `uploadFile`, `updateFile`) to handle both text markdown notes and large media/binary assets.

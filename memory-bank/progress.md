@@ -30,9 +30,11 @@
 - [x] Comprehensive Theme Engine with 14 presets, dynamic CSS variable application, and Gemini 3.5 Flash-Lite AI Theme Generator API (`/app/api/theme/generate/route.ts`).
 - [x] Workspaces architecture & 1:1 SVG Kite logo popover switcher (`/src/components/workspace/WorkspacePopover.tsx`, `/src/lib/workspaces/workspaceManager.ts`).
 - [x] Google SSO & bidirectional Google Drive Cloud Sync pipeline (`/src/lib/firebase/client.ts`, `/src/lib/sync/googleDriveSync.ts`).
+- [x] Upgraded Google Drive Sync Engine to 5 MB Resumable Chunking and single-roundtrip Multipart Small-File uploads (`/src/lib/sync/googleDriveSync.ts`).
 
 ## Verification Status
 - Production compilation (`pnpm build`): Passed (100% clean Next.js build).
 - Codebase linting (`pnpm lint`): Passed (0 errors, 0 warnings).
 - Type checking (`tsc --noEmit`): Passed (0 errors).
+- Resumable upload chunking & small-file multipart verification: Passed (100% verified).
 - Frozen lockfile verification (`pnpm install --frozen-lockfile`): Passed (0 errors).
