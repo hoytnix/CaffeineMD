@@ -1,42 +1,48 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { db } from '@/src/lib/storage/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { scanDroppedItems, runIngestionPipeline } from '@/src/lib/storage/importPipeline';
-import { useTreeStructure } from '@/src/hooks/useTreeStructure';
+import { useTreeStructure, TreeNode } from '@/src/hooks/useTreeStructure';
 import { FileTreeItem } from './FileTreeItem';
 import { NewNoteModal } from './NewNoteModal';
-import { Search, FolderUp, Settings, Trash2, Undo2, ChevronDown, ChevronRight } from 'lucide-react';
+import { FileActionMenu } from './FileActionMenu';
+import { RenameModal, MoveModal } from './FileModals';
+import { TrashSection } from './TrashSection';
+import { useFileTreeActions } from './useFileTreeActions';
+import { Search, FolderUp, Settings } from 'lucide-react';
 import Link from 'next/link';
 
 export function FileTree() {
   const rawFiles = useLiveQuery(() => db.files.toArray());
   const files = useMemo(() => rawFiles ?? [], [rawFiles]);
   const [openFolders, setOpenFolders] = useState<Set<string>>(new Set(['Projects', 'Engineering']));
-  const [isTrashOpen, setIsTrashOpen] = useState(false);
   const [isDragOverTree, setIsDragOverTree] = useState(false);
   const [newNoteModal, setNewNoteModal] = useState(false);
+
+  // File action drawer/menu state
+  const [activeMenuNode, setActiveMenuNode] = useState<TreeNode | null>(null);
+  const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
+
+  // Rename & Move modal state
+  const [renameTarget, setRenameTarget] = useState<TreeNode | null>(null);
+  const [moveTarget, setMoveTarget] = useState<TreeNode | null>(null);
 
   const {
     activeFilePath,
     activeWorkspaceId,
     openFileTab,
-    vaultName,
+    renameFileTab,
     setImportProgress,
-    activeView,
-    setActiveView,
-    setImportModalOpen,
     setIsSearchOpen,
+    setImportModalOpen,
     promptDeleteNote,
-    deleteNote,
-    restoreNote,
-    emptyTrashAll,
+    showToast,
     purgeExpiredTrashNotes,
   } = useWorkspaceStore();
 
-  // Run auto-purge of expired trash notes on mount
   React.useEffect(() => {
     purgeExpiredTrashNotes();
   }, [purgeExpiredTrashNotes]);
@@ -63,29 +69,51 @@ export function FileTree() {
 
   const treeData = useTreeStructure(activeFiles, '');
 
-  const toggleFolder = (path: string) => {
+  const folderSuggestions = useMemo(() => {
+    const set = new Set<string>();
+    activeFiles.forEach((f) => {
+      if (f.path.includes('/')) {
+        const parts = f.path.split('/');
+        for (let i = 1; i < parts.length; i++) {
+          set.add(parts.slice(0, i).join('/'));
+        }
+      }
+    });
+    return Array.from(set).sort();
+  }, [activeFiles]);
+
+  const { duplicateNode, renameNode, moveNode } = useFileTreeActions({
+    activeFiles,
+    showToast,
+    openFileTab,
+    renameFileTab,
+  });
+
+  const toggleFolder = useCallback((path: string) => {
     setOpenFolders((prev) => {
       const next = new Set(prev);
       if (next.has(path)) next.delete(path);
       else next.add(path);
       return next;
     });
-  };
+  }, []);
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleOpenActionMenu = useCallback((e: React.MouseEvent, node: TreeNode) => {
     e.preventDefault();
-    setIsDragOverTree(true);
-  };
+    e.stopPropagation();
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    setMenuAnchorRect(rect);
+    setActiveMenuNode(node);
+  }, []);
 
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOverTree(false);
-  };
+  const handleCloseActionMenu = useCallback(() => {
+    setActiveMenuNode(null);
+    setMenuAnchorRect(null);
+  }, []);
 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOverTree(false);
-
     const items = e.dataTransfer.items;
     if (!items || items.length === 0) return;
 
@@ -100,15 +128,10 @@ export function FileTree() {
     }
   };
 
-  const handleDeleteFile = (e: React.MouseEvent, path: string) => {
-    e.stopPropagation();
-    promptDeleteNote(path);
-  };
-
   return (
     <div
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
+      onDragOver={(e) => { e.preventDefault(); setIsDragOverTree(true); }}
+      onDragLeave={(e) => { e.preventDefault(); setIsDragOverTree(false); }}
       onDrop={handleDrop}
       className={`w-64 h-full flex flex-col bg-[var(--card)] border-r border-[var(--border)] text-[var(--foreground)] select-none transition-all ${
         isDragOverTree ? 'ring-2 ring-indigo-500 bg-indigo-50/20' : ''
@@ -150,90 +173,14 @@ export function FileTree() {
               activeFilePath={activeFilePath}
               onToggleFolder={toggleFolder}
               onOpenFile={openFileTab}
-              onDeleteFile={handleDeleteFile}
+              onOpenActionMenu={handleOpenActionMenu}
             />
           ))
         )}
       </div>
 
       {/* Ephemeral Trash Folder Section */}
-      <div className="border-t border-[var(--border)] px-1.5 py-1">
-        <div
-          onClick={() => setIsTrashOpen((prev) => !prev)}
-          className="flex items-center justify-between py-1 px-2 rounded-md hover:bg-neutral-800/30 cursor-pointer text-xs font-medium text-neutral-400 hover:text-[var(--foreground)] transition-colors select-none group"
-        >
-          <div className="flex items-center gap-1.5">
-            {isTrashOpen ? (
-              <ChevronDown className="w-3 h-3 text-neutral-400 shrink-0" />
-            ) : (
-              <ChevronRight className="w-3 h-3 text-neutral-400 shrink-0" />
-            )}
-            <Trash2 className="w-3.5 h-3.5 text-rose-400/80 shrink-0" />
-            <span>Trash</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            {trashFiles.length > 0 && (
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-500/10 text-rose-400 font-mono">
-                {trashFiles.length}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {isTrashOpen && (
-          <div className="pl-4 pr-1 py-1 space-y-1">
-            {trashFiles.length === 0 ? (
-              <div className="text-[11px] text-neutral-500 py-1 pl-2">Trash is empty</div>
-            ) : (
-              <>
-                <div className="flex items-center justify-between px-2 py-0.5 text-[10px] text-neutral-500">
-                  <span>{trashFiles.length} item{trashFiles.length === 1 ? '' : 's'}</span>
-                  <button
-                    onClick={() => {
-                      if (confirm('Permanently delete all notes in Trash?')) {
-                        emptyTrashAll();
-                      }
-                    }}
-                    className="text-rose-400 hover:text-rose-300 transition-colors cursor-pointer"
-                  >
-                    Empty
-                  </button>
-                </div>
-                {trashFiles.map((tf) => (
-                  <div
-                    key={tf.path}
-                    className="flex items-center justify-between py-1 px-2 rounded-md bg-neutral-900/30 text-xs text-neutral-400 group hover:text-[var(--foreground)]"
-                  >
-                    <span className="truncate text-[11px] line-through opacity-75">
-                      {tf.title || tf.name}
-                    </span>
-                    <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => restoreNote(tf.path)}
-                        title="Restore note"
-                        className="min-h-[28px] min-w-[28px] flex items-center justify-center p-1 rounded hover:bg-neutral-800 text-neutral-300 hover:text-emerald-400 transition-colors cursor-pointer"
-                      >
-                        <Undo2 className="w-3 h-3" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (confirm(`Permanently delete "${tf.title || tf.name}"?`)) {
-                            deleteNote(tf.path);
-                          }
-                        }}
-                        title="Delete permanently"
-                        className="min-h-[28px] min-w-[28px] flex items-center justify-center p-1 rounded hover:bg-neutral-800 text-neutral-400 hover:text-rose-400 transition-colors cursor-pointer"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </>
-            )}
-          </div>
-        )}
-      </div>
+      <TrashSection trashFiles={trashFiles} />
 
       {/* Bottom Quick-Import & Settings Action Bar */}
       <div className="p-2 border-t border-[var(--border)] bg-[var(--card)]/50 flex items-center gap-1.5">
@@ -255,6 +202,47 @@ export function FileTree() {
       </div>
 
       <NewNoteModal isOpen={newNoteModal} onClose={() => setNewNoteModal(false)} />
+
+      {/* Action Popover Menu */}
+      <FileActionMenu
+        isOpen={Boolean(activeMenuNode && menuAnchorRect)}
+        onClose={handleCloseActionMenu}
+        anchorRect={menuAnchorRect}
+        filePath={activeMenuNode?.path || ''}
+        fileName={activeMenuNode?.file?.title || activeMenuNode?.name || ''}
+        isFolder={Boolean(activeMenuNode?.isFolder)}
+        onRename={() => setRenameTarget(activeMenuNode)}
+        onDuplicate={() => activeMenuNode && duplicateNode(activeMenuNode)}
+        onMove={() => setMoveTarget(activeMenuNode)}
+        onTrash={() => {
+          if (activeMenuNode) {
+            promptDeleteNote(activeMenuNode.path, activeMenuNode.file?.title || activeMenuNode.name);
+          }
+        }}
+      />
+
+      {/* Rename Dialog Modal */}
+      <RenameModal
+        isOpen={Boolean(renameTarget)}
+        onClose={() => setRenameTarget(null)}
+        currentTitle={renameTarget?.file?.title || renameTarget?.name?.replace(/\.[^/.]+$/, '') || ''}
+        isFolder={Boolean(renameTarget?.isFolder)}
+        onConfirm={(newName) => renameTarget ? renameNode(renameTarget, newName) : Promise.resolve()}
+      />
+
+      {/* Move Dialog Modal */}
+      <MoveModal
+        isOpen={Boolean(moveTarget)}
+        onClose={() => setMoveTarget(null)}
+        fileName={moveTarget?.file?.title || moveTarget?.name || ''}
+        currentFolder={
+          moveTarget?.path.includes('/')
+            ? moveTarget.path.substring(0, moveTarget.path.lastIndexOf('/'))
+            : ''
+        }
+        folderSuggestions={folderSuggestions}
+        onConfirm={(targetFolder) => moveTarget ? moveNode(moveTarget, targetFolder) : Promise.resolve()}
+      />
     </div>
   );
 }

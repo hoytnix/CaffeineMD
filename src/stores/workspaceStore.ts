@@ -83,6 +83,7 @@ export interface WorkspaceState {
   setActiveNotePath: (path: string | null) => void;
   openFileTab: (path: string, title?: string) => void;
   closeFileTab: (path: string) => void;
+  renameFileTab: (oldPath: string, newPath: string, newTitle?: string) => void;
   deleteNote: (path: string) => Promise<boolean>;
   setActiveView: (view: ActiveWorkspaceView) => void;
   setActiveTab: (tab: WorkspaceTabId) => void;
@@ -227,6 +228,25 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       openTabs: newTabs,
       activeFilePath: nextActive,
       activeNotePath: nextActive,
+    });
+  },
+
+  renameFileTab: (oldPath, newPath, newTitle) => {
+    const state = get();
+    const resolvedTitle = newTitle || newPath.split('/').pop()?.replace(/\.[^/.]+$/, '') || newPath;
+    const newTabs = state.openTabs.map((t) =>
+      t.path === oldPath ? { ...t, path: newPath, title: resolvedTitle } : t
+    );
+    const updateActive = state.activeFilePath === oldPath;
+
+    set({
+      openTabs: newTabs,
+      ...(updateActive
+        ? {
+            activeFilePath: newPath,
+            activeNotePath: newPath,
+          }
+        : {}),
     });
   },
 

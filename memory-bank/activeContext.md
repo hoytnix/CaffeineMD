@@ -1,16 +1,30 @@
 # Active Context: Kite Workspace
 
 ## Current Focus
-Standardized list bullet vertical alignment and nested indentation hierarchy across rich-text editor:
-- Configured explicit indentation units (`padding-left: 1.5rem`) on `.tiptap ul` / `.ProseMirror ul` and `ol`.
-- Established distinct nested bullet markers: `disc` (level 1) -> `circle` (level 2) -> `square` (level 3+), and ordered lists `decimal` -> `lower-alpha` -> `lower-roman`.
-- Fixed list item vertical alignment: switched `.tiptap li > p` to `display: block` with `line-height: 1.6` and `margin: 0`, eliminating floating or misplaced bullet markers.
-- Nested sub-lists inside list items now indent cleanly and flush with parent content (`padding-left: 1.5rem`, `margin: 0.125rem 0`).
-- Standardized task checklist item alignments (`ul[data-type="taskList"] li`) with flex container and explicit nested task list indentation.
-- Bound `kite-editor-content` utility class to `EditorContent` in `TiptapEditor.tsx`.
-- Synchronized PlaintextMarkdownEditor line numbers gutter scroll position with textarea vertical scroll (`lineNumbersRef`, `handleScroll`).
+File explorer item ellipsis button and contextual action drawer / popover menu:
+- Replaced direct trash button on file and folder rows with vertical ellipsis button (`MoreVertical`) visible on hover/focus.
+- Implemented click event propagation guards to prevent inadvertent row selection or folder expansion.
+- Created `FileActionMenu` slide-out popover drawer anchored to item trigger with outside-click and `Escape` dismissals.
+- Implemented file operations repository (`fileOperations.ts`) and dialog modals for **Rename**, **Duplicate**, **Move to...**, and **Trash / Delete**.
+- Connected active open tab synchronizer (`renameFileTab`) in workspace store to update open tabs when files are renamed or moved.
+- Modularized sidebar tree components (`TrashSection.tsx`, `useFileTreeActions.ts`, `RenameModal.tsx`, `MoveModal.tsx`) adhering strictly to 30-250 LOC constraints.
 
 ## Key Changes
+1. **File Tree Vertical Ellipsis & Action Popover Menu (`/src/components/sidebar/FileTreeItem.tsx`, `/src/components/sidebar/FileActionMenu.tsx`)**:
+   - Replaced direct trash button with `MoreVertical` ellipsis button on both notes and folders.
+   - Guarded click events with `e.preventDefault()` and `e.stopPropagation()`.
+   - Built accessible `FileActionMenu` anchored to target trigger rect with viewport boundary clamping, dark/light theme styling, outside click listener, and Escape key dismissal.
+
+2. **File Mutation Operations & Tab Synchronizer (`/src/lib/storage/repositories/fileOperations.ts`, `/src/stores/workspaceStore.ts`)**:
+   - Implemented `renameVaultFile`, `duplicateVaultFile`, and `moveVaultFile` supporting IndexedDB transactions and mirror updates to mounted Native File System Access API handles.
+   - Added `renameFileTab(oldPath, newPath, newTitle)` in `workspaceStore` to dynamically update active and background document tabs.
+
+3. **Contextual Action Modals & Modular Architecture (`/src/components/sidebar/`)**:
+   - `RenameModal.tsx`: Uncontrolled keyed dialog for renaming note titles and folder directory names.
+   - `MoveModal.tsx`: Destination picker with automatic folder suggestion pills and custom path input.
+   - `useFileTreeActions.ts`: Decoupled mutation handler hook.
+   - `TrashSection.tsx`: Isolated collapsible ephemeral trash view keeping `FileTree.tsx` within ~248 LOC.
+
 1. **Editor Enter-Key Cursor Loss Bug Fix (`/src/components/editor/TiptapEditor.tsx`, `/src/components/editor/config/editorExtensions.ts`)**:
    - Identified root cause: debounced persistence updates parent file state which triggers `useEffect` comparing HTML lengths. Stripped empty paragraphs or whitespace on Enter resulted in length differences, calling `editor.commands.setContent()` and blowing away ProseMirror cursor selection.
    - Added `loadedPathRef` to strictly control initial note loads and note switches.

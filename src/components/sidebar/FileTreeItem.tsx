@@ -11,7 +11,7 @@ import {
   Paperclip,
   ChevronRight,
   ChevronDown,
-  Trash2,
+  MoreVertical,
 } from 'lucide-react';
 
 interface FileTreeItemProps {
@@ -21,7 +21,7 @@ interface FileTreeItemProps {
   activeFilePath: string | null;
   onToggleFolder: (path: string) => void;
   onOpenFile: (path: string, title?: string) => void;
-  onDeleteFile: (e: React.MouseEvent, path: string) => void;
+  onOpenActionMenu: (e: React.MouseEvent, node: TreeNode) => void;
 }
 
 export const FileTreeItem = React.memo(function FileTreeItem({
@@ -31,7 +31,7 @@ export const FileTreeItem = React.memo(function FileTreeItem({
   activeFilePath,
   onToggleFolder,
   onOpenFile,
-  onDeleteFile,
+  onOpenActionMenu,
 }: FileTreeItemProps) {
   const isFolderOpen = openFolders.has(node.path);
   const isActive = activeFilePath === node.path;
@@ -42,19 +42,31 @@ export const FileTreeItem = React.memo(function FileTreeItem({
         <div
           onClick={() => onToggleFolder(node.path)}
           style={{ paddingLeft: `${depth * 12 + 10}px` }}
-          className="flex items-center gap-1.5 py-1 px-2 rounded-md hover:bg-neutral-200/50 dark:hover:bg-neutral-800/60 cursor-pointer text-xs font-medium text-neutral-700 dark:text-neutral-300 transition-colors group"
+          className="flex items-center justify-between py-1 px-2 rounded-md hover:bg-neutral-200/50 dark:hover:bg-neutral-800/60 cursor-pointer text-xs font-medium text-neutral-700 dark:text-neutral-300 transition-colors group"
         >
-          {isFolderOpen ? (
-            <ChevronDown className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-          ) : (
-            <ChevronRight className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-          )}
-          {isFolderOpen ? (
-            <FolderOpen className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-          ) : (
-            <Folder className="w-3.5 h-3.5 text-neutral-400 group-hover:text-neutral-600 shrink-0" />
-          )}
-          <span className="truncate">{node.name}</span>
+          <div className="flex items-center gap-1.5 truncate">
+            {isFolderOpen ? (
+              <ChevronDown className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+            ) : (
+              <ChevronRight className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+            )}
+            {isFolderOpen ? (
+              <FolderOpen className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+            ) : (
+              <Folder className="w-3.5 h-3.5 text-neutral-400 group-hover:text-neutral-600 shrink-0" />
+            )}
+            <span className="truncate">{node.name}</span>
+          </div>
+
+          <button
+            type="button"
+            onClick={(e) => onOpenActionMenu(e, node)}
+            className="opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 min-h-[28px] min-w-[28px] flex items-center justify-center p-1 rounded text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-200/60 dark:hover:bg-neutral-700/60 transition-all cursor-pointer"
+            title={`More actions for ${node.name}`}
+            aria-label={`Actions for folder ${node.name}`}
+          >
+            <MoreVertical className="w-3.5 h-3.5" />
+          </button>
         </div>
 
         {isFolderOpen && node.children && (
@@ -68,7 +80,7 @@ export const FileTreeItem = React.memo(function FileTreeItem({
                 activeFilePath={activeFilePath}
                 onToggleFolder={onToggleFolder}
                 onOpenFile={onOpenFile}
-                onDeleteFile={onDeleteFile}
+                onOpenActionMenu={onOpenActionMenu}
               />
             ))}
           </div>
@@ -112,11 +124,13 @@ export const FileTreeItem = React.memo(function FileTreeItem({
       </div>
 
       <button
-        onClick={(e) => onDeleteFile(e, node.path)}
-        className="opacity-100 md:opacity-0 md:group-hover:opacity-100 min-h-[28px] min-w-[28px] flex items-center justify-center p-1 rounded text-neutral-400 hover:text-rose-500 transition-opacity"
-        title="Delete file"
+        type="button"
+        onClick={(e) => onOpenActionMenu(e, node)}
+        className="opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 min-h-[28px] min-w-[28px] flex items-center justify-center p-1 rounded text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-200/60 dark:hover:bg-neutral-700/60 transition-all cursor-pointer"
+        title={`More actions for ${node.file?.title || node.name}`}
+        aria-label={`Actions for file ${node.file?.title || node.name}`}
       >
-        <Trash2 className="w-3 h-3" />
+        <MoreVertical className="w-3.5 h-3.5" />
       </button>
     </div>
   );
