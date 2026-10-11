@@ -20,7 +20,8 @@ export interface TabItem {
   title: string;
 }
 
-export type ActiveWorkspaceView = 'editor' | 'graph' | 'table' | 'board' | 'list' | 'tags';
+export type ActiveWorkspaceView = 'editor' | 'graph' | 'table' | 'board' | 'list' | 'tags' | 'settings';
+export type WorkspaceTabId = ActiveWorkspaceView | 'kanban';
 
 export interface WorkspaceState {
   vaultName: string;
@@ -28,7 +29,9 @@ export interface WorkspaceState {
   mountedMode: 'indexeddb' | 'filesystem';
   mountedFolderName: string | null;
   activeFilePath: string | null;
+  activeNotePath: string | null;
   activeView: ActiveWorkspaceView;
+  activeTab: WorkspaceTabId;
   openTabs: TabItem[];
   isImportModalOpen: boolean;
   importProgress: ImportProgress | null;
@@ -77,10 +80,12 @@ export interface WorkspaceState {
 
   // Actions
   setActiveFilePath: (path: string | null) => void;
+  setActiveNotePath: (path: string | null) => void;
   openFileTab: (path: string, title?: string) => void;
   closeFileTab: (path: string) => void;
   deleteNote: (path: string) => Promise<boolean>;
   setActiveView: (view: ActiveWorkspaceView) => void;
+  setActiveTab: (tab: WorkspaceTabId) => void;
   setImportModalOpen: (open: boolean) => void;
   setImportProgress: (progress: ImportProgress | null) => void;
   setIsSearchOpen: (open: boolean) => void;
@@ -101,7 +106,9 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   mountedMode: 'indexeddb',
   mountedFolderName: null,
   activeFilePath: 'Welcome to Kite.md',
+  activeNotePath: 'Welcome to Kite.md',
   activeView: 'editor',
+  activeTab: 'editor',
   openTabs: [
     { path: 'Welcome to Kite.md', title: 'Welcome to Kite' },
     { path: 'Projects/Product Roadmap 2026.md', title: 'Product Roadmap 2026' },
@@ -178,7 +185,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   },
 
   setActiveFilePath: (path) => {
-    set({ activeFilePath: path });
+    set({ activeFilePath: path, activeNotePath: path });
     if (path) {
       const state = get();
       if (!state.openTabs.some((t) => t.path === path)) {
@@ -186,6 +193,10 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         set({ openTabs: [...state.openTabs, { path, title }] });
       }
     }
+  },
+
+  setActiveNotePath: (path) => {
+    get().setActiveFilePath(path);
   },
 
   openFileTab: (path, title) => {
@@ -197,7 +208,9 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     set({
       openTabs: newTabs,
       activeFilePath: path,
+      activeNotePath: path,
       activeView: 'editor',
+      activeTab: 'editor',
     });
   },
 
@@ -213,6 +226,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     set({
       openTabs: newTabs,
       activeFilePath: nextActive,
+      activeNotePath: nextActive,
     });
   },
 
@@ -337,9 +351,20 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   },
 
   setActiveView: (view) => {
-    set({ activeView: view });
+    const tab: WorkspaceTabId = view === 'board' ? 'kanban' : view;
+    set({ activeView: view, activeTab: tab });
     if (view === 'table' || view === 'board' || view === 'list') {
       set({ databaseViewMode: view });
+    }
+  },
+
+  setActiveTab: (tab) => {
+    if (tab === 'kanban' || tab === 'board') {
+      set({ activeView: 'board', activeTab: 'kanban', databaseViewMode: 'board' });
+    } else if (tab === 'table' || tab === 'list') {
+      set({ activeView: tab, activeTab: tab, databaseViewMode: tab });
+    } else {
+      set({ activeView: tab as ActiveWorkspaceView, activeTab: tab });
     }
   },
 
@@ -358,12 +383,32 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       mountedFolderName: folderName || null,
       vaultName: folderName ? folderName : 'Local Vault',
     }),
-  setActiveWorkspaceId: (id, name) =>
+  setActiveWorkspaceId: (id, name) => {
+    const currentId = get().activeWorkspaceId;
+    if (currentId === id) {
+      if (name) set({ vaultName: name });
+      return;
+    }
     set({
       activeWorkspaceId: id,
-      vaultName: name || 'Workspace',
+      vaultName: name || (id === 'default-vault' || id === 'local-vault' ? 'Local Vault' : id),
       activeFilePath: null,
+      activeNotePath: null,
       openTabs: [],
-    }),
+    });
+    if (!name) {
+      import('../lib/storage/db').then(({ db }) => {
+        db.workspaces.get(id).then((ws) => {
+          if (ws) {
+            set({
+              vaultName: ws.name,
+              mountedMode: ws.mode,
+              mountedFolderName: ws.mode === 'filesystem' ? ws.name : null,
+            });
+          }
+        }).catch(() => {});
+      }).catch(() => {});
+    }
+  },
   setDatabaseViewMode: (mode) => set({ databaseViewMode: mode }),
 }));

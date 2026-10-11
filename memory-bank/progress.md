@@ -40,6 +40,7 @@
 - [x] Touch & mobile viewport visibility with minimum `28px` tap targets for File Tree delete buttons, trash actions, and document tab close triggers (`/src/components/sidebar/FileTreeItem.tsx`, `/src/components/sidebar/FileTree.tsx`, `/app/page.tsx`).
 - [x] Incremental Google Drive delta sync with `modifiedTime` / `md5Checksum` checks, upload updates via `PATCH`, and skip tracking (`/src/lib/sync/googleDriveSync.ts`).
 - [x] Kanban HTML5 Drag-and-Drop card movement across status columns with instant frontmatter update and icon-only Eisenhower priority dots (`/src/components/database/KanbanView.tsx`).
+- [x] Gmail-style URL routing & hash permalinking (`/w/[workspaceId]#[view]`, `#[view]/[noteId]`) with bi-directional synchronization, root redirect, and deep linking (`/src/hooks/useWorkspaceRouter.ts`, `/app/page.tsx`, `/app/w/[workspaceId]/page.tsx`, `/src/stores/workspaceStore.ts`).
 
 ## Verification Status
 - Production compilation (`pnpm build`): Passed (100% clean Next.js build).

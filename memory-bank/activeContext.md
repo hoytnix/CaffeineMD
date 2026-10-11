@@ -1,17 +1,19 @@
 # Active Context: Kite Workspace
 
 ## Current Focus
-Implemented incremental Google Drive sync delta checks, native drag-and-drop status updates in Kanban view, and icon-only Eisenhower Matrix priority dots with tooltip labels.
+Implemented Gmail-style URL routing and hash permalinking with bi-directional state synchronization, dynamic Next.js App Router paths (`/w/[workspaceId]`), root redirection, and seamless deep linking.
 
 ## Key Changes
-1. **Incremental Google Drive Sync Delta Check (`/src/lib/sync/googleDriveSync.ts`)**:
-   - Added metadata comparison (`modifiedTime`, `md5Checksum`) in Google Drive sync pipeline.
-   - For upload: skipped files where local note `updatedAt` is not newer than remote `modifiedTime` when already mapped; updated files use PATCH/update requests via `uploadSmallFile` or `uploadLargeFileResumable`.
-   - For download: skipped remote files when local note `updatedAt` is greater than or equal to remote `modifiedTime`, accurately reporting `stats.skipped`.
+1. **Bi-Directional Hash Routing Hook (`/src/hooks/useWorkspaceRouter.ts`)**:
+   - Listens to `window.location.hash`, `popstate`, and `hashchange` events to hydrate workspace ID, active view tab (`editor`, `graph`, `table`, `kanban`, `board`, `list`, `tags`, `settings`), and note path.
+   - Silently synchronizes local Zustand store changes back to browser address bar without full page reloads using `window.history.replaceState`.
+   - Encodes and decodes note paths (e.g. `#/editor/Daily%20Notes%2F2026-10-10.md`).
 
-2. **Kanban Drag-and-Drop Card Status Updates (`/src/components/database/KanbanView.tsx`)**:
-   - Added HTML5 drag-and-drop (`draggable`, `onDragStart`, `onDragEnd`, `onDragOver`, `onDragLeave`, `onDrop`) to cards and column containers.
-   - Dropping a card on any column automatically updates the note's frontmatter status and persists changes in IndexedDB, with real-time drop target highlighting (`ring-2 ring-indigo-500/30`).
+2. **Root Dynamic Route & Redirection Architecture (`/app/page.tsx` & `/app/w/[workspaceId]/page.tsx`)**:
+   - Root `/` page redirects to `/w/[workspaceId]#[view]` using active or default workspace and preserves existing hash fragments.
+   - Dynamic `/app/w/[workspaceId]/page.tsx` mounts the primary workspace shell and invokes `useWorkspaceRouter()` at top level.
 
-3. **Eisenhower Matrix Icon-Only Indicator (`/src/components/database/KanbanView.tsx`)**:
-   - Stripped out textual labels from priority indicators on Kanban cards, rendering clean `w-2.5 h-2.5 rounded-full` dots with accessible `title` and `aria-label` tooltips.
+3. **Store Synchronization & Settings Embed (`/src/stores/workspaceStore.ts`, `/src/components/settings/SettingsView.tsx`)**:
+   - Extended `WorkspaceState` with `activeTab`, `activeNotePath`, `setActiveTab`, and `setActiveNotePath`.
+   - Preserved open tabs and file paths when confirming already active workspace ID.
+   - Integrated `SettingsView` directly into workspace views when navigating to `#/settings`.
