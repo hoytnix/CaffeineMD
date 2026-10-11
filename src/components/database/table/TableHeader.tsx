@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { TableColumnResizer } from './TableColumnResizer';
 
 interface TableHeaderProps {
   sortCol: string;
@@ -9,6 +10,7 @@ interface TableHeaderProps {
   onSort: (colKey: string) => void;
   customColumns: string[];
   columnWidths?: Record<string, number>;
+  resizingCol?: string | null;
   onStartResize?: (colKey: string, startX: number, initialWidth?: number) => void;
 }
 
@@ -18,6 +20,7 @@ export function TableHeader({
   onSort,
   customColumns,
   columnWidths,
+  resizingCol,
   onStartResize,
 }: TableHeaderProps) {
   const renderSortIcon = (colKey: string) => {
@@ -47,12 +50,11 @@ export function TableHeader({
           {renderSortIcon(key)}
         </div>
         {onStartResize && (
-          <div
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              onStartResize(key, e.clientX, width);
-            }}
-            className="absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-indigo-500/50"
+          <TableColumnResizer
+            columnKey={key}
+            currentWidth={width}
+            isResizing={resizingCol === key}
+            onStartResize={onStartResize}
           />
         )}
       </th>

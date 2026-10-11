@@ -1,82 +1,56 @@
 # Active Context: Kite Workspace
 
 ## Current Focus
-File explorer item ellipsis button and contextual action drawer / popover menu:
-- Replaced direct trash button on file and folder rows with vertical ellipsis button (`MoreVertical`) visible on hover/focus.
-- Implemented click event propagation guards to prevent inadvertent row selection or folder expansion.
-- Created `FileActionMenu` slide-out popover drawer anchored to item trigger with outside-click and `Escape` dismissals.
-- Implemented file operations repository (`fileOperations.ts`) and dialog modals for **Rename**, **Duplicate**, **Move to...**, and **Trash / Delete**.
-- Connected active open tab synchronizer (`renameFileTab`) in workspace store to update open tabs when files are renamed or moved.
-- Modularized sidebar tree components (`TrashSection.tsx`, `useFileTreeActions.ts`, `RenameModal.tsx`, `MoveModal.tsx`) adhering strictly to 30-250 LOC constraints.
+Completed architectural deconstruction of the 7 largest, most complex files in the codebase, decomposing them into clean, modular components, hooks, and services strictly adhering to the 100–250 LOC threshold without regressions in Dexie persistence, WebFS disk sync, or Google Drive cloud reconciliation.
 
 ## Key Changes
-1. **File Tree Vertical Ellipsis & Action Popover Menu (`/src/components/sidebar/FileTreeItem.tsx`, `/src/components/sidebar/FileActionMenu.tsx`)**:
-   - Replaced direct trash button with `MoreVertical` ellipsis button on both notes and folders.
-   - Guarded click events with `e.preventDefault()` and `e.stopPropagation()`.
-   - Built accessible `FileActionMenu` anchored to target trigger rect with viewport boundary clamping, dark/light theme styling, outside click listener, and Escape key dismissal.
+1. **Step 1: Modular Theme Definitions & Color Utilities (`/src/lib/themes/`)**:
+   - `colorUtils.ts` (177 LOC): Hex/RGB/HSL conversion, WCAG luminance calculations, contrast ratio checks, and root CSS custom properties DOM injector.
+   - `presets/baseThemes.ts` (109 LOC): Light, Dark, Solarized Light, Solarized Dark, Monokai.
+   - `presets/seasonalThemes.ts` (117 LOC): Spring, Summer, Autumn, Winter.
+   - `presets/customThemes.ts` (154 LOC): Forest, Seahorse, Deep Sea, Microsoft, Hacker, Custom.
+   - `themeDefinitions.ts` (56 LOC): Unified index contract barrel re-exporting all presets, types, and color utilities.
 
-2. **File Mutation Operations & Tab Synchronizer (`/src/lib/storage/repositories/fileOperations.ts`, `/src/stores/workspaceStore.ts`)**:
-   - Implemented `renameVaultFile`, `duplicateVaultFile`, and `moveVaultFile` supporting IndexedDB transactions and mirror updates to mounted Native File System Access API handles.
-   - Added `renameFileTab(oldPath, newPath, newTitle)` in `workspaceStore` to dynamically update active and background document tabs.
+2. **Step 2: Decomposed Settings View God Component (`/src/components/settings/`)**:
+   - `sections/ThemeSettingsSection.tsx` (200 LOC): 2-to-4 column responsive theme selector cards and active theme preview chips.
+   - `sections/CustomThemeBuilder.tsx` (213 LOC): AI Theme Studio generation input and color picker inputs.
+   - `sections/GoogleDriveSyncSection.tsx` (199 LOC): Google SSO connection cards, sync triggers, folder ID bindings, and sync status badges.
+   - `sections/RemoteWorkspacesList.tsx` (143 LOC): Google Drive remote workspace discovery, active status badges, and download triggers.
+   - `sections/StorageSettingsSection.tsx` (182 LOC): IndexedDB storage usage indicators, ephemeral trash retention sliders, and vault purge confirmations.
+   - `sections/useGoogleDriveSyncSettings.ts` (238 LOC): Decoupled Google auth and sync state management hook.
+   - `SettingsView.tsx` (108 LOC): Clean orchestration shell layout.
 
-3. **Contextual Action Modals & Modular Architecture (`/src/components/sidebar/`)**:
-   - `RenameModal.tsx`: Uncontrolled keyed dialog for renaming note titles and folder directory names.
-   - `MoveModal.tsx`: Destination picker with automatic folder suggestion pills and custom path input.
-   - `useFileTreeActions.ts`: Decoupled mutation handler hook.
-   - `TrashSection.tsx`: Isolated collapsible ephemeral trash view keeping `FileTree.tsx` within ~248 LOC.
+3. **Step 3: Decomposed Bottom Editor Toolbar (`/src/components/editor/`)**:
+   - `toolbar/HeadingSelectorPopover.tsx` (138 LOC): H1–H6 heading selection context popover menu with active heading state triggers and normal paragraph option.
+   - `toolbar/TableControlsGroup.tsx` (109 LOC): Insert table, add/remove row, and add/remove column buttons.
+   - `toolbar/ListFormattingGroup.tsx` (115 LOC): Bullet list, numbered list, task checklist, and list indent/outdent controls.
+   - `toolbar/EditorStatusMetrics.tsx` (113 LOC): Live word count, character count, reading time estimation, and cloud sync status badge.
+   - `toolbar/MarkFormattingGroup.tsx` (211 LOC): Bold, italic, underline, strike, code, blockquote, link, HR, undo, redo, and copy note actions.
+   - `EditorBottomToolbar.tsx` (96 LOC): Composed toolbar layout with mouse drag-to-scroll panning.
 
-1. **Editor Enter-Key Cursor Loss Bug Fix (`/src/components/editor/TiptapEditor.tsx`, `/src/components/editor/config/editorExtensions.ts`)**:
-   - Identified root cause: debounced persistence updates parent file state which triggers `useEffect` comparing HTML lengths. Stripped empty paragraphs or whitespace on Enter resulted in length differences, calling `editor.commands.setContent()` and blowing away ProseMirror cursor selection.
-   - Added `loadedPathRef` to strictly control initial note loads and note switches.
-   - Added active typing guard: `if (editor.isFocused) return;` inside note synchronization `useEffect` to ensure active editing never resets document state or cursor position.
-   - Configured `paragraph: {}` and `hardBreak: { keepMarks: true }` in `StarterKit.configure` to prevent aggressive collapsing of empty block nodes during typing.
+4. **Step 4: Decomposed Virtual Table Database View (`/src/components/database/`)**:
+   - `table/TableColumnResizer.tsx` (106 LOC): Header column drag handle, keyboard arrow navigation, boundary clamping, and visual guide indicator.
+   - `table/TableCellFactory.tsx` (231 LOC): Type-based cell rendering for Title, Tags, Status, Date, Eisenhower Matrix dots, and Author.
+   - `table/TablePaginationBar.tsx` (124 LOC): Row count summary, page size picker, and pagination navigation controls.
+   - `table/TableRow.tsx` (123 LOC): Table row wrapper delegating cell rendering to `TableCellFactory`.
+   - `TableView.tsx` (163 LOC): Clean table DOM composition and sorting state mapping.
 
-2. **Google Drive Sync Progress Engine & Event Bus (`/src/lib/sync/syncProgress.ts`)**:
-   - Defined `SyncProgressState` data model (`status`, `currentAction`, `totalFiles`, `processedFiles`, `currentFileName`, `progressPercentage`, `errorMessage`).
-   - Implemented reactive `SyncProgressEmitter` event bus with automatic 3.5s reset timer to `idle` upon completion or error.
-   - Created `useSyncProgress()` React hook for live UI subscriptions.
+5. **Step 5: Modularized Recursive File Tree Operations (`/src/components/sidebar/`)**:
+   - `hooks/useTreeDragAndDrop.ts` (105 LOC): Drag-and-drop ingestion from native filesystem and internal tree relocation calculations.
+   - `tree/FolderNode.tsx` (103 LOC): Recursive expandable/collapsible folder node rendering.
+   - `tree/FileNodeRow.tsx` (112 LOC): Individual note leaf row rendering with Eisenhower priority dots and ellipsis action menu trigger.
+   - `tree/FileTreeModals.tsx` (111 LOC): Composite modal orchestrator mounting New Note, Rename, Move, and Action drawer dialogs.
+   - `FileTree.tsx` (213 LOC): Workspace directory container mounting search bar, root tree nodes, trash section, and toolbar.
 
-3. **Granular Sync Batch Updates (`/src/lib/sync/syncExecutor.ts`, `/src/lib/sync/googleDriveSync.ts`)**:
-   - Added file-level processing callbacks (`onFileProcessed`) to `executeDownloadBatch` and `executeUploadBatch`.
-   - Wired `syncProgressEmitter` in `GoogleDriveSyncService.syncNow` to emit progress across `scanning`, `syncing`, `completed`, and `error` states.
+6. **Step 6: Decoupled Tiptap Editor Lifecycle & Persistence (`/src/components/editor/`)**:
+   - `hooks/useTiptapInit.ts` (130 LOC): Tiptap v2 editor instance lifecycle, extension loading, ProseMirror DOM event handlers, and Enter-key cursor focus protections.
+   - `hooks/useEditorAutosave.ts` (133 LOC): Debounced note persistence, IndexedDB dirty checking, ⌘S shortcut, and rich-text / plaintext mode switching.
+   - `components/EditorDragOverlay.tsx` (109 LOC): Drag-and-drop file upload backdrop and supported format guidelines.
+   - `TiptapEditor.tsx` (172 LOC): Pure container shell rendering header, content canvas, backlinks panel, and floating menus.
 
-4. **Visual Sync Progress Bar (`/src/components/workspace/WorkspacePopover.tsx`)**:
-   - Integrated `useSyncProgress()` in `WorkspacePopover`.
-   - Added pulsing indigo activity indicator to Kite Logo trigger while syncing is active.
-   - Rendered animated file-by-file progress bar displaying operation (`Uploading` / `Downloading`), current file name, processed count (`x/y`), percentage, and smooth progress track.
-
-## Key Changes
-1. **Phase 1: Core Storage Architecture Deconstruction (`/src/lib/storage/`)**:
-   - `schema.ts` (219 LOC): Isolated `KiteVaultDatabase` Dexie class, version stores, `EisenhowerQuadrant`, and record typing interfaces (`VaultFile`, `BacklinkRecord`, `TagRecord`, `VaultMetadata`, `WorkspaceRecord`).
-   - `repositories/noteRepository.ts` (193 LOC): Note CRUD operations (`getNote`, `saveNote`, `listNotes`, `bulkUpsertNotes`, `deleteVaultFile`), ephemeral trash lifecycle (`moveToTrash`, `restoreFromTrash`, `getTrashFiles`, `emptyTrash`, `purgeExpiredTrash`), and `seedInitialVaultIfEmpty`.
-   - `repositories/assetRepository.ts` (116 LOC): Binary blob handlers (`storeAsset`, `getAsset`, `deleteAsset`, `blobToArrayBuffer`, `arrayBufferToBlob`, `base64ToBlob`, `blobToBase64`).
-   - `searchIndex.ts` (101 LOC): Tokenization (`tokenizeText`), n-grams (`generateNGrams`), document scoring (`scoreDocument`), and query ranking (`searchNotesQuery`).
-   - `seedData.ts` (177 LOC): Starter knowledge base notes extracted cleanly.
-   - `db.ts` (5 LOC): Zero-breaking-change barrel façade re-exporting schema, repositories, and search index.
-
-2. **Phase 1: Google Drive Sync Pipeline Modularization (`/src/lib/sync/`)**:
-   - `google/driveApiClient.ts` (227 LOC): Raw Google Drive v3 REST API requests (`driveFetch`, `fetchDriveFiles`, `createDriveFolder`, `downloadRemoteFile`, `downloadRemoteBinary`, `uploadSmallFile`) and typing interfaces (`RemoteWorkspace`, `RemoteDriveFile`, `DriveSyncStatus`).
-   - `google/resumableChunkUploader.ts` (232 LOC): 5 MB resumable chunk stream uploader with exponential backoff and session resumption (`initiateResumableSession`, `uploadLargeFileResumable`, `syncFileToDrive`).
-   - `google/remoteCrawler.ts` (68 LOC): Recursive remote folder scanner (`crawlRemoteDirectory`, `listAllRemoteFiles`).
-   - `reconciler.ts` (70 LOC): Pure two-way diff comparison and timestamp tolerance reconciliation (`reconcileSyncSets`).
-   - `syncExecutor.ts` (166 LOC): Concurrency pooled download (`executeDownloadBatch`) and upload (`executeUploadBatch`) runners.
-   - `googleDriveSync.ts` (229 LOC): Orchestrator service preserving `GoogleDriveSyncService` API.
-
-3. **Phase 2: Tiptap Editor & Extensibility Shell Deconstruction (`/src/components/editor/`, `/src/hooks/`)**:
-   - `config/editorExtensions.ts` (85 LOC): ProseMirror & Tiptap extension configurations (`getEditorExtensions`).
-   - `config/editorDomHandlers.ts` (78 LOC): WikiLink DOM navigation and codeblock language auto-detection.
-   - `hooks/useEditorDropUpload.ts` (90 LOC): Drag-and-drop & paste media attachment handlers linked to `assetRepository`.
-   - `hooks/useEditorSuggestions.ts` (135 LOC): Slash command and WikiLink suggestion popup states.
-   - `FloatingToolbarHost.tsx` (59 LOC): Floating menus wrapper.
-   - `TiptapEditor.tsx` (243 LOC): Pure UI shell reduced from 641 LOC.
-
-4. **Phase 2: Database View Engines Deconstruction (`/src/components/database/`)**:
-   - `DatabaseToolbar.tsx` (98 LOC): Layout container delegating to `toolbar/ViewSwitcher.tsx` (59 LOC), `toolbar/ToolbarSearchInput.tsx` (39 LOC), `toolbar/SortPopover.tsx` (31 LOC), and `toolbar/FilterPopover.tsx` (115 LOC).
-   - `TableView.tsx` (142 LOC): Virtual table reduced from 401 LOC delegating to `table/TableHeader.tsx` (75 LOC), `table/TableCellRenderer.tsx` (211 LOC), `table/TableRow.tsx` (123 LOC), and `hooks/useColumnResize.ts` (47 LOC).
-   - `KanbanView.tsx` (162 LOC): Reduced from 428 LOC delegating to `kanban/KanbanColumn.tsx` (137 LOC), `kanban/KanbanCard.tsx` (104 LOC), and `hooks/useKanbanDragAndDrop.ts` (135 LOC).
-
-5. **Phase 2: Graph Canvas Engine Modularization (`/src/lib/graph/`)**:
-   - `physicsSimulation.ts` (72 LOC): Numerical simulation configurator and boundary constraints (`createGraphSimulation`, `applyBoundaryConstraints`).
-   - `renderers/edgeRenderer.ts` (31 LOC): Canvas bezier path rendering and zoom-dependent alpha fading.
-   - `renderers/nodeRenderer.ts` (59 LOC): Canvas node circles, Eisenhower halo rings, hover glow, and text labels.
-   - `graphCanvasRenderer.ts` (55 LOC): High-DPI canvas orchestrator coordinating render passes.
+7. **Step 7: Modularized Google Drive Cloud Sync Engine (`/src/lib/sync/`)**:
+   - `google/driveAuthService.ts` (117 LOC): OAuth2 token acquisition, credential storage, 401 interceptors, and authenticated header builder.
+   - `google/drivePayloadBuilder.ts` (121 LOC): MIME multipart boundary generator, metadata JSON serialization, and note Blob packaging.
+   - `google/driveReconciler.ts` (108 LOC): Differential reconciliation logic comparing remote timestamps against local Dexie note revisions.
+   - `google/driveSyncRunner.ts` (125 LOC): Batch download and upload orchestration loop with real-time sync progress emitter updates.
+   - `googleDriveSync.ts` (213 LOC): High-level façade orchestrating auth, payload builder, reconciler, and runner while preserving full public API signatures.

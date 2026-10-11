@@ -1,176 +1,69 @@
 'use client';
 
-import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
+import React, { useState, useRef } from 'react';
+import { EditorContent } from '@tiptap/react';
 import { db } from '@/src/lib/storage/db';
-import {
-  parseMarkdownContent,
-  serializeMarkdownWithFrontmatter,
-  markdownToEditorHtml,
-  editorHtmlToMarkdown,
-} from '@/src/lib/markdown/serializer';
+import { parseMarkdownContent, serializeMarkdownWithFrontmatter } from '@/src/lib/markdown/serializer';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { BlockHandle } from './extensions/BlockHandle';
 import { BacklinksPanel } from './BacklinksPanel';
-import { useNotePersistence } from '@/src/hooks/useNotePersistence';
 import { useEditorDropUpload } from '@/src/hooks/useEditorDropUpload';
 import { useEditorSuggestions } from '@/src/hooks/useEditorSuggestions';
+import { useTiptapInit } from './hooks/useTiptapInit';
+import { useEditorAutosave } from './hooks/useEditorAutosave';
+import { EditorDragOverlay } from './components/EditorDragOverlay';
 import { EditorHeader } from './EditorHeader';
 import { BinaryAssetPreview } from './BinaryAssetPreview';
 import { PlaintextMarkdownEditor } from './modes/PlaintextMarkdownEditor';
 import { FloatingToolbarHost } from './FloatingToolbarHost';
 import { EditorBottomToolbar } from './EditorBottomToolbar';
-import { getEditorExtensions } from './config/editorExtensions';
-import { handleWikiLinkDomClick, autoDetectUnlabeledCodeBlocks } from './config/editorDomHandlers';
 import { FileQuestion } from 'lucide-react';
 
-interface TiptapEditorProps {
+export interface TiptapEditorProps {
   filePath: string;
 }
 
 export function TiptapEditor({ filePath }: TiptapEditorProps) {
-  const { openFileTab, setActiveEditor, activeWorkspaceId } = useWorkspaceStore();
-  const {
-    file, setFile, title, setTitle, isSaving, saveSuccess, loading,
-    rawMarkdown, setRawMarkdown, handleSave, handleSaveRaw, updateProperties, saveTimeoutRef,
-  } = useNotePersistence({ filePath });
-
-  const [editorMode, setEditorMode] = useState<'rich' | 'plain'>('rich');
+  const { openFileTab, activeWorkspaceId } = useWorkspaceStore();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const gutterRef = useRef<HTMLDivElement | null>(null);
-  const loadedPathRef = useRef<string | null>(null);
 
-  const { handleDrop, handlePaste } = useEditorDropUpload({ activeWorkspaceId: activeWorkspaceId || 'default-vault' });
+  const {
+    file, setFile, title, setTitle, isSaving, saveSuccess, loading,
+    rawMarkdown, setRawMarkdown, editorMode,
+    handleSave, handleSaveRaw, updateProperties, saveTimeoutRef,
+    switchToPlaintext, switchToRichText, handleManualSave,
+  } = useEditorAutosave({ filePath });
+
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+
+  const { handleDrop, handlePaste } = useEditorDropUpload({
+    activeWorkspaceId: activeWorkspaceId || 'default-vault',
+  });
 
   const {
     slashMenu, wikiMenu, callbacks, filteredCommands, executeCommand, executeWikiLink,
   } = useEditorSuggestions();
 
-  const extensions = useMemo(() => getEditorExtensions(callbacks), [callbacks]);
-
-  const editor = useEditor({
-    immediatelyRender: false,
-    extensions,
-    editorProps: {
-      attributes: {
-        class: 'focus:outline-none min-h-[500px] text-[15px] leading-[1.8] text-neutral-800 dark:text-neutral-200',
-      },
-      handleDOMEvents: {
-        click: (_view, event) => handleWikiLinkDomClick(event, openFileTab, activeWorkspaceId || 'default-vault'),
-        drop: handleDrop,
-        paste: handlePaste,
-      },
-    },
-    onUpdate: ({ editor: currentEditor }) => {
-      if (!file || !currentEditor || currentEditor.isDestroyed || !currentEditor.schema) return;
-      autoDetectUnlabeledCodeBlocks(currentEditor);
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      saveTimeoutRef.current = setTimeout(() => {
-        if (!currentEditor || currentEditor.isDestroyed || !currentEditor.schema) return;
-        try {
-          handleSave(editorHtmlToMarkdown(currentEditor.getHTML()), file);
-        } catch (err) {
-          console.warn('Auto-save skipped:', err);
-        }
-      }, 1200);
-    },
-  }, [filePath, handleDrop, handlePaste, extensions]);
-
-  // Sync Note Content to Tiptap when file loads or switches
-  // CRITICAL: Guard against re-injecting content when editor is focused to prevent Enter-key cursor jumping!
-  useEffect(() => {
-    if (!editor || editor.isDestroyed || !editor.schema || !file || file.isBinary) return;
-
-    const isFileSwitch = loadedPathRef.current !== file.path;
-
-    if (isFileSwitch) {
-      try {
-        const parsed = parseMarkdownContent(file.content || '', file.title);
-        const editorHtml = markdownToEditorHtml(parsed.body);
-        editor.commands.setContent(editorHtml);
-        autoDetectUnlabeledCodeBlocks(editor);
-        loadedPathRef.current = file.path;
-      } catch (err) {
-        console.warn('Failed to parse note markdown for editor:', err);
-      }
-      return;
-    }
-
-    // If currently focused and typing, NEVER overwrite document state from reactive local saves
-    if (editor.isFocused) {
-      return;
-    }
-
-    // Only update unfocused editor if significant external change occurred (e.g. sync reconciliation)
-    try {
-      const parsed = parseMarkdownContent(file.content || '', file.title);
-      const editorHtml = markdownToEditorHtml(parsed.body);
-      const currentHtml = editor.getHTML();
-      if (currentHtml === '<p></p>' || Math.abs(currentHtml.length - editorHtml.length) > 10) {
-        editor.commands.setContent(editorHtml);
-        autoDetectUnlabeledCodeBlocks(editor);
-      }
-    } catch (err) {
-      console.warn('Failed to parse note markdown for editor:', err);
-    }
-  }, [file, editor, filePath]);
-
-  useEffect(() => {
-    if (editor) setActiveEditor(editor);
-    return () => setActiveEditor(null);
-  }, [editor, setActiveEditor]);
-
-  const switchToPlaintext = useCallback(() => {
-    if (editor && !editor.isDestroyed && editor.schema) {
-      try {
-        const markdownBody = editorHtmlToMarkdown(editor.getHTML());
-        const fullRaw = serializeMarkdownWithFrontmatter(markdownBody, file?.frontmatter || {});
-        setRawMarkdown(fullRaw);
-        if (file) handleSave(markdownBody, file);
-      } catch {
-        if (file) setRawMarkdown(file.content || '');
-      }
-    } else if (file) {
-      setRawMarkdown(file.content || '');
-    }
-    setEditorMode('plain');
-  }, [editor, file, handleSave, setRawMarkdown]);
-
-  const switchToRichText = useCallback(() => {
-    if (file) {
-      handleSaveRaw(rawMarkdown, file);
-      try {
-        const parsed = parseMarkdownContent(rawMarkdown, file.title);
-        const html = markdownToEditorHtml(parsed.body);
-        if (editor && !editor.isDestroyed && editor.schema) {
-          editor.commands.setContent(html);
-          autoDetectUnlabeledCodeBlocks(editor);
-        }
-      } catch (err) {
-        console.warn('Error syncing to rich text:', err);
-      }
-    }
-    setEditorMode('rich');
-  }, [editor, file, rawMarkdown, handleSaveRaw]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-        e.preventDefault();
-        if (editorMode === 'plain') {
-          if (file) handleSaveRaw(rawMarkdown, file);
-        } else if (editor && !editor.isDestroyed && editor.schema && file) {
-          handleSave(editorHtmlToMarkdown(editor.getHTML()), file);
-        }
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [editorMode, file, rawMarkdown, editor, handleSaveRaw, handleSave]);
+  const { editor } = useTiptapInit({
+    filePath,
+    file,
+    callbacks,
+    activeWorkspaceId: activeWorkspaceId || 'default-vault',
+    openFileTab,
+    handleDrop,
+    handlePaste,
+    onAutoSave: handleSave,
+  });
 
   if (loading) {
-    return <div className="flex-1 flex items-center justify-center p-12 text-neutral-400"><div className="animate-pulse text-sm">Loading note...</div></div>;
+    return (
+      <div className="flex-1 flex items-center justify-center p-12 text-neutral-400">
+        <div className="animate-pulse text-sm">Loading note...</div>
+      </div>
+    );
   }
+
   if (!file) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-12 text-center text-neutral-500">
@@ -180,24 +73,34 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
       </div>
     );
   }
+
   if (file.isBinary) return <BinaryAssetPreview file={file} />;
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-auto overflow-x-hidden min-w-0 bg-[var(--background)] text-[var(--foreground)] relative">
+    <div
+      onDragOver={(e) => { e.preventDefault(); setIsDraggingOver(true); }}
+      onDragLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+          setIsDraggingOver(false);
+        }
+      }}
+      onDrop={() => setIsDraggingOver(false)}
+      className="flex-1 flex flex-col h-full overflow-y-auto overflow-x-hidden min-w-0 bg-[var(--background)] text-[var(--foreground)] relative"
+    >
+      <EditorDragOverlay
+        isDraggingOver={isDraggingOver}
+        onDragLeave={() => setIsDraggingOver(false)}
+        onDrop={() => setIsDraggingOver(false)}
+      />
+
       <EditorHeader
         file={file}
         isSaving={isSaving}
         saveSuccess={saveSuccess}
         editorMode={editorMode}
-        onSwitchToRichText={switchToRichText}
-        onSwitchToPlaintext={switchToPlaintext}
-        onManualSave={() => {
-          if (editorMode === 'plain') {
-            if (file) handleSaveRaw(rawMarkdown, file);
-          } else if (editor && !editor.isDestroyed && editor.schema && file) {
-            handleSave(editorHtmlToMarkdown(editor.getHTML()), file);
-          }
-        }}
+        onSwitchToRichText={() => switchToRichText(editor)}
+        onSwitchToPlaintext={() => switchToPlaintext(editor)}
+        onManualSave={() => handleManualSave(editor)}
         isSaveDisabled={isSaving || (editorMode === 'rich' && (!editor || editor.isDestroyed))}
         onUpdateProperties={updateProperties}
         onTitleChange={setTitle}
@@ -224,7 +127,9 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
             {editor && !editor.isDestroyed ? (
               <EditorContent editor={editor} className="min-h-[400px] kite-editor-content" />
             ) : (
-              <div className="min-h-[400px] flex items-center justify-center text-neutral-400 animate-pulse text-xs font-mono">Loading note content...</div>
+              <div className="min-h-[400px] flex items-center justify-center text-neutral-400 animate-pulse text-xs font-mono">
+                Loading note content...
+              </div>
             )}
           </>
         ) : (

@@ -7,6 +7,7 @@ import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { useColumnResize } from '@/src/hooks/useColumnResize';
 import { TableHeader } from './table/TableHeader';
 import { TableRow } from './table/TableRow';
+import { TablePaginationBar } from './table/TablePaginationBar';
 
 interface TableViewProps {
   files: VaultFile[];
@@ -21,7 +22,11 @@ export function TableView({ files, columns, onRefresh }: TableViewProps) {
   const [sortCol, setSortCol] = useState<string>('updatedAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  const { columnWidths, startResize } = useColumnResize();
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  const { columnWidths, resizingCol, startResize } = useColumnResize();
 
   const customColumns = useMemo(() => {
     return columns.filter(
@@ -61,6 +66,11 @@ export function TableView({ files, columns, onRefresh }: TableViewProps) {
       return sortOrder === 'asc' ? comparison : -comparison;
     });
   }, [files, sortCol, sortOrder]);
+
+  const paginatedFiles = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return sortedFiles.slice(start, start + pageSize);
+  }, [sortedFiles, currentPage, pageSize]);
 
   const handleCellClick = (file: VaultFile, key: string) => {
     setEditingCell({ path: file.path, key });
@@ -110,33 +120,44 @@ export function TableView({ files, columns, onRefresh }: TableViewProps) {
   };
 
   return (
-    <div className="w-full overflow-x-auto border border-neutral-200 dark:border-neutral-800 rounded-lg bg-white dark:bg-neutral-900 shadow-xs">
-      <table className="w-full text-left text-xs border-collapse">
-        <TableHeader
-          sortCol={sortCol}
-          sortOrder={sortOrder}
-          onSort={handleSort}
-          customColumns={customColumns}
-          columnWidths={columnWidths}
-          onStartResize={startResize}
-        />
-        <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800/80">
-          {sortedFiles.map((file) => (
-            <TableRow
-              key={file.path}
-              file={file}
-              customColumns={customColumns}
-              editingCell={editingCell}
-              cellValue={cellValue}
-              onCellValueChange={setCellValue}
-              onCellClick={handleCellClick}
-              onCellSave={handleCellSave}
-              onOpenFile={(path, title) => openFileTab(path, title)}
-              onRefresh={onRefresh}
-            />
-          ))}
-        </tbody>
-      </table>
+    <div className="w-full flex flex-col border border-neutral-200 dark:border-neutral-800 rounded-lg bg-white dark:bg-neutral-900 shadow-xs overflow-hidden">
+      <div className="w-full overflow-x-auto">
+        <table className="w-full text-left text-xs border-collapse">
+          <TableHeader
+            sortCol={sortCol}
+            sortOrder={sortOrder}
+            onSort={handleSort}
+            customColumns={customColumns}
+            columnWidths={columnWidths}
+            resizingCol={resizingCol}
+            onStartResize={startResize}
+          />
+          <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800/80">
+            {paginatedFiles.map((file) => (
+              <TableRow
+                key={file.path}
+                file={file}
+                customColumns={customColumns}
+                editingCell={editingCell}
+                cellValue={cellValue}
+                onCellValueChange={setCellValue}
+                onCellClick={handleCellClick}
+                onCellSave={handleCellSave}
+                onOpenFile={(path, title) => openFileTab(path, title)}
+                onRefresh={onRefresh}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <TablePaginationBar
+        totalCount={sortedFiles.length}
+        currentPage={currentPage}
+        pageSize={pageSize}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={setPageSize}
+      />
     </div>
   );
 }

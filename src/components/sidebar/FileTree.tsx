@@ -4,14 +4,13 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { db } from '@/src/lib/storage/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
-import { scanDroppedItems, runIngestionPipeline } from '@/src/lib/storage/importPipeline';
 import { useTreeStructure, TreeNode } from '@/src/hooks/useTreeStructure';
-import { FileTreeItem } from './FileTreeItem';
-import { NewNoteModal } from './NewNoteModal';
-import { FileActionMenu } from './FileActionMenu';
-import { RenameModal, MoveModal } from './FileModals';
+import { FolderNode } from './tree/FolderNode';
+import { FileNodeRow } from './tree/FileNodeRow';
+import { FileTreeModals } from './tree/FileTreeModals';
 import { TrashSection } from './TrashSection';
 import { useFileTreeActions } from './useFileTreeActions';
+import { useTreeDragAndDrop } from './hooks/useTreeDragAndDrop';
 import { Search, FolderUp, Settings } from 'lucide-react';
 import Link from 'next/link';
 
@@ -19,14 +18,11 @@ export function FileTree() {
   const rawFiles = useLiveQuery(() => db.files.toArray());
   const files = useMemo(() => rawFiles ?? [], [rawFiles]);
   const [openFolders, setOpenFolders] = useState<Set<string>>(new Set(['Projects', 'Engineering']));
-  const [isDragOverTree, setIsDragOverTree] = useState(false);
   const [newNoteModal, setNewNoteModal] = useState(false);
 
-  // File action drawer/menu state
+  // File action drawer/menu and modal targets
   const [activeMenuNode, setActiveMenuNode] = useState<TreeNode | null>(null);
   const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
-
-  // Rename & Move modal state
   const [renameTarget, setRenameTarget] = useState<TreeNode | null>(null);
   const [moveTarget, setMoveTarget] = useState<TreeNode | null>(null);
 
@@ -89,6 +85,12 @@ export function FileTree() {
     renameFileTab,
   });
 
+  const { isDragOverTree, handleDragOver, handleDragLeave, handleDrop } = useTreeDragAndDrop({
+    activeWorkspaceId: activeWorkspaceId || 'default-vault',
+    setImportProgress,
+    openFileTab,
+  });
+
   const toggleFolder = useCallback((path: string) => {
     setOpenFolders((prev) => {
       const next = new Set(prev);
@@ -101,37 +103,14 @@ export function FileTree() {
   const handleOpenActionMenu = useCallback((e: React.MouseEvent, node: TreeNode) => {
     e.preventDefault();
     e.stopPropagation();
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    setMenuAnchorRect(rect);
+    setMenuAnchorRect((e.currentTarget as HTMLElement).getBoundingClientRect());
     setActiveMenuNode(node);
   }, []);
 
-  const handleCloseActionMenu = useCallback(() => {
-    setActiveMenuNode(null);
-    setMenuAnchorRect(null);
-  }, []);
-
-  const handleDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOverTree(false);
-    const items = e.dataTransfer.items;
-    if (!items || items.length === 0) return;
-
-    const droppedFiles = await scanDroppedItems(items);
-    if (droppedFiles.length > 0) {
-      await runIngestionPipeline(
-        droppedFiles,
-        activeWorkspaceId || 'default-vault',
-        (p) => setImportProgress(p)
-      );
-      openFileTab(droppedFiles[0].relativePath, droppedFiles[0].name.replace(/\.[^/.]+$/, ''));
-    }
-  };
-
   return (
     <div
-      onDragOver={(e) => { e.preventDefault(); setIsDragOverTree(true); }}
-      onDragLeave={(e) => { e.preventDefault(); setIsDragOverTree(false); }}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={`w-64 h-full flex flex-col bg-[var(--card)] border-r border-[var(--border)] text-[var(--foreground)] select-none transition-all ${
         isDragOverTree ? 'ring-2 ring-indigo-500 bg-indigo-50/20' : ''
@@ -164,18 +143,29 @@ export function FileTree() {
             <div className="mt-1 text-[11px]">Drop folders or click import below.</div>
           </div>
         ) : (
-          treeData.map((node) => (
-            <FileTreeItem
-              key={node.path}
-              node={node}
-              depth={0}
-              openFolders={openFolders}
-              activeFilePath={activeFilePath}
-              onToggleFolder={toggleFolder}
-              onOpenFile={openFileTab}
-              onOpenActionMenu={handleOpenActionMenu}
-            />
-          ))
+          treeData.map((node) =>
+            node.isFolder ? (
+              <FolderNode
+                key={node.path}
+                node={node}
+                depth={0}
+                openFolders={openFolders}
+                activeFilePath={activeFilePath}
+                onToggleFolder={toggleFolder}
+                onOpenFile={openFileTab}
+                onOpenActionMenu={handleOpenActionMenu}
+              />
+            ) : (
+              <FileNodeRow
+                key={node.path}
+                node={node}
+                depth={0}
+                activeFilePath={activeFilePath}
+                onOpenFile={openFileTab}
+                onOpenActionMenu={handleOpenActionMenu}
+              />
+            )
+          )
         )}
       </div>
 
@@ -201,47 +191,22 @@ export function FileTree() {
         </Link>
       </div>
 
-      <NewNoteModal isOpen={newNoteModal} onClose={() => setNewNoteModal(false)} />
-
-      {/* Action Popover Menu */}
-      <FileActionMenu
-        isOpen={Boolean(activeMenuNode && menuAnchorRect)}
-        onClose={handleCloseActionMenu}
-        anchorRect={menuAnchorRect}
-        filePath={activeMenuNode?.path || ''}
-        fileName={activeMenuNode?.file?.title || activeMenuNode?.name || ''}
-        isFolder={Boolean(activeMenuNode?.isFolder)}
-        onRename={() => setRenameTarget(activeMenuNode)}
-        onDuplicate={() => activeMenuNode && duplicateNode(activeMenuNode)}
-        onMove={() => setMoveTarget(activeMenuNode)}
-        onTrash={() => {
-          if (activeMenuNode) {
-            promptDeleteNote(activeMenuNode.path, activeMenuNode.file?.title || activeMenuNode.name);
-          }
-        }}
-      />
-
-      {/* Rename Dialog Modal */}
-      <RenameModal
-        isOpen={Boolean(renameTarget)}
-        onClose={() => setRenameTarget(null)}
-        currentTitle={renameTarget?.file?.title || renameTarget?.name?.replace(/\.[^/.]+$/, '') || ''}
-        isFolder={Boolean(renameTarget?.isFolder)}
-        onConfirm={(newName) => renameTarget ? renameNode(renameTarget, newName) : Promise.resolve()}
-      />
-
-      {/* Move Dialog Modal */}
-      <MoveModal
-        isOpen={Boolean(moveTarget)}
-        onClose={() => setMoveTarget(null)}
-        fileName={moveTarget?.file?.title || moveTarget?.name || ''}
-        currentFolder={
-          moveTarget?.path.includes('/')
-            ? moveTarget.path.substring(0, moveTarget.path.lastIndexOf('/'))
-            : ''
-        }
+      {/* Modals and Context Menus Container */}
+      <FileTreeModals
+        activeMenuNode={activeMenuNode}
+        menuAnchorRect={menuAnchorRect}
+        onCloseActionMenu={() => { setActiveMenuNode(null); setMenuAnchorRect(null); }}
+        renameTarget={renameTarget}
+        setRenameTarget={setRenameTarget}
+        moveTarget={moveTarget}
+        setMoveTarget={setMoveTarget}
+        newNoteModal={newNoteModal}
+        setNewNoteModal={setNewNoteModal}
         folderSuggestions={folderSuggestions}
-        onConfirm={(targetFolder) => moveTarget ? moveNode(moveTarget, targetFolder) : Promise.resolve()}
+        duplicateNode={duplicateNode}
+        renameNode={renameNode}
+        moveNode={moveNode}
+        promptDeleteNote={promptDeleteNote}
       />
     </div>
   );

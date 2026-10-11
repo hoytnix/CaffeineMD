@@ -1,12 +1,18 @@
 'use client';
 
-import { db, VaultFile } from '@/src/lib/storage/db';
-import { getAccessToken } from '@/src/lib/firebase/client';
+import { DriveAuthService } from './google/driveAuthService';
+import { DrivePayloadBuilder } from './google/drivePayloadBuilder';
+import { executeDriveSyncSession } from './google/driveSyncRunner';
+import { syncProgressEmitter, SyncProgressState } from './syncProgress';
 
 // Re-export submodules to preserve full backwards compatibility
 export * from './google/driveApiClient';
 export * from './google/resumableChunkUploader';
 export * from './google/remoteCrawler';
+export * from './google/driveAuthService';
+export * from './google/drivePayloadBuilder';
+export * from './google/driveReconciler';
+export * from './google/driveSyncRunner';
 export * from './reconciler';
 export * from './syncExecutor';
 export * from './syncProgress';
@@ -29,9 +35,6 @@ import {
 } from './google/resumableChunkUploader';
 
 import { listAllRemoteFiles } from './google/remoteCrawler';
-import { reconcileSyncSets } from './reconciler';
-import { executeDownloadBatch, executeUploadBatch } from './syncExecutor';
-import { SyncProgressState, syncProgressEmitter } from './syncProgress';
 
 export class GoogleDriveSyncService {
   public static readonly CHUNK_SIZE = CHUNK_SIZE;
@@ -56,7 +59,7 @@ export class GoogleDriveSyncService {
   }
 
   public static async listRemoteWorkspaces(): Promise<RemoteWorkspace[]> {
-    const token = await getAccessToken();
+    const token = await DriveAuthService.getValidToken().catch(() => null);
     if (!token) return [];
 
     try {
@@ -94,11 +97,7 @@ export class GoogleDriveSyncService {
       return this.folderCache.get(safeName)!;
     }
 
-    const token = await getAccessToken();
-    if (!token) {
-      throw new Error('Google Drive access token is not available. Please sign in with Google first.');
-    }
-
+    const token = await DriveAuthService.getValidToken();
     const query = `name = '${safeName}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
     const data = await fetchDriveFiles(token, query, 'files(id,name)');
 
@@ -129,8 +128,6 @@ export class GoogleDriveSyncService {
     onProgress?: (statusText: string) => void,
     onProgressState?: (state: SyncProgressState) => void
   ): Promise<DriveSyncStatus> {
-    const stats = { uploaded: 0, downloaded: 0, skipped: 0 };
-
     try {
       syncProgressEmitter.emit({
         status: 'scanning',
@@ -141,10 +138,7 @@ export class GoogleDriveSyncService {
       });
       onProgressState?.(syncProgressEmitter.getState());
 
-      const token = await getAccessToken();
-      if (!token) {
-        throw new Error('Google Drive access token is not available. Please sign in with Google first.');
-      }
+      const token = await DriveAuthService.getValidToken();
 
       onProgress?.('Resolving workspace folder...');
       const folderId = targetFolderId || (await this.getOrCreateWorkspaceFolder(workspaceName));
@@ -156,104 +150,24 @@ export class GoogleDriveSyncService {
           ? 'default-vault'
           : `drive-${workspaceName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`);
 
-      onProgress?.('Scanning Google Drive for remote files...');
-      const remoteMap = await listAllRemoteFiles(token, folderId);
-
-      onProgress?.('Analyzing local workspace notes...');
-      const allLocal = await db.files.toArray();
-      const localFiles =
-        currentWorkspaceId === 'default-vault'
-          ? allLocal.filter((f) => !f.vaultId || f.vaultId === 'default-vault')
-          : allLocal.filter((f) => f.vaultId === currentWorkspaceId);
-
-      const localMap = new Map<string, VaultFile>();
-      for (const local of localFiles) {
-        if (local.isTrash) continue;
-        const normalizedLocalPath = local.path.replace(/\\/g, '/').replace(/^\/+/, '');
-        localMap.set(normalizedLocalPath, local);
-      }
-
-      const { uploadTasks, downloadTasks, skippedCount } = reconcileSyncSets(localMap, remoteMap, 2000);
-      stats.skipped += skippedCount;
-
-      const totalFiles = downloadTasks.length + uploadTasks.length;
-      let processedFiles = 0;
-
-      if (totalFiles > 0) {
-        syncProgressEmitter.emit({
-          status: 'syncing',
-          totalFiles,
-          processedFiles: 0,
-          progressPercentage: 0,
-        });
-        onProgressState?.(syncProgressEmitter.getState());
-      }
-
-      // Execute downloads
-      stats.downloaded += await executeDownloadBatch(
+      const result = await executeDriveSyncSession({
         token,
-        downloadTasks,
+        folderId,
+        workspaceName,
         currentWorkspaceId,
         onProgress,
-        (fileName) => {
-          processedFiles++;
-          syncProgressEmitter.emit({
-            status: 'syncing',
-            currentAction: 'downloading',
-            currentFileName: fileName,
-            totalFiles,
-            processedFiles,
-          });
-          onProgressState?.(syncProgressEmitter.getState());
-        }
-      );
-
-      // Execute uploads
-      stats.uploaded += await executeUploadBatch(
-        token,
-        uploadTasks,
-        folderId,
-        onProgress,
-        (fileName) => {
-          processedFiles++;
-          syncProgressEmitter.emit({
-            status: 'syncing',
-            currentAction: 'uploading',
-            currentFileName: fileName,
-            totalFiles,
-            processedFiles,
-          });
-          onProgressState?.(syncProgressEmitter.getState());
-        }
-      );
-
-      this.lastSyncTime = Date.now();
-      onProgress?.('Synced');
-
-      syncProgressEmitter.emit({
-        status: 'completed',
-        totalFiles,
-        processedFiles: totalFiles,
-        progressPercentage: 100,
-        currentFileName: undefined,
-        currentAction: undefined,
+        onProgressState,
       });
-      onProgressState?.(syncProgressEmitter.getState());
 
-      return {
-        isConnected: true,
-        isSyncing: false,
-        folderId,
-        folderName: `Kite-${workspaceName}`,
-        lastSyncedAt: this.lastSyncTime,
-        lastError: null,
-        stats,
-      };
-    } catch (err: any) {
+      this.lastSyncTime = result.lastSyncedAt;
+      onProgress?.('Synced');
+      return result;
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : 'Sync failed';
       console.error('Google Drive Sync error:', err);
       syncProgressEmitter.emit({
         status: 'error',
-        errorMessage: err?.message || 'Sync failed',
+        errorMessage: errMsg,
       });
       onProgressState?.(syncProgressEmitter.getState());
 
@@ -263,8 +177,8 @@ export class GoogleDriveSyncService {
         folderId: this.cachedFolderId,
         folderName: `Kite-${workspaceName}`,
         lastSyncedAt: this.lastSyncTime,
-        lastError: err?.message || 'Sync failed',
-        stats,
+        lastError: errMsg,
+        stats: { uploaded: 0, downloaded: 0, skipped: 0 },
       };
     }
   }
@@ -275,11 +189,8 @@ export class GoogleDriveSyncService {
     contentOrBlob: string | Blob,
     mimeType?: string
   ): Promise<string> {
-    const token = await getAccessToken();
-    if (!token) throw new Error('Google Drive access token is not available. Please sign in with Google first.');
-    const fileBlob = typeof contentOrBlob === 'string'
-      ? new Blob([contentOrBlob], { type: mimeType || 'text/markdown; charset=UTF-8' })
-      : contentOrBlob;
+    const token = await DriveAuthService.getValidToken();
+    const fileBlob = DrivePayloadBuilder.packageNoteContent(contentOrBlob, mimeType);
     return syncFileToDrive(token, { name, mimeType: mimeType || fileBlob.type || 'text/markdown' }, fileBlob, folderId);
   }
 
@@ -288,11 +199,8 @@ export class GoogleDriveSyncService {
     contentOrBlob: string | Blob,
     mimeType?: string
   ): Promise<string> {
-    const token = await getAccessToken();
-    if (!token) throw new Error('Google Drive access token is not available. Please sign in with Google first.');
-    const fileBlob = typeof contentOrBlob === 'string'
-      ? new Blob([contentOrBlob], { type: mimeType || 'text/markdown; charset=UTF-8' })
-      : contentOrBlob;
+    const token = await DriveAuthService.getValidToken();
+    const fileBlob = DrivePayloadBuilder.packageNoteContent(contentOrBlob, mimeType);
     return syncFileToDrive(token, { mimeType: mimeType || fileBlob.type || 'text/markdown' }, fileBlob, undefined, fileId);
   }
 

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { VaultFile } from '@/src/lib/storage/db';
-import { TableCellRenderer } from './TableCellRenderer';
+import { TableCellFactory } from './TableCellFactory';
 
 interface TableRowProps {
   file: VaultFile;
@@ -32,7 +32,7 @@ export function TableRow({
 
   return (
     <tr className="hover:bg-neutral-50/80 dark:hover:bg-neutral-800/40 transition-colors group">
-      <TableCellRenderer
+      <TableCellFactory
         file={file}
         colKey="title"
         isEditing={false}
@@ -44,7 +44,7 @@ export function TableRow({
         onRefresh={onRefresh}
       />
 
-      <TableCellRenderer
+      <TableCellFactory
         file={file}
         colKey="tags"
         isEditing={isCellEditing('tags')}
@@ -56,7 +56,7 @@ export function TableRow({
         onRefresh={onRefresh}
       />
 
-      <TableCellRenderer
+      <TableCellFactory
         file={file}
         colKey="status"
         isEditing={false}
@@ -68,7 +68,7 @@ export function TableRow({
         onRefresh={onRefresh}
       />
 
-      <TableCellRenderer
+      <TableCellFactory
         file={file}
         colKey="author"
         isEditing={isCellEditing('author')}
@@ -80,7 +80,7 @@ export function TableRow({
         onRefresh={onRefresh}
       />
 
-      <TableCellRenderer
+      <TableCellFactory
         file={file}
         colKey="eisenhower"
         isEditing={false}
@@ -93,7 +93,7 @@ export function TableRow({
       />
 
       {customColumns.map((col) => (
-        <TableCellRenderer
+        <TableCellFactory
           key={col}
           file={file}
           colKey={col}
@@ -107,7 +107,7 @@ export function TableRow({
         />
       ))}
 
-      <TableCellRenderer
+      <TableCellFactory
         file={file}
         colKey="updatedAt"
         isEditing={false}
