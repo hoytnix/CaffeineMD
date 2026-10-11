@@ -1,18 +1,8 @@
 # System Patterns & Architecture
 
-## Architecture Matrix
-- **Storage Layer**:
-  - `Dexie.js` IndexedDB schema (`KiteVaultDatabase` in `/src/lib/storage/db.ts`) storing `files`, `backlinks`, `tags`, and `settings`.
-  - Native File System Access API adapter (`/src/lib/storage/fileSystem.ts`) managing handles for live local directories and disk writes.
-  - Ingestion pipeline (`/src/lib/storage/importPipeline.ts`) with `webkitGetAsEntry()` recursive crawler.
-- **Editor Architecture**:
-  - Tiptap v2 + ProseMirror plugins.
-  - `@tiptap/suggestion` extensions with **dedicated unique `PluginKey` instances**:
-    - `SlashCommandPluginKey = new PluginKey('slashCommandSuggestion')`
-    - `WikiLinkPluginKey = new PluginKey('wikiLinkSuggestion')`
-    *(Prevents ProseMirror `RangeError: Adding different instances of a keyed plugin`)*
-- **Markdown & Frontmatter Bridge**:
-  - `/src/lib/markdown/serializer.ts` parses and dumps YAML headers (`js-yaml`) and extracts WikiLinks `[[Page|Alias]]`.
-- **Reactive State Management**:
-  - `zustand` (`/src/stores/workspaceStore.ts`) for tab management, active view switches, search modals, and import dialogs.
-  - `dexie-react-hooks` (`useLiveQuery`) for reactive UI updates across the file tree and databases.
+## Core Patterns
+- **Storage**: Dexie.js IndexedDB (`files`, `backlinks`, `tags`, `workspaces`, `settings`) in `/src/lib/storage/`. File System Access API in `/src/lib/storage/fileSystem.ts`.
+- **Editor**: Tiptap v2 + ProseMirror with distinct keyed plugins (`SlashCommandPluginKey`, `WikiLinkPluginKey` to prevent `RangeError`). Lossless YAML header parser via `js-yaml` in `/src/lib/markdown/`.
+- **State**: `zustand` (`workspaceStore.ts`) for navigation & modals; `dexie-react-hooks` (`useLiveQuery`) for reactive UI.
+- **LOC Constraint**: Strict 100–250 LOC per module; god components decomposed into focused hooks, subcomponents, and barrel contracts.
+- **Portal Popovers**: Editor toolbar menus (Style, Headings, Lists, Media, History) rendered via `createPortal` to `document.body` with fixed coordinates to prevent overflow clipping.

@@ -1,18 +1,9 @@
-# Product Context: Kite Workspace
+# Product Context: Kite
 
-## Problem Domain
-Knowledge workers, researchers, and engineers often want the flexible Markdown file storage and bidirectional graph capabilities of Obsidian combined with the structured database properties and fluid block editing of Notion, without cloud lock-in or latency.
+Combines Obsidian's local-first Markdown filesystem ownership with Notion's structured database views and fluid block editing—zero cloud lock-in, zero latency.
 
-## User Experience Flows
-1. **Mounting or Importing Vaults**:
-   - User clicks "Import Vault" or drops a folder hierarchy into the sidebar.
-   - User can choose "Live Disk Folder" via File System Access API for zero-copy in-place edits on their filesystem, or upload via `webkitdirectory`.
-2. **Note Creation & Editing**:
-   - Notes are authored with rich text formatting, slash commands (`/`), task lists, tables, callouts, and code blocks.
-   - Typing `[[` activates autocomplete for other vault documents.
-3. **Properties & Backlink Inspection**:
-   - YAML frontmatter properties (`tags`, `status`, `priority`, etc.) are displayed and editable at the base of every note.
-   - Linked references display which documents cite the current note with contextual text snippets.
-4. **Structured Databases & Knowledge Graph**:
-   - Databases parse frontmatter properties across notes to render interactive Tables and Kanban boards.
-   - The knowledge graph provides 2D force simulation with physics, scaling nodes based on connections.
+## Key Workflows
+1. **Vault Mount**: Open local folders via Native File System Access API or import via webkit directory drop into Dexie IndexedDB.
+2. **Note Authoring**: Tiptap rich-text with slash menu (`/`), bidirectional `[[WikiLinks]]`, task lists, callouts, tables, and live metrics.
+3. **Properties & Backlinks**: Frontmatter metadata inspector (title, tags, status, author, Eisenhower matrix) and backlinks panel at note bottom.
+4. **Views**: Peer tabs for Editor, Knowledge Graph, Table, Kanban, List, and Tag Cloud.
