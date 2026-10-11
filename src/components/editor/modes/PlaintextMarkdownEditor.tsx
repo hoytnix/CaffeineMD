@@ -90,8 +90,6 @@ export function PlaintextMarkdownEditor({
           <div className="text-[11px] font-mono text-neutral-400 flex items-center gap-2">
             <span>{rawMarkdown.split('\n').length} lines</span>
             <span>·</span>
-            <span>{rawMarkdown.trim() ? rawMarkdown.trim().split(/\s+/).length : 0} words</span>
-            <span>·</span>
             <span>{rawMarkdown.length} chars</span>
           </div>
         </div>

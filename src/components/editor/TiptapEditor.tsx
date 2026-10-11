@@ -168,6 +168,9 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
 
         <BacklinksPanel
           currentFile={file}
+          editor={editor}
+          rawMarkdown={rawMarkdown}
+          editorMode={editorMode}
           onUpdateFile={(updated) => {
             setFile(updated);
             db.files.put(updated);

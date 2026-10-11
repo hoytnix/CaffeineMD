@@ -1,7 +1,16 @@
 # Active Context: Kite Workspace
 
 ## Current Focus
-Removed redundant document metrics (word count, save status) from `EditorBottomToolbar.tsx` to streamline the bottom toolbar into a compact centered floating pill. Fixed the `HeadingSelectorPopover.tsx` dropdown by mounting it via `createPortal` with coordinate positioning, preventing toolbar `overflow-x-auto` clipping and drag threshold interference.
+Streamlined bottom editor toolbar and relocated document metrics:
+1. Positioned `Copy All as Markdown` at the very left of the toolbar.
+2. Grouped Bold, Italic, Underline, and Strikethrough into `StyleSelectorPopover.tsx`.
+3. Consolidated bullet list, numbered list, task checklist, and indentation into `ListFormattingGroup.tsx`.
+4. Extracted Inline Code, Code Blocks, Quotes, Links, and Images into `MediaSelectorPopover.tsx`.
+5. Created `HistorySelectorPopover.tsx` grouping Undo (`⌘Z`) and Redo (`⌘⇧Z`) in a dedicated history popover menu.
+6. Relocated `TableControlsGroup.tsx` immediately to the left of `HistorySelectorPopover.tsx`.
+7. Created `NoteMetricsBar.tsx` positioned immediately above NOTE PROPERTIES (`BacklinksPanel.tsx`), displaying live Word Count and LLM Token Count in both Rich Text and Plaintext modes.
+8. Removed duplicate word count from the header of `PlaintextMarkdownEditor.tsx`.
+9. Decomposed `BacklinksPanel.tsx` by extracting `NotePropertiesCard.tsx` and `NoteMetricsBar.tsx`, ensuring all modules strictly meet the 100–250 LOC requirement.
 
 ## Key Changes
 1. **Step 1: Modular Theme Definitions & Color Utilities (`/src/lib/themes/`)**:
@@ -22,11 +31,13 @@ Removed redundant document metrics (word count, save status) from `EditorBottomT
 
 3. **Step 3: Decomposed Bottom Editor Toolbar (`/src/components/editor/`)**:
    - `toolbar/HeadingSelectorPopover.tsx` (138 LOC): H1–H6 heading selection context popover menu with active heading state triggers and normal paragraph option.
-   - `toolbar/TableControlsGroup.tsx` (109 LOC): Insert table, add/remove row, and add/remove column buttons.
-   - `toolbar/ListFormattingGroup.tsx` (115 LOC): Bullet list, numbered list, task checklist, and list indent/outdent controls.
+   - `toolbar/StyleSelectorPopover.tsx` (215 LOC): Bold, Italic, Underline, and Strikethrough popover dropdown rendered via `createPortal`.
+   - `toolbar/ListFormattingGroup.tsx` (230 LOC): Bullet list, numbered list, task checklist, and list indent/outdent popover controls.
+   - `toolbar/MediaSelectorPopover.tsx` (250 LOC): Media popover providing Inline Code, Code Block, Blockquote, Link / WikiLink, local Image upload, and Image URL insertion.
+   - `toolbar/TableControlsGroup.tsx` (110 LOC): Insert table, add/remove row, and add/remove column buttons.
+   - `toolbar/HistorySelectorPopover.tsx` (188 LOC): History popover dropdown for Undo and Redo actions rendered via `createPortal`.
    - `toolbar/EditorStatusMetrics.tsx` (113 LOC): Live word count, character count, reading time estimation, and cloud sync status badge.
-   - `toolbar/MarkFormattingGroup.tsx` (211 LOC): Bold, italic, underline, strike, code, blockquote, link, HR, undo, redo, and copy note actions.
-   - `EditorBottomToolbar.tsx` (96 LOC): Composed toolbar layout with mouse drag-to-scroll panning.
+   - `EditorBottomToolbar.tsx` (151 LOC): Composed toolbar layout with mouse drag-to-scroll panning, leading Copy All button, and Divider button.
 
 4. **Step 4: Decomposed Virtual Table Database View (`/src/components/database/`)**:
    - `table/TableColumnResizer.tsx` (106 LOC): Header column drag handle, keyboard arrow navigation, boundary clamping, and visual guide indicator.
