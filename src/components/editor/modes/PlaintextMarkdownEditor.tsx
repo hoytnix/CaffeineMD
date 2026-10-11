@@ -79,9 +79,9 @@ export function PlaintextMarkdownEditor({
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col space-y-2 sm:space-y-4">
       {/* Plaintext Subheader & Markdown Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border)]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 pb-2 sm:pb-3 border-b border-[var(--border)]">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--card)] border border-[var(--border)] text-[11px] font-mono text-[var(--foreground)]">
             <Code className="w-3.5 h-3.5 text-[var(--accent)]" />
@@ -165,7 +165,7 @@ export function PlaintextMarkdownEditor({
               (gutterRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
             }
           }}
-          className="w-11 select-none py-4 pr-2.5 text-right font-mono text-[13px] leading-7 text-neutral-400 border-r border-[var(--border)] bg-[var(--card)] overflow-hidden shrink-0"
+          className="w-10 sm:w-11 select-none py-2.5 sm:py-4 pr-2 sm:pr-2.5 text-right font-mono text-[13px] leading-7 text-neutral-400 border-r border-[var(--border)] bg-[var(--card)] overflow-hidden shrink-0"
         >
           {rawMarkdown.split('\n').map((_, i) => (
             <div key={i} className="h-7">
@@ -186,7 +186,7 @@ export function PlaintextMarkdownEditor({
           autoCapitalize="off"
           autoComplete="off"
           autoCorrect="off"
-          className="flex-1 w-full resize-none p-4 font-mono text-[13.5px] leading-7 bg-transparent text-[var(--foreground)] placeholder-neutral-400 dark:placeholder-neutral-600 focus:outline-none min-h-[480px]"
+          className="flex-1 w-full resize-none p-2.5 sm:p-4 font-mono text-[13.5px] leading-7 bg-transparent text-[var(--foreground)] placeholder-neutral-400 dark:placeholder-neutral-600 focus:outline-none min-h-[300px] sm:min-h-[480px]"
         />
       </div>
     </div>

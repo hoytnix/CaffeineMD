@@ -90,7 +90,7 @@ export function BacklinksPanel({
   if (!currentFile) return null;
 
   return (
-    <div className="mt-12 pt-6 border-t border-neutral-200 dark:border-neutral-800 text-neutral-800 dark:text-neutral-200 select-none">
+    <div className="mt-6 sm:mt-12 pt-4 sm:pt-6 border-t border-neutral-200 dark:border-neutral-800 text-neutral-800 dark:text-neutral-200 select-none">
       {/* Live Word & Token Count placed right above NOTE PROPERTIES */}
       <NoteMetricsBar
         editor={editor}

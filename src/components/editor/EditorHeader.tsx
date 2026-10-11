@@ -128,7 +128,7 @@ export function EditorHeader({
   return (
     <div className="sticky top-0 z-20 flex flex-col bg-[var(--background)]/95 backdrop-blur-md border-b border-[var(--border)] shadow-2xs">
       {/* Top Bar: Path breadcrumb and actions */}
-      <div className="flex items-center justify-between px-6 py-2.5">
+      <div className="flex items-center justify-between px-3.5 sm:px-6 py-2 sm:py-2.5">
         <div className="flex items-center gap-2 text-xs text-neutral-500 min-w-0 flex-1 mr-3">
           <span
             className="truncate font-mono text-[11px] text-[var(--foreground)]/60 shrink min-w-0"
@@ -233,9 +233,9 @@ export function EditorHeader({
 
       {/* Interactive Default Properties Controls */}
       {isPropertiesExpanded && (
-        <div className="px-6 py-2.5 border-t border-[var(--border)]/60 bg-[var(--card)]/40 text-xs space-y-2.5">
+        <div className="px-3.5 sm:px-6 py-2 sm:py-2.5 border-t border-[var(--border)]/60 bg-[var(--card)]/40 text-xs space-y-2 sm:space-y-2.5">
           {/* Row 1: Title & Author */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 items-center">
             {/* 1. Title */}
             <div className="flex items-center gap-2 min-w-0">
               <span className="flex items-center gap-1 text-[11px] font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-14">
@@ -272,7 +272,7 @@ export function EditorHeader({
           </div>
 
           {/* Row 2: Status & Priority */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 items-center">
             {/* 3. Status */}
             <div className="flex items-center gap-2 min-w-0">
               <span className="flex items-center gap-1 text-[11px] font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-14">

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { VaultFile } from '@/src/lib/storage/db';
 import { normalizeEisenhower } from '@/src/lib/markdown/frontmatter';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
-import { Plus, Tag } from 'lucide-react';
+import { Plus, Tag, ChevronDown, ChevronRight } from 'lucide-react';
 
 export interface NotePropertiesCardProps {
   currentFile: VaultFile;
@@ -23,6 +23,7 @@ export function NotePropertiesCard({
   const [newPropKey, setNewPropKey] = useState('');
   const [newPropValue, setNewPropValue] = useState('');
   const [isAddingProp, setIsAddingProp] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const { setActiveView, setSelectedTagFilter } = useWorkspaceStore();
 
@@ -55,14 +56,38 @@ export function NotePropertiesCard({
     setIsAddingProp(false);
   };
 
+  const customProperties = Object.entries(currentFile.frontmatter || {}).filter(
+    ([key]) => key !== 'eisenhower'
+  );
+  const hasFields = customProperties.length > 0 || Boolean(currentFile.eisenhower || currentFile.frontmatter?.eisenhower);
+  const isEffectivelyCollapsed = isCollapsed || (!hasFields && !isAddingProp);
+
   return (
-    <div className="mb-6 rounded-lg bg-[var(--card)] border border-[var(--border)] p-4 select-none">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-neutral-400">
+    <div
+      className={`rounded-lg bg-[var(--card)] border border-[var(--border)] select-none transition-all ${
+        isEffectivelyCollapsed
+          ? 'mb-2 sm:mb-3 p-2.5 sm:p-3'
+          : 'mb-3 sm:mb-6 p-3 sm:p-4'
+      }`}
+    >
+      <div className={`flex items-center justify-between ${isEffectivelyCollapsed ? '' : 'mb-3'}`}>
+        <button
+          type="button"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-neutral-400 hover:text-[var(--foreground)] transition-colors cursor-pointer"
+          title={isCollapsed ? 'Expand properties' : 'Collapse properties'}
+          aria-label="Toggle properties"
+        >
+          {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           <Tag className="w-3.5 h-3.5" />
           <span>Note Properties</span>
-        </div>
-        {!isAddingProp && (
+          {isCollapsed && (
+            <span className="text-[10px] font-mono text-neutral-500 font-normal">
+              ({customProperties.length + (currentFile.eisenhower || currentFile.frontmatter?.eisenhower ? 1 : 0)})
+            </span>
+          )}
+        </button>
+        {!isEffectivelyCollapsed && !isAddingProp && (
           <button
             onClick={() => setIsAddingProp(true)}
             className="flex items-center gap-1 text-[11px] text-[var(--accent)] hover:underline font-medium cursor-pointer"
@@ -73,8 +98,10 @@ export function NotePropertiesCard({
         )}
       </div>
 
-      {/* Existing Properties */}
-      <div className="space-y-2 text-xs">
+      {!isEffectivelyCollapsed && (
+        <>
+          {/* Existing Properties */}
+          <div className="space-y-2 text-xs">
         {/* Dedicated Eisenhower Quadrant Selector */}
         <div className="flex items-center justify-between group py-1 border-b border-[var(--border)] pb-2 mb-2">
           <span className="w-28 text-neutral-400 font-medium truncate flex items-center gap-1.5">
@@ -189,6 +216,8 @@ export function NotePropertiesCard({
             Cancel
           </button>
         </form>
+      )}
+        </>
       )}
     </div>
   );

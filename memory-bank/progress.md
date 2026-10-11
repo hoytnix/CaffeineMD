@@ -13,6 +13,7 @@
 - [x] **Brand Refresh**: Rebranded all user-facing product references and metadata from "Kite Workspace"/"Kite" to "Kite MD".
 - [x] **File Explorer Resizing**: Draggable right border on sidebar with persistent custom width (180px–720px), double-click reset, and keyboard accessibility.
 - [x] **Editor Properties Layout**: Rearranged properties bar into 3 structured rows (Title & Author; Status & Priority; Tags) and collapsed by default.
+- [x] **Mobile Editor Whitespace Optimization**: Responsive editor wrapper padding (`px-4 pt-2 sm:pt-4 md:pt-6 pb-8`), reduced title bottom margin on mobile (`mb-2 sm:mb-4 md:mb-6`), zero-overhead collapsible note properties (`NotePropertiesCard.tsx`), and ProseMirror/Tiptap first-child margin collapse (`[&>*:first-child]:mt-0`).
 
 ## Verification
 - Linting (`pnpm lint`): 0 errors, 0 warnings.

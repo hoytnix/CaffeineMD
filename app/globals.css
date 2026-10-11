@@ -56,8 +56,14 @@ body {
   letter-spacing: -0.02em;
 }
 
-.ProseMirror h1:first-child {
-  margin-top: 0;
+.ProseMirror > *:first-child,
+.tiptap > *:first-child,
+.kite-editor-content > *:first-child,
+.ProseMirror h1:first-child,
+.ProseMirror h2:first-child,
+.ProseMirror h3:first-child,
+.ProseMirror p:first-child {
+  margin-top: 0 !important;
 }
 
 .ProseMirror h2 {

@@ -120,7 +120,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
         onTitleChange={setTitle}
       />
 
-      <div className="max-w-4xl w-full mx-auto px-10 py-10 flex-1">
+      <div className="max-w-4xl w-full mx-auto px-4 pt-2 sm:pt-4 md:pt-6 pb-8 sm:px-6 md:px-10 flex-1">
         {editorMode === 'rich' ? (
           <>
             <textarea
@@ -142,13 +142,16 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
                 if (file && trimmed && trimmed !== file.title) updateProperties({ title: trimmed });
               }}
               placeholder="Untitled Note"
-              className="w-full text-3xl sm:text-4xl font-bold tracking-tight bg-transparent border-none focus:outline-none mb-6 placeholder-neutral-400 dark:placeholder-neutral-600 text-[var(--foreground)] resize-none overflow-hidden break-words leading-tight block"
+              className="w-full text-2xl sm:text-4xl font-bold tracking-tight bg-transparent border-none focus:outline-none mb-2 sm:mb-4 md:mb-6 placeholder-neutral-400 dark:placeholder-neutral-600 text-[var(--foreground)] resize-none overflow-hidden break-words leading-tight block"
             />
             {editor && !editor.isDestroyed && <BlockHandle editor={editor} />}
             {editor && !editor.isDestroyed ? (
-              <EditorContent editor={editor} className="min-h-[400px] kite-editor-content" />
+              <EditorContent
+                editor={editor}
+                className="min-h-[280px] sm:min-h-[400px] kite-editor-content pt-1 sm:pt-2 first:mt-0 [&>*:first-child]:mt-0 [&_.ProseMirror>*:first-child]:mt-0 [&_.tiptap>*:first-child]:mt-0"
+              />
             ) : (
-              <div className="min-h-[400px] flex items-center justify-center text-neutral-400 animate-pulse text-xs font-mono">
+              <div className="min-h-[280px] sm:min-h-[400px] flex items-center justify-center text-neutral-400 animate-pulse text-xs font-mono">
                 Loading note content...
               </div>
             )}

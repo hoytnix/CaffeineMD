@@ -51,7 +51,7 @@ export function useTiptapInit({
       editorProps: {
         attributes: {
           class:
-            'focus:outline-none min-h-[500px] text-[15px] leading-[1.8] text-neutral-800 dark:text-neutral-200',
+            'focus:outline-none min-h-[280px] sm:min-h-[500px] text-[15px] leading-[1.8] text-neutral-800 dark:text-neutral-200 first:mt-0 [&>*:first-child]:mt-0',
         },
         handleDOMEvents: {
           click: (_view, event) =>
