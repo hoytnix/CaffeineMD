@@ -8,11 +8,12 @@ export function useEmojiDrawer() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Shift + Spacebar trigger
-      const isShiftSpace = e.shiftKey && (e.code === 'Space' || e.key === ' ');
+      // Cmd/Ctrl + Shift (+ Space or E) trigger
+      const isCmdOrCtrl = e.metaKey || e.ctrlKey;
+      const isCmdShift = isCmdOrCtrl && e.shiftKey && (e.code === 'Space' || e.key === ' ' || e.key.toLowerCase() === 'e');
 
-      if (isShiftSpace) {
-        // Prevent default browser scroll down on spacebar
+      if (isCmdShift) {
+        // Prevent default browser behavior
         e.preventDefault();
         e.stopPropagation();
         toggleEmojiDrawer();

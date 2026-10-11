@@ -169,7 +169,7 @@ export function EmojiDrawer() {
                 Emoji Drawer
               </span>
               <span className="text-[10px] text-neutral-400 bg-neutral-200/60 dark:bg-neutral-800 px-1.5 py-0.5 rounded font-mono">
-                Shift + Space
+                ⌘⇧Space
               </span>
             </div>
             <button

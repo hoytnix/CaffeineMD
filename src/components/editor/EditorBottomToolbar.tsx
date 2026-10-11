@@ -5,9 +5,7 @@ import { Editor } from '@tiptap/react';
 import {
   Copy,
   Check,
-  Heading1,
-  Heading2,
-  Heading3,
+  Heading,
   Bold,
   Italic,
   Underline as UnderlineIcon,
@@ -31,6 +29,7 @@ import {
   Rows,
   Plus,
   Trash2,
+  ChevronDown,
 } from 'lucide-react';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { editorHtmlToMarkdown } from '@/src/lib/markdown/serializer';
@@ -47,9 +46,7 @@ interface ToolbarButtonDef {
 
 const DEFAULT_BUTTON_ORDER = [
   'copy-all',
-  'h1',
-  'h2',
-  'h3',
+  'heading',
   'bold',
   'italic',
   'underline',
@@ -74,6 +71,15 @@ const DEFAULT_BUTTON_ORDER = [
   'redo',
 ];
 
+const HEADING_LEVELS = [
+  { level: 1 as const, label: 'Heading 1', tag: 'H1' },
+  { level: 2 as const, label: 'Heading 2', tag: 'H2' },
+  { level: 3 as const, label: 'Heading 3', tag: 'H3' },
+  { level: 4 as const, label: 'Heading 4', tag: 'H4' },
+  { level: 5 as const, label: 'Heading 5', tag: 'H5' },
+  { level: 6 as const, label: 'Heading 6', tag: 'H6' },
+];
+
 const BUTTON_DEFINITIONS: Record<string, ToolbarButtonDef> = {
   'copy-all': {
     id: 'copy-all',
@@ -90,26 +96,14 @@ const BUTTON_DEFINITIONS: Record<string, ToolbarButtonDef> = {
       }
     },
   },
-  h1: {
-    id: 'h1',
-    label: 'Heading 1',
-    icon: Heading1,
-    action: (editor) => editor.chain().focus().toggleHeading({ level: 1 }).run(),
-    isActive: (editor) => editor.isActive('heading', { level: 1 }),
-  },
-  h2: {
-    id: 'h2',
-    label: 'Heading 2',
-    icon: Heading2,
-    action: (editor) => editor.chain().focus().toggleHeading({ level: 2 }).run(),
-    isActive: (editor) => editor.isActive('heading', { level: 2 }),
-  },
-  h3: {
-    id: 'h3',
-    label: 'Heading 3',
-    icon: Heading3,
-    action: (editor) => editor.chain().focus().toggleHeading({ level: 3 }).run(),
-    isActive: (editor) => editor.isActive('heading', { level: 3 }),
+  heading: {
+    id: 'heading',
+    label: 'Headings',
+    icon: Heading,
+    action: () => {
+      // Toggled via isHeaderMenuOpen state
+    },
+    isActive: (editor) => editor.isActive('heading'),
   },
   bold: {
     id: 'bold',
@@ -306,6 +300,22 @@ interface EditorBottomToolbarProps {
 export function EditorBottomToolbar({ editor }: EditorBottomToolbarProps) {
   const { showToast } = useWorkspaceStore();
   const [copiedRecently, setCopiedRecently] = useState(false);
+  const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
+  const headerMenuRef = useRef<HTMLDivElement>(null);
+
+  // Outside click listener for heading popover
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (headerMenuRef.current && !headerMenuRef.current.contains(e.target as Node)) {
+        setIsHeaderMenuOpen(false);
+      }
+    };
+    if (isHeaderMenuOpen) {
+      document.addEventListener('mousedown', handleOutsideClick);
+    }
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [isHeaderMenuOpen]);
+
   const [buttonOrder, setButtonOrder] = useState<string[]>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -435,10 +445,124 @@ export function EditorBottomToolbar({ editor }: EditorBottomToolbarProps) {
         if (!isVisible) return null;
 
         const isCopyBtn = btnId === 'copy-all';
+        const isHeadingBtn = btnId === 'heading';
         const IconComponent = isCopyBtn && copiedRecently ? Check : def.icon;
-        const active = def.isActive ? def.isActive(editor) : false;
+        const active = isHeadingBtn
+          ? editor.isActive('heading')
+          : def.isActive
+          ? def.isActive(editor)
+          : false;
         const disabled = def.isDisabled ? def.isDisabled(editor) : false;
         const isDragOver = dragOverIndex === idx;
+
+        if (isHeadingBtn) {
+          return (
+            <div
+              key={btnId}
+              ref={headerMenuRef}
+              draggable={!disabled && !isHeaderMenuOpen}
+              onDragStart={(e) => handleDragStart(e, idx)}
+              onDragOver={(e) => handleDragOver(e, idx)}
+              onDragEnd={handleDragEnd}
+              onDrop={(e) => handleDrop(e, idx)}
+              className={`relative flex items-center shrink-0 rounded-lg transition-all ${
+                isDragOver ? 'scale-110 ring-2 ring-[var(--accent)]' : ''
+              }`}
+            >
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={(e) => {
+                  if (hasDraggedDistRef.current) {
+                    e.stopPropagation();
+                    return;
+                  }
+                  setIsHeaderMenuOpen((prev) => !prev);
+                }}
+                title="Headings (Drag icon to reorder, drag bar to scroll)"
+                aria-expanded={isHeaderMenuOpen}
+                aria-haspopup="true"
+                className={`p-1 px-1.5 rounded-lg transition-all flex items-center gap-0.5 justify-center cursor-pointer min-w-[34px] h-[26px] ${
+                  active || isHeaderMenuOpen
+                    ? 'bg-[var(--accent)] text-white shadow-xs'
+                    : 'text-neutral-400 hover:text-[var(--foreground)] hover:bg-[var(--border)]/60'
+                }`}
+              >
+                <Heading className="w-4 h-4 shrink-0 stroke-[2] pointer-events-none" />
+                <ChevronDown className="w-2.5 h-2.5 opacity-70 pointer-events-none" />
+              </button>
+
+              {/* Headings H1-H6 Popover Menu */}
+              {isHeaderMenuOpen && (
+                <div
+                  onMouseDown={(e) => e.stopPropagation()}
+                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 rounded-xl bg-[var(--card)] border border-[var(--border)] shadow-2xl p-1.5 flex flex-col gap-0.5 z-50 text-[var(--foreground)] animate-in fade-in slide-in-from-bottom-2"
+                >
+                  <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--foreground)]/50">
+                    Heading Levels
+                  </div>
+
+                  {HEADING_LEVELS.map(({ level, label, tag }) => {
+                    const isLevelActive = editor.isActive('heading', { level });
+                    return (
+                      <button
+                        key={level}
+                        type="button"
+                        onClick={() => {
+                          editor.chain().focus().toggleHeading({ level }).run();
+                          setIsHeaderMenuOpen(false);
+                        }}
+                        className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-xs transition-colors cursor-pointer text-left w-full ${
+                          isLevelActive
+                            ? 'bg-[var(--accent)] text-white font-semibold'
+                            : 'hover:bg-[var(--foreground)]/10 text-[var(--foreground)]'
+                        }`}
+                      >
+                        <span>{label}</span>
+                        <span
+                          className={`text-[10px] font-mono px-1 py-0.5 rounded ${
+                            isLevelActive
+                              ? 'bg-white/20 text-white'
+                              : 'bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)]/60'
+                          }`}
+                        >
+                          {tag}
+                        </span>
+                      </button>
+                    );
+                  })}
+
+                  <div className="my-1 border-t border-[var(--border)]" />
+
+                  {/* Normal Text / Paragraph option */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      editor.chain().focus().setParagraph().run();
+                      setIsHeaderMenuOpen(false);
+                    }}
+                    className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-xs transition-colors cursor-pointer text-left w-full ${
+                      editor.isActive('paragraph')
+                        ? 'bg-[var(--accent)] text-white font-semibold'
+                        : 'hover:bg-[var(--foreground)]/10 text-[var(--foreground)]'
+                    }`}
+                  >
+                    <span>Normal Text</span>
+                    <span
+                      className={`text-[10px] font-mono px-1 py-0.5 rounded ${
+                        editor.isActive('paragraph')
+                          ? 'bg-white/20 text-white'
+                          : 'bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)]/60'
+                      }`}
+                    >
+                      P
+                    </span>
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        }
 
         return (
           <div

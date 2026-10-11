@@ -33,7 +33,7 @@ export function getEditorExtensions(callbacks: EditorExtensionCallbacks): AnyExt
   return [
     StarterKit.configure({
       codeBlock: false,
-      heading: { levels: [1, 2, 3] },
+      heading: { levels: [1, 2, 3, 4, 5, 6] },
       paragraph: {},
       hardBreak: { keepMarks: true },
     }),

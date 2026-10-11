@@ -1049,7 +1049,7 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
                 Universal Emoji Drawer
               </span>
               <kbd className="px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 font-mono text-[11px] text-neutral-500">
-                Shift + Space
+                ⌘⇧Space / Ctrl+Shift+Space
               </kbd>
             </div>
             <div className="p-3.5 flex items-center justify-between text-xs">
