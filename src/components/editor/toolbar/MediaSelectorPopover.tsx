@@ -27,55 +27,28 @@ const CODE_ITEMS = [
   { id: 'quote', label: 'Quote', icon: Quote, tag: '>', check: (e: Editor) => e.isActive('blockquote'), act: (e: Editor) => e.chain().focus().toggleBlockquote().run() },
 ];
 
+import { useToolbarPopover } from './useToolbarPopover';
+
 export function MediaSelectorPopover({
   editor,
   checkHasDragged,
   onActionNotice,
 }: MediaSelectorPopoverProps) {
   const { activeWorkspaceId } = useWorkspaceStore();
-  const [isOpen, setIsOpen] = useState(false);
-  const [coords, setCoords] = useState<{ bottom: number; left: number } | null>(null);
-
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const updateCoords = () => {
-    if (buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setCoords({ bottom: window.innerHeight - rect.top + 8, left: rect.left + rect.width / 2 });
-    }
-  };
-
-  const toggleOpen = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (checkHasDragged?.()) return;
-    if (!isOpen) { updateCoords(); setIsOpen(true); } else { setIsOpen(false); }
-  };
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleOutside = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (menuRef.current && !menuRef.current.contains(target) && buttonRef.current && !buttonRef.current.contains(target)) {
-        setIsOpen(false);
-      }
-    };
-    const handleDismiss = () => setIsOpen(false);
-    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setIsOpen(false); };
-
-    document.addEventListener('mousedown', handleOutside);
-    window.addEventListener('resize', handleDismiss);
-    window.addEventListener('scroll', handleDismiss, true);
-    document.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      document.removeEventListener('mousedown', handleOutside);
-      window.removeEventListener('resize', handleDismiss);
-      window.removeEventListener('scroll', handleDismiss, true);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isOpen]);
+  const {
+    isOpen,
+    setIsOpen,
+    popoverStyle,
+    buttonRef,
+    menuRef,
+    toggleOpen,
+    animationClass,
+  } = useToolbarPopover({
+    checkHasDragged,
+    popoverWidth: 208,
+  });
 
   const handleInsertLink = () => {
     setIsOpen(false);
@@ -150,17 +123,12 @@ export function MediaSelectorPopover({
         <ChevronDown className="w-2.5 h-2.5 opacity-70 pointer-events-none" />
       </button>
 
-      {isOpen && coords && typeof document !== 'undefined' && createPortal(
+      {isOpen && popoverStyle && typeof document !== 'undefined' && createPortal(
         <div
           ref={menuRef}
           onMouseDown={(e) => e.stopPropagation()}
-          style={{
-            position: 'fixed',
-            bottom: `${coords.bottom}px`,
-            left: `${coords.left}px`,
-            transform: 'translateX(-50%)',
-          }}
-          className="w-52 rounded-xl bg-[var(--card)] border border-[var(--border)] shadow-2xl p-1.5 flex flex-col gap-0.5 z-[9999] text-[var(--foreground)] animate-in fade-in slide-in-from-bottom-2"
+          style={popoverStyle}
+          className={`w-52 rounded-xl bg-[var(--card)] border border-[var(--border)] shadow-2xl p-1.5 flex flex-col gap-0.5 z-[9999] text-[var(--foreground)] ${animationClass}`}
         >
           <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--foreground)]/50">
             Code & Quotes

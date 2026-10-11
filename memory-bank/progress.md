@@ -5,6 +5,7 @@
 - [x] **Markdown & Serialization**: YAML frontmatter parsing, bi-directional WikiLinks, HTML-Markdown lossless serializer (`/src/lib/markdown/`).
 - [x] **Rich-Text Editor**: Tiptap v2, StarterKit, highlight.js code blocks, task lists, tables, slash menu, floating wiki menu, block handles, universal emoji drawer (`Shift+Space`).
 - [x] **Editor Toolbar & Metrics**: Decomposed bottom floating pill with Style, Heading, List, Media, and History popovers; real-time words/chars/tokens/emojis/links/KB metrics bar.
+- [x] **Configurable Editor Toolbox Position**: Added 4-sided toolbox placement configuration (Left, Right, Bottom, Top) in `SettingsView.tsx` via `EditorSettingsSection.tsx` with live preview, `localStorage` persistence, directional popovers via `useToolbarPopover.ts`, and vertical/horizontal toolbar adaptability in `EditorBottomToolbar.tsx` and `TiptapEditor.tsx`.
 - [x] **Databases & Views**: Frontmatter-driven Table view (column resizing, cell factory), Kanban Board (drag-and-drop status & Eisenhower grouping), List view, Tag Cloud.
 - [x] **Knowledge Graph**: D3 force-directed physics simulation with decoupled edge/node renderers.
 - [x] **Search & Navigation**: `⌘K` fuzzy search modal, hash routing permalinks (`/w/[id]#[view]`), memoized file tree with ellipsis actions.

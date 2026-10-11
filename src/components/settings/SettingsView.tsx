@@ -11,6 +11,7 @@ import { GoogleDriveSyncSection } from './sections/GoogleDriveSyncSection';
 import { ThemeSettingsSection } from './sections/ThemeSettingsSection';
 import { CustomThemeBuilder } from './sections/CustomThemeBuilder';
 import { StorageSettingsSection } from './sections/StorageSettingsSection';
+import { EditorSettingsSection } from './sections/EditorSettingsSection';
 
 export function SettingsView({ onBack }: { onBack?: () => void }) {
   const {
@@ -18,6 +19,8 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
     setTheme,
     customTheme,
     updateCustomTheme,
+    toolboxPosition,
+    setToolboxPosition,
     vaultName,
     trashRetentionDays,
     setTrashRetentionDays,
@@ -90,6 +93,13 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
           customTheme={customTheme}
           showCustomWizard={showCustomWizard}
           setShowCustomWizard={setShowCustomWizard}
+        />
+
+        {/* Editor & Formatting Toolbox Position */}
+        <EditorSettingsSection
+          toolboxPosition={toolboxPosition}
+          setToolboxPosition={setToolboxPosition}
+          showToast={showToast}
         />
 
         {/* Storage, Ephemeral Retention & Keyboard Shortcuts */}

@@ -1,6 +1,12 @@
 # Active Context: Kite MD
 
 ## Current State
+- **Configurable Editor Toolbox Position (Left, Right, Bottom, Top)**:
+  - Added `toolboxPosition: 'left' | 'right' | 'bottom' | 'top'` in `workspaceStore.ts` with instant `localStorage` persistence (`kite-toolbox-position`) and reactive updates.
+  - Implemented `EditorSettingsSection.tsx` in `SettingsView.tsx` with 4 interactive visual placement cards featuring miniature animated editor wireframes and affirmative toasts.
+  - Enhanced `EditorBottomToolbar.tsx` to dynamically support both horizontal layout (`bottom`, `top`) and vertical layout (`left`, `right`) with 2D drag scrolling and responsive mouse wheel navigation.
+  - Updated `TiptapEditor.tsx` layout to dock the toolbox on the chosen side (left vertical bar, right vertical bar, sticky top bar below note header, or sticky bottom floating pill).
+  - Created reusable `useToolbarPopover.ts` hook providing clamped viewport coordinates, directional animations, and dismiss events across all popovers (`StyleSelectorPopover`, `HeadingSelectorPopover`, `MediaSelectorPopover`, `HistorySelectorPopover`, `ListFormattingGroup`).
 - **Editor Properties Layout**: Rearranged properties at top of editor into 3 clean rows (Row 1: Title & Author; Row 2: Status & Priority; Row 3: Tags on own line) in `EditorHeader.tsx`, hidden/collapsed by default (`isPropertiesExpanded = false`) with chevron toggle.
 - **Resizable File Explorer**: Draggable border resizer (`SidebarResizer.tsx` + `useSidebarResize.ts`) on the right side of `FileTree.tsx`, supporting drag resizing (180px–720px), double-click reset (256px), keyboard accessibility, and localStorage persistence.
 - **Rebranding**: Rebranded from "Kite Workspace"/"Kite" to "Kite MD" across metadata, UI, popovers, default seed notes, and workspace stores.

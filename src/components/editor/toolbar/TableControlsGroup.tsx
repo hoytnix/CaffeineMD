@@ -7,13 +7,16 @@ import { Table as TableIcon, Columns, Rows, Plus, Trash2, Minus } from 'lucide-r
 export interface TableControlsGroupProps {
   editor: Editor;
   onActionNotice?: (msg: string) => void;
+  orientation?: 'horizontal' | 'vertical';
 }
 
 export function TableControlsGroup({
   editor,
   onActionNotice,
+  orientation = 'horizontal',
 }: TableControlsGroupProps) {
   const isTableActive = editor.isActive('table');
+  const isVertical = orientation === 'vertical';
 
   const handleInsertTable = () => {
     editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
@@ -45,7 +48,7 @@ export function TableControlsGroup({
   };
 
   return (
-    <div className="flex items-center gap-1 shrink-0">
+    <div className={`flex ${isVertical ? 'flex-col' : 'items-center'} gap-1 shrink-0`}>
       <button
         type="button"
         onClick={handleInsertTable}

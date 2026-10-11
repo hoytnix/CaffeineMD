@@ -24,7 +24,7 @@ export interface TiptapEditorProps {
 }
 
 export function TiptapEditor({ filePath }: TiptapEditorProps) {
-  const { openFileTab, activeWorkspaceId } = useWorkspaceStore();
+  const { openFileTab, activeWorkspaceId, toolboxPosition } = useWorkspaceStore();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const gutterRef = useRef<HTMLDivElement | null>(null);
   const titleTextareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -99,7 +99,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
         }
       }}
       onDrop={() => setIsDraggingOver(false)}
-      className="flex-1 flex flex-col h-full overflow-y-auto overflow-x-hidden min-w-0 bg-[var(--background)] text-[var(--foreground)] relative"
+      className="flex-1 flex flex-col h-full overflow-hidden min-w-0 bg-[var(--background)] text-[var(--foreground)] relative"
     >
       <EditorDragOverlay
         isDraggingOver={isDraggingOver}
@@ -107,85 +107,114 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
         onDrop={() => setIsDraggingOver(false)}
       />
 
-      <EditorHeader
-        file={file}
-        isSaving={isSaving}
-        saveSuccess={saveSuccess}
-        editorMode={editorMode}
-        onSwitchToRichText={() => switchToRichText(editor)}
-        onSwitchToPlaintext={() => switchToPlaintext(editor)}
-        onManualSave={() => handleManualSave(editor)}
-        isSaveDisabled={isSaving || (editorMode === 'rich' && (!editor || editor.isDestroyed))}
-        onUpdateProperties={updateProperties}
-        onTitleChange={setTitle}
-      />
-
-      <div className="max-w-4xl w-full mx-auto px-4 pt-2 sm:pt-4 md:pt-6 pb-8 sm:px-6 md:px-10 flex-1">
-        {editorMode === 'rich' ? (
-          <>
-            <textarea
-              ref={titleTextareaRef}
-              rows={1}
-              value={title}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                if (file) setFile({ ...file, title: e.target.value });
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  editor?.commands.focus('start');
-                }
-              }}
-              onBlur={() => {
-                const trimmed = title.trim();
-                if (file && trimmed && trimmed !== file.title) updateProperties({ title: trimmed });
-              }}
-              placeholder="Untitled Note"
-              className="w-full text-2xl sm:text-4xl font-bold tracking-tight bg-transparent border-none focus:outline-none mb-2 sm:mb-4 md:mb-6 placeholder-neutral-400 dark:placeholder-neutral-600 text-[var(--foreground)] resize-none overflow-hidden break-words leading-tight block"
-            />
-            {editor && !editor.isDestroyed && <BlockHandle editor={editor} />}
-            {editor && !editor.isDestroyed ? (
-              <EditorContent
-                editor={editor}
-                className="min-h-[280px] sm:min-h-[400px] kite-editor-content pt-1 sm:pt-2 first:mt-0 [&>*:first-child]:mt-0 [&_.ProseMirror>*:first-child]:mt-0 [&_.tiptap>*:first-child]:mt-0"
-              />
-            ) : (
-              <div className="min-h-[280px] sm:min-h-[400px] flex items-center justify-center text-neutral-400 animate-pulse text-xs font-mono">
-                Loading note content...
-              </div>
-            )}
-          </>
-        ) : (
-          <PlaintextMarkdownEditor
-            rawMarkdown={rawMarkdown}
-            onMarkdownChange={setRawMarkdown}
-            onSaveTrigger={(val) => {
-              if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-              if (file) saveTimeoutRef.current = setTimeout(() => handleSaveRaw(val, file), 1200);
-            }}
-            gutterRef={gutterRef}
-            textareaRef={textareaRef}
-          />
+      <div className="flex-1 flex flex-row overflow-hidden relative min-h-0">
+        {/* Left Toolbar Dock */}
+        {editorMode === 'rich' && editor && !editor.isDestroyed && toolboxPosition === 'left' && (
+          <div className="flex flex-col justify-center pl-3 py-4 shrink-0 z-30 animate-in fade-in slide-in-from-left-2">
+            <EditorBottomToolbar editor={editor} position="left" />
+          </div>
         )}
 
-        <BacklinksPanel
-          currentFile={file}
-          editor={editor}
-          rawMarkdown={rawMarkdown}
-          editorMode={editorMode}
-          onUpdateFile={(updated) => {
-            setFile(updated);
-            db.files.put(updated);
-            if (editorMode === 'plain') {
-              const parsed = parseMarkdownContent(rawMarkdown, updated.title);
-              setRawMarkdown(serializeMarkdownWithFrontmatter(parsed.body, updated.frontmatter || {}));
-            }
-          }}
-        />
-      </div>
+        {/* Main Note Scrollable Container */}
+        <div className="flex-1 flex flex-col h-full overflow-y-auto overflow-x-hidden min-w-0 relative">
+          <EditorHeader
+            file={file}
+            isSaving={isSaving}
+            saveSuccess={saveSuccess}
+            editorMode={editorMode}
+            onSwitchToRichText={() => switchToRichText(editor)}
+            onSwitchToPlaintext={() => switchToPlaintext(editor)}
+            onManualSave={() => handleManualSave(editor)}
+            isSaveDisabled={isSaving || (editorMode === 'rich' && (!editor || editor.isDestroyed))}
+            onUpdateProperties={updateProperties}
+            onTitleChange={setTitle}
+          />
 
-      {editorMode === 'rich' && editor && !editor.isDestroyed && <EditorBottomToolbar editor={editor} />}
+          {/* Top Toolbar Dock */}
+          {editorMode === 'rich' && editor && !editor.isDestroyed && toolboxPosition === 'top' && (
+            <div className="sticky top-3 z-30 w-full flex justify-center px-4 pt-1 pb-2 shrink-0 animate-in fade-in slide-in-from-top-2">
+              <EditorBottomToolbar editor={editor} position="top" />
+            </div>
+          )}
+
+          <div className="max-w-4xl w-full mx-auto px-4 pt-2 sm:pt-4 md:pt-6 pb-8 sm:px-6 md:px-10 flex-1">
+            {editorMode === 'rich' ? (
+              <>
+                <textarea
+                  ref={titleTextareaRef}
+                  rows={1}
+                  value={title}
+                  onChange={(e) => {
+                    setTitle(e.target.value);
+                    if (file) setFile({ ...file, title: e.target.value });
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      editor?.commands.focus('start');
+                    }
+                  }}
+                  onBlur={() => {
+                    const trimmed = title.trim();
+                    if (file && trimmed && trimmed !== file.title) updateProperties({ title: trimmed });
+                  }}
+                  placeholder="Untitled Note"
+                  className="w-full text-2xl sm:text-4xl font-bold tracking-tight bg-transparent border-none focus:outline-none mb-2 sm:mb-4 md:mb-6 placeholder-neutral-400 dark:placeholder-neutral-600 text-[var(--foreground)] resize-none overflow-hidden break-words leading-tight block"
+                />
+                {editor && !editor.isDestroyed && <BlockHandle editor={editor} />}
+                {editor && !editor.isDestroyed ? (
+                  <EditorContent
+                    editor={editor}
+                    className="min-h-[280px] sm:min-h-[400px] kite-editor-content pt-1 sm:pt-2 first:mt-0 [&>*:first-child]:mt-0 [&_.ProseMirror>*:first-child]:mt-0 [&_.tiptap>*:first-child]:mt-0"
+                  />
+                ) : (
+                  <div className="min-h-[280px] sm:min-h-[400px] flex items-center justify-center text-neutral-400 animate-pulse text-xs font-mono">
+                    Loading note content...
+                  </div>
+                )}
+              </>
+            ) : (
+              <PlaintextMarkdownEditor
+                rawMarkdown={rawMarkdown}
+                onMarkdownChange={setRawMarkdown}
+                onSaveTrigger={(val) => {
+                  if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+                  if (file) saveTimeoutRef.current = setTimeout(() => handleSaveRaw(val, file), 1200);
+                }}
+                gutterRef={gutterRef}
+                textareaRef={textareaRef}
+              />
+            )}
+
+            <BacklinksPanel
+              currentFile={file}
+              editor={editor}
+              rawMarkdown={rawMarkdown}
+              editorMode={editorMode}
+              onUpdateFile={(updated) => {
+                setFile(updated);
+                db.files.put(updated);
+                if (editorMode === 'plain') {
+                  const parsed = parseMarkdownContent(rawMarkdown, updated.title);
+                  setRawMarkdown(serializeMarkdownWithFrontmatter(parsed.body, updated.frontmatter || {}));
+                }
+              }}
+            />
+          </div>
+
+          {/* Bottom Toolbar Dock */}
+          {editorMode === 'rich' && editor && !editor.isDestroyed && toolboxPosition === 'bottom' && (
+            <EditorBottomToolbar editor={editor} position="bottom" />
+          )}
+        </div>
+
+        {/* Right Toolbar Dock */}
+        {editorMode === 'rich' && editor && !editor.isDestroyed && toolboxPosition === 'right' && (
+          <div className="flex flex-col justify-center pr-3 py-4 shrink-0 z-30 animate-in fade-in slide-in-from-right-2">
+            <EditorBottomToolbar editor={editor} position="right" />
+          </div>
+        )}
+      </div>
 
       <FloatingToolbarHost
         slashMenu={slashMenu}

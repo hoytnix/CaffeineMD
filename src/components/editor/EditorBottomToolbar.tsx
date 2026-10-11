@@ -4,7 +4,7 @@ import React, { useRef, useState } from 'react';
 import { Editor } from '@tiptap/react';
 import { Copy, Check, Minus } from 'lucide-react';
 import { editorHtmlToMarkdown } from '@/src/lib/markdown/serializer';
-import { useWorkspaceStore } from '@/src/stores/workspaceStore';
+import { useWorkspaceStore, ToolboxPosition } from '@/src/stores/workspaceStore';
 import { StyleSelectorPopover } from './toolbar/StyleSelectorPopover';
 import { HeadingSelectorPopover } from './toolbar/HeadingSelectorPopover';
 import { ListFormattingGroup } from './toolbar/ListFormattingGroup';
@@ -14,16 +14,19 @@ import { HistorySelectorPopover } from './toolbar/HistorySelectorPopover';
 
 export interface EditorBottomToolbarProps {
   editor: Editor | null;
+  position?: ToolboxPosition;
 }
 
-export function EditorBottomToolbar({ editor }: EditorBottomToolbarProps) {
-  const { showToast } = useWorkspaceStore();
+export function EditorBottomToolbar({ editor, position }: EditorBottomToolbarProps) {
+  const { showToast, toolboxPosition } = useWorkspaceStore();
+  const resolvedPosition = position || toolboxPosition;
+  const isVertical = resolvedPosition === 'left' || resolvedPosition === 'right';
   const [copiedRecently, setCopiedRecently] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const isMouseDownRef = useRef(false);
-  const mouseStartXRef = useRef(0);
-  const scrollLeftRef = useRef(0);
+  const mouseStartCoordRef = useRef(0);
+  const scrollStartRef = useRef(0);
   const hasDraggedDistRef = useRef(false);
 
   const handleCopyAll = () => {
@@ -43,19 +46,30 @@ export function EditorBottomToolbar({ editor }: EditorBottomToolbarProps) {
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.button !== 0 || !containerRef.current) return;
     isMouseDownRef.current = true;
-    mouseStartXRef.current = e.pageX - containerRef.current.offsetLeft;
-    scrollLeftRef.current = containerRef.current.scrollLeft;
+    if (isVertical) {
+      mouseStartCoordRef.current = e.pageY - containerRef.current.offsetTop;
+      scrollStartRef.current = containerRef.current.scrollTop;
+    } else {
+      mouseStartCoordRef.current = e.pageX - containerRef.current.offsetLeft;
+      scrollStartRef.current = containerRef.current.scrollLeft;
+    }
     hasDraggedDistRef.current = false;
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isMouseDownRef.current || !containerRef.current) return;
-    const x = e.pageX - containerRef.current.offsetLeft;
-    const walk = (x - mouseStartXRef.current) * 1.5;
+    const current = isVertical
+      ? e.pageY - containerRef.current.offsetTop
+      : e.pageX - containerRef.current.offsetLeft;
+    const walk = (current - mouseStartCoordRef.current) * 1.5;
     if (Math.abs(walk) > 10) {
       hasDraggedDistRef.current = true;
     }
-    containerRef.current.scrollLeft = scrollLeftRef.current - walk;
+    if (isVertical) {
+      containerRef.current.scrollTop = scrollStartRef.current - walk;
+    } else {
+      containerRef.current.scrollLeft = scrollStartRef.current - walk;
+    }
   };
 
   const handleMouseUp = () => {
@@ -64,12 +78,20 @@ export function EditorBottomToolbar({ editor }: EditorBottomToolbarProps) {
 
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     if (!containerRef.current) return;
-    if (Math.abs(e.deltaX) < Math.abs(e.deltaY)) {
+    if (isVertical) {
+      containerRef.current.scrollTop += e.deltaY;
+    } else if (Math.abs(e.deltaX) < Math.abs(e.deltaY)) {
       containerRef.current.scrollLeft += e.deltaY;
     }
   };
 
   if (!editor) return null;
+
+  const containerClasses = isVertical
+    ? 'w-fit max-h-[calc(100vh-10rem)] overflow-y-auto scrollbar-none no-scrollbar py-2 px-1.5 rounded-2xl bg-[var(--card)]/95 backdrop-blur-xl border border-[var(--border)] shadow-xl flex flex-col items-center gap-1.5 select-none transition-all cursor-grab active:cursor-grabbing shrink-0'
+    : resolvedPosition === 'top'
+    ? 'mx-auto w-fit max-w-[calc(100%-2rem)] sm:max-w-2xl overflow-x-auto scrollbar-none no-scrollbar py-1 px-3 rounded-2xl bg-[var(--card)]/95 backdrop-blur-xl border border-[var(--border)] shadow-xl flex items-center gap-1.5 select-none transition-all cursor-grab active:cursor-grabbing shrink-0'
+    : 'sticky bottom-6 z-30 mx-auto w-fit max-w-[calc(100%-2rem)] sm:max-w-2xl overflow-x-auto scrollbar-none no-scrollbar py-1 px-3 rounded-2xl bg-[var(--card)]/95 backdrop-blur-xl border border-[var(--border)] shadow-xl flex items-center gap-1.5 select-none transition-all cursor-grab active:cursor-grabbing shrink-0';
 
   return (
     <div
@@ -81,7 +103,7 @@ export function EditorBottomToolbar({ editor }: EditorBottomToolbarProps) {
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
       onWheel={handleWheel}
-      className="sticky bottom-6 z-30 mx-auto w-fit max-w-[calc(100%-2rem)] sm:max-w-2xl overflow-x-auto scrollbar-none no-scrollbar py-1 px-3 rounded-2xl bg-[var(--card)]/95 backdrop-blur-xl border border-[var(--border)] shadow-xl flex items-center gap-1.5 select-none transition-all cursor-grab active:cursor-grabbing shrink-0"
+      className={containerClasses}
     >
       <button
         type="button"
@@ -138,6 +160,7 @@ export function EditorBottomToolbar({ editor }: EditorBottomToolbarProps) {
       <TableControlsGroup
         editor={editor}
         onActionNotice={(msg) => showToast(msg)}
+        orientation={isVertical ? 'vertical' : 'horizontal'}
       />
 
       <HistorySelectorPopover

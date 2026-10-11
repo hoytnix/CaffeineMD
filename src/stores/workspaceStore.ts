@@ -22,6 +22,7 @@ export interface TabItem {
 
 export type ActiveWorkspaceView = 'editor' | 'graph' | 'table' | 'board' | 'list' | 'tags' | 'settings';
 export type WorkspaceTabId = ActiveWorkspaceView | 'kanban';
+export type ToolboxPosition = 'left' | 'right' | 'bottom' | 'top';
 
 export interface WorkspaceState {
   vaultName: string;
@@ -60,6 +61,10 @@ export interface WorkspaceState {
   customTheme: ThemeDefinition;
   setTheme: (themeId: string) => void;
   updateCustomTheme: (tokens: Partial<ThemeDefinition>) => void;
+
+  // Editor Toolbox Placement
+  toolboxPosition: ToolboxPosition;
+  setToolboxPosition: (position: ToolboxPosition) => void;
 
   // Workspace Creation Modal
   isCreateWorkspaceModalOpen: boolean;
@@ -183,6 +188,21 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       } catch {}
     }
     applyThemeToDocument(updated);
+  },
+
+  // Editor Toolbox Placement
+  toolboxPosition:
+    typeof window !== 'undefined' &&
+    ['left', 'right', 'bottom', 'top'].includes(localStorage.getItem('kite-toolbox-position') || '')
+      ? (localStorage.getItem('kite-toolbox-position') as ToolboxPosition)
+      : 'bottom',
+  setToolboxPosition: (position: ToolboxPosition) => {
+    set({ toolboxPosition: position });
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('kite-toolbox-position', position);
+      } catch {}
+    }
   },
 
   setActiveFilePath: (path) => {
