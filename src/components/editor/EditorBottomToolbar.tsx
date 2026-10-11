@@ -25,6 +25,12 @@ import {
   Undo,
   Redo,
   GripVertical,
+  Outdent,
+  Indent,
+  Columns,
+  Rows,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { editorHtmlToMarkdown } from '@/src/lib/markdown/serializer';
@@ -35,6 +41,8 @@ interface ToolbarButtonDef {
   icon: React.ComponentType<{ className?: string }>;
   action: (editor: Editor, onActionNotice?: (msg: string) => void) => void;
   isActive?: (editor: Editor) => boolean;
+  isDisabled?: (editor: Editor) => boolean;
+  isVisible?: (editor: Editor) => boolean;
 }
 
 const DEFAULT_BUTTON_ORDER = [
@@ -51,10 +59,16 @@ const DEFAULT_BUTTON_ORDER = [
   'bullet-list',
   'ordered-list',
   'task-list',
+  'outdent',
+  'indent',
   'blockquote',
   'link',
   'image',
   'table',
+  'table-add-col',
+  'table-del-col',
+  'table-add-row',
+  'table-del-row',
   'hr',
   'undo',
   'redo',
@@ -164,6 +178,32 @@ const BUTTON_DEFINITIONS: Record<string, ToolbarButtonDef> = {
     action: (editor) => editor.chain().focus().toggleTaskList().run(),
     isActive: (editor) => editor.isActive('taskList'),
   },
+  outdent: {
+    id: 'outdent',
+    label: 'Decrease Indent (Outdent)',
+    icon: Outdent,
+    action: (editor) => {
+      const liftedList = editor.chain().focus().liftListItem('listItem').run();
+      if (!liftedList) {
+        editor.chain().focus().liftListItem('taskItem').run();
+      }
+    },
+    isDisabled: (editor) =>
+      !editor.can().liftListItem('listItem') && !editor.can().liftListItem('taskItem'),
+  },
+  indent: {
+    id: 'indent',
+    label: 'Increase Indent (Indent)',
+    icon: Indent,
+    action: (editor) => {
+      const sinkList = editor.chain().focus().sinkListItem('listItem').run();
+      if (!sinkList) {
+        editor.chain().focus().sinkListItem('taskItem').run();
+      }
+    },
+    isDisabled: (editor) =>
+      !editor.can().sinkListItem('listItem') && !editor.can().sinkListItem('taskItem'),
+  },
   blockquote: {
     id: 'blockquote',
     label: 'Blockquote',
@@ -206,6 +246,38 @@ const BUTTON_DEFINITIONS: Record<string, ToolbarButtonDef> = {
       editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
     },
     isActive: (editor) => editor.isActive('table'),
+  },
+  'table-add-col': {
+    id: 'table-add-col',
+    label: 'Add Column After',
+    icon: Columns,
+    action: (editor) => editor.chain().focus().addColumnAfter().run(),
+    isDisabled: (editor) => !editor.can().addColumnAfter(),
+    isVisible: (editor) => editor.isActive('table'),
+  },
+  'table-del-col': {
+    id: 'table-del-col',
+    label: 'Delete Column',
+    icon: Trash2,
+    action: (editor) => editor.chain().focus().deleteColumn().run(),
+    isDisabled: (editor) => !editor.can().deleteColumn(),
+    isVisible: (editor) => editor.isActive('table'),
+  },
+  'table-add-row': {
+    id: 'table-add-row',
+    label: 'Add Row After',
+    icon: Rows,
+    action: (editor) => editor.chain().focus().addRowAfter().run(),
+    isDisabled: (editor) => !editor.can().addRowAfter(),
+    isVisible: (editor) => editor.isActive('table'),
+  },
+  'table-del-row': {
+    id: 'table-del-row',
+    label: 'Delete Row',
+    icon: Minus,
+    action: (editor) => editor.chain().focus().deleteRow().run(),
+    isDisabled: (editor) => !editor.can().deleteRow(),
+    isVisible: (editor) => editor.isActive('table'),
   },
   hr: {
     id: 'hr',
@@ -359,15 +431,19 @@ export function EditorBottomToolbar({ editor }: EditorBottomToolbarProps) {
         const def = BUTTON_DEFINITIONS[btnId];
         if (!def) return null;
 
+        const isVisible = def.isVisible ? def.isVisible(editor) : true;
+        if (!isVisible) return null;
+
         const isCopyBtn = btnId === 'copy-all';
         const IconComponent = isCopyBtn && copiedRecently ? Check : def.icon;
         const active = def.isActive ? def.isActive(editor) : false;
+        const disabled = def.isDisabled ? def.isDisabled(editor) : false;
         const isDragOver = dragOverIndex === idx;
 
         return (
           <div
             key={btnId}
-            draggable
+            draggable={!disabled}
             onDragStart={(e) => handleDragStart(e, idx)}
             onDragOver={(e) => handleDragOver(e, idx)}
             onDragEnd={handleDragEnd}
@@ -378,9 +454,10 @@ export function EditorBottomToolbar({ editor }: EditorBottomToolbarProps) {
           >
             <button
               type="button"
+              disabled={disabled}
               onClick={(e) => {
-                // If user was dragging to pan/scroll, suppress button click
-                if (hasDraggedDistRef.current) {
+                // If user was dragging to pan/scroll or button disabled, suppress button click
+                if (disabled || hasDraggedDistRef.current) {
                   e.stopPropagation();
                   return;
                 }
@@ -393,7 +470,7 @@ export function EditorBottomToolbar({ editor }: EditorBottomToolbarProps) {
                 });
               }}
               title={`${def.label} (Drag icon to reorder, drag bar to scroll)`}
-              className={`p-1 px-2 rounded-lg transition-all flex items-center justify-center cursor-pointer min-w-[26px] h-[26px] ${
+              className={`p-1 px-2 rounded-lg transition-all flex items-center justify-center cursor-pointer min-w-[26px] h-[26px] disabled:opacity-30 disabled:cursor-not-allowed ${
                 active
                   ? 'bg-[var(--accent)] text-white shadow-xs'
                   : isCopyBtn && copiedRecently
