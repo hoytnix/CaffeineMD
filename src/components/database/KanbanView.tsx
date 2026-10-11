@@ -52,66 +52,112 @@ export function KanbanView({ files, groupKey = 'status', onRefresh }: KanbanView
     });
   };
 
-  const handleCreateCard = async (col: string) => {
-    if (!newCardTitle.trim()) return;
+  const handleCreateCard = React.useCallback(
+    async (col: string) => {
+      if (!newCardTitle.trim()) return;
 
-    const fileName = `${newCardTitle.trim()}.md`;
-    const newNote: VaultFile = {
-      id: fileName,
-      path: fileName,
-      name: fileName,
-      title: newCardTitle.trim(),
-      extension: 'md',
-      content: `---
-title: ${newCardTitle.trim()}
+      const baseTitle = newCardTitle.trim();
+      const fileName = `${baseTitle}.md`;
+      const newNote: VaultFile = {
+        id: fileName,
+        path: fileName,
+        name: fileName,
+        title: baseTitle,
+        extension: 'md',
+        content: `---
+title: ${baseTitle}
 ${groupKey}: ${col}
 eisenhower: urgent_immediate
 ---
 
-# ${newCardTitle.trim()}
+# ${baseTitle}
 `,
-      frontmatter: {
-        title: newCardTitle.trim(),
-        [groupKey]: col,
+        frontmatter: {
+          title: baseTitle,
+          [groupKey]: col,
+          eisenhower: 'urgent_immediate',
+        },
+        tags: [],
         eisenhower: 'urgent_immediate',
-      },
-      tags: [],
-      eisenhower: 'urgent_immediate',
-      isBinary: false,
-      size: 80,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      vaultId: activeWorkspaceId || 'default-vault',
-    };
+        isBinary: false,
+        size: 80,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        vaultId: activeWorkspaceId || 'default-vault',
+      };
 
-    await db.files.put(newNote);
-    setNewCardTitle('');
-    setActiveColumnForNew(null);
-    onRefresh();
-  };
+      await db.files.put(newNote);
+      setNewCardTitle('');
+      setActiveColumnForNew(null);
+      onRefresh();
+    },
+    [newCardTitle, groupKey, activeWorkspaceId, onRefresh]
+  );
 
-  const handleMoveStatus = async (file: VaultFile, targetStatus: string) => {
-    const updated = {
-      ...file,
-      frontmatter: {
-        ...file.frontmatter,
-        [groupKey]: targetStatus,
-      },
-      updatedAt: Date.now(),
-    };
-    await db.files.put(updated);
-    onRefresh();
-  };
+  const [draggedPath, setDraggedPath] = useState<string | null>(null);
+  const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
+
+  const handleMoveStatus = React.useCallback(
+    async (file: VaultFile, targetStatus: string) => {
+      const updated = {
+        ...file,
+        frontmatter: {
+          ...file.frontmatter,
+          [groupKey]: targetStatus,
+        },
+        updatedAt: Date.now(),
+      };
+      await db.files.put(updated);
+      onRefresh();
+    },
+    [groupKey, onRefresh]
+  );
+
+  const updateNoteStatus = React.useCallback(
+    async (notePath: string, targetStatus: string) => {
+      const targetFile = files.find((f) => f.path === notePath) || (await db.files.get(notePath));
+      if (!targetFile) return;
+
+      const currentStatus = targetFile.frontmatter?.[groupKey] || (targetFile as any)[groupKey];
+      if (normalizeStatus(currentStatus).toLowerCase() === targetStatus.toLowerCase()) return;
+
+      await handleMoveStatus(targetFile, targetStatus);
+    },
+    [files, groupKey, handleMoveStatus]
+  );
 
   return (
     <div className="flex gap-4 overflow-x-auto pb-4 pt-1 items-start min-h-[500px]">
       {columns.map((col) => {
         const columnFiles = getFilesForColumn(col);
+        const isColumnOver = dragOverColumn === col;
 
         return (
           <div
             key={col}
-            className="w-72 shrink-0 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border border-neutral-200/80 dark:border-neutral-800 flex flex-col p-3 shadow-xs"
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'move';
+              if (dragOverColumn !== col) {
+                setDragOverColumn(col);
+              }
+            }}
+            onDragLeave={(e) => {
+              if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+              setDragOverColumn((prev) => (prev === col ? null : prev));
+            }}
+            onDrop={async (e) => {
+              e.preventDefault();
+              setDragOverColumn(null);
+              const notePath = e.dataTransfer.getData('text/plain');
+              if (!notePath) return;
+              await updateNoteStatus(notePath, col);
+            }}
+            className={`w-72 shrink-0 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border transition-all flex flex-col p-3 shadow-xs ${
+              isColumnOver
+                ? 'border-indigo-500 bg-indigo-50/30 dark:bg-indigo-950/20 ring-2 ring-indigo-500/30'
+                : 'border-neutral-200/80 dark:border-neutral-800'
+            }`}
           >
             {/* Column Header */}
             <div className="flex items-center justify-between pb-2 mb-2 border-b border-neutral-200/60 dark:border-neutral-800">
@@ -125,75 +171,88 @@ eisenhower: urgent_immediate
               </div>
               <button
                 onClick={() => setActiveColumnForNew(col)}
-                className="p-1 rounded text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-200/50 dark:hover:bg-neutral-800"
+                className="p-1 rounded text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-200/50 dark:hover:bg-neutral-800 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
               </button>
             </div>
 
-            {/* Cards List */}
-            <div className="space-y-2 flex-1 min-h-[100px]">
+            {/* Cards List / Drop Target */}
+            <div className="space-y-2 flex-1 min-h-[120px]">
               {columnFiles.map((file) => {
                 const rawQuadrant = (file.eisenhower || file.frontmatter?.eisenhower) as EisenhowerQuadrant | undefined;
                 const opt = rawQuadrant && EISENHOWER_CONFIG[rawQuadrant] ? EISENHOWER_CONFIG[rawQuadrant] : null;
+                const isDraggingCard = draggedPath === file.path;
 
                 return (
                   <div
                     key={file.path}
-                    className="p-3 rounded-lg bg-white dark:bg-neutral-800/90 border border-neutral-200 dark:border-neutral-700/80 shadow-xs hover:border-neutral-300 dark:hover:border-neutral-600 transition-all group"
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('text/plain', file.path);
+                      e.dataTransfer.effectAllowed = 'move';
+                      setDraggedPath(file.path);
+                    }}
+                    onDragEnd={() => {
+                      setDraggedPath(null);
+                      setDragOverColumn(null);
+                    }}
+                    className={`p-3 rounded-lg bg-white dark:bg-neutral-800/90 border shadow-xs transition-all group cursor-grab active:cursor-grabbing ${
+                      isDraggingCard
+                        ? 'opacity-40 border-indigo-400 scale-[0.98]'
+                        : 'border-neutral-200 dark:border-neutral-700/80 hover:border-neutral-300 dark:hover:border-neutral-600'
+                    }`}
                   >
                     <div className="flex items-start justify-between gap-1.5">
                       <button
                         onClick={() => openFileTab(file.path, file.title)}
-                        className="text-left font-medium text-xs text-neutral-900 dark:text-neutral-100 hover:text-indigo-600 dark:hover:text-indigo-400 truncate flex-1"
+                        className="text-left font-medium text-xs text-neutral-900 dark:text-neutral-100 hover:text-indigo-600 dark:hover:text-indigo-400 truncate flex-1 cursor-pointer"
                       >
                         {file.title || file.name}
                       </button>
 
                       {opt && (
                         <span
-                          className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full border shrink-0 flex items-center gap-1 ${opt.badgeClass}`}
-                          title={`Eisenhower: ${opt.label}`}
-                        >
-                          <span className={`w-1.5 h-1.5 rounded-full ${opt.dotBg}`} />
-                          <span>{opt.shortLabel}</span>
-                        </span>
+                          title={opt.label}
+                          aria-label={opt.label}
+                          className={`inline-block w-2.5 h-2.5 rounded-full shrink-0 ${opt.dotBg}`}
+                        />
                       )}
                     </div>
 
-                  {/* Properties preview */}
-                  {file.frontmatter?.priority && (
-                    <div className="mt-2 text-[10px] text-neutral-500 font-mono">
-                      Priority: {file.frontmatter.priority}
-                    </div>
-                  )}
+                    {/* Properties preview */}
+                    {file.frontmatter?.priority && (
+                      <div className="mt-2 text-[10px] text-neutral-500 font-mono">
+                        Priority: {file.frontmatter.priority}
+                      </div>
+                    )}
 
-                  {file.tags && file.tags.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1 text-[10px] text-neutral-400">
-                      {file.tags.map((t) => (
-                        <span key={t}>#{t}</span>
-                      ))}
-                    </div>
-                  )}
+                    {file.tags && file.tags.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1 text-[10px] text-neutral-400">
+                        {file.tags.map((t) => (
+                          <span key={t}>#{t}</span>
+                        ))}
+                      </div>
+                    )}
 
-                  {/* Quick move status dropdown */}
-                  <div className="mt-2.5 pt-2 border-t border-neutral-100 dark:border-neutral-700/60 flex items-center justify-between text-[10px] text-neutral-400">
-                    <span>Move to:</span>
-                    <select
-                      value={col}
-                      onChange={(e) => handleMoveStatus(file, e.target.value)}
-                      className="bg-transparent text-[11px] text-neutral-600 dark:text-neutral-300 outline-none cursor-pointer"
-                    >
-                      {columns.map((c) => (
-                        <option key={c} value={c} className="bg-white dark:bg-neutral-900">
-                          {c}
-                        </option>
-                      ))}
-                    </select>
+                    {/* Quick move status dropdown */}
+                    <div className="mt-2.5 pt-2 border-t border-neutral-100 dark:border-neutral-700/60 flex items-center justify-between text-[10px] text-neutral-400">
+                      <span>Move to:</span>
+                      <select
+                        value={col}
+                        onChange={(e) => handleMoveStatus(file, e.target.value)}
+                        className="bg-transparent text-[11px] text-neutral-600 dark:text-neutral-300 outline-none cursor-pointer"
+                      >
+                        {columns.map((c) => (
+                          <option key={c} value={c} className="bg-white dark:bg-neutral-900">
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
 
               {/* Add Card Form */}
               {activeColumnForNew === col ? (

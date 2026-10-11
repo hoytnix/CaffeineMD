@@ -1,17 +1,17 @@
 # Active Context: Kite Workspace
 
 ## Current Focus
-Resolved mobile touch button visibility for file tree items, trash actions, and document tabs. Fixed folder/file upload pipeline to import notes directly into the active workspace rather than defaulting to "default-vault" / "Local Vault".
+Implemented incremental Google Drive sync delta checks, native drag-and-drop status updates in Kanban view, and icon-only Eisenhower Matrix priority dots with tooltip labels.
 
 ## Key Changes
-1. **File Tree & Trash Item Action Mobile Visibility (`/src/components/sidebar/FileTreeItem.tsx`, `/src/components/sidebar/FileTree.tsx`)**:
-   - Replaced hover-exclusive visibility (`opacity-0 group-hover:opacity-100`) with responsive classes (`opacity-100 md:opacity-0 md:group-hover:opacity-100`).
-   - Added minimum tap target dimensions (`min-h-[28px] min-w-[28px]` with flex centering and tap padding) to prevent accidental note selection on touch devices.
+1. **Incremental Google Drive Sync Delta Check (`/src/lib/sync/googleDriveSync.ts`)**:
+   - Added metadata comparison (`modifiedTime`, `md5Checksum`) in Google Drive sync pipeline.
+   - For upload: skipped files where local note `updatedAt` is not newer than remote `modifiedTime` when already mapped; updated files use PATCH/update requests via `uploadSmallFile` or `uploadLargeFileResumable`.
+   - For download: skipped remote files when local note `updatedAt` is greater than or equal to remote `modifiedTime`, accurately reporting `stats.skipped`.
 
-2. **Editor Document Tab Close Button Mobile Visibility (`/app/page.tsx`)**:
-   - Updated tab close (`X`) buttons to remain visible at `opacity-100` whenever the tab is active or viewed on touch/mobile viewports (`opacity-100 md:opacity-0 md:group-hover:opacity-100` on inactive desktop tabs).
+2. **Kanban Drag-and-Drop Card Status Updates (`/src/components/database/KanbanView.tsx`)**:
+   - Added HTML5 drag-and-drop (`draggable`, `onDragStart`, `onDragEnd`, `onDragOver`, `onDragLeave`, `onDrop`) to cards and column containers.
+   - Dropping a card on any column automatically updates the note's frontmatter status and persists changes in IndexedDB, with real-time drop target highlighting (`ring-2 ring-indigo-500/30`).
 
-3. **Active Workspace Scoping for Folder/File Imports & Note Creation (`/src/components/upload/VaultDropzone.tsx`, `/src/hooks/useVaultMounting.ts`, `/src/components/database/KanbanView.tsx`, `/src/components/editor/TiptapEditor.tsx`)**:
-   - Read `activeWorkspaceId` from `useWorkspaceStore` in `VaultDropzone` and `useVaultMounting`, passing `targetWorkspaceId` to `runIngestionPipeline`.
-   - Guaranteed all imported files, directories, attachments, and backlinks are assigned `targetWorkspaceId` in IndexedDB (`db.files.put`), allowing notes to immediately display in the active workspace view.
-   - Updated WikiLink note auto-creation and Kanban board card creation to scope new notes to `activeWorkspaceId || 'default-vault'`.
+3. **Eisenhower Matrix Icon-Only Indicator (`/src/components/database/KanbanView.tsx`)**:
+   - Stripped out textual labels from priority indicators on Kanban cards, rendering clean `w-2.5 h-2.5 rounded-full` dots with accessible `title` and `aria-label` tooltips.

@@ -546,18 +546,19 @@ export class GoogleDriveSyncService {
           ? 'default-vault'
           : `drive-${workspaceName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`);
 
-      // 1. Fetch remote files list in the folder
+      // 1. Fetch remote files list in the folder with metadata for delta sync
       const query = encodeURIComponent(`'${folderId}' in parents and trashed = false`);
-      const listRes = await this.driveFetch(`files?q=${query}&fields=files(id,name,modifiedTime,size)`);
+      const listRes = await this.driveFetch(`files?q=${query}&fields=files(id,name,modifiedTime,size,md5Checksum)`);
       const driveList = await listRes.json();
-      const remoteFiles: Array<{ id: string; name: string; modifiedTime: string }> =
+      const remoteFiles: Array<{ id: string; name: string; modifiedTime: string; md5Checksum?: string }> =
         driveList.files || [];
 
-      const remoteMap = new Map<string, { id: string; modifiedTime: number }>();
+      const remoteMap = new Map<string, { id: string; modifiedTime: number; md5Checksum?: string }>();
       for (const f of remoteFiles) {
         remoteMap.set(f.name, {
           id: f.id,
           modifiedTime: new Date(f.modifiedTime).getTime(),
+          md5Checksum: f.md5Checksum,
         });
       }
 
@@ -585,9 +586,12 @@ export class GoogleDriveSyncService {
 
         const remote = remoteMap.get(driveFileName);
 
+        // Upload delta check: upload if not on remote, or local file is newer than remote modifiedTime
+        const shouldUpload = !remote || local.updatedAt > remote.modifiedTime;
+
         if (!remote) {
           uploadTasks.push({ local, driveFileName, remoteId: undefined });
-        } else if (local.updatedAt > remote.modifiedTime + 2000) {
+        } else if (shouldUpload) {
           uploadTasks.push({ local, driveFileName, remoteId: remote.id });
         } else {
           stats.skipped++;
@@ -618,8 +622,14 @@ export class GoogleDriveSyncService {
 
       for (const [remoteName, remoteInfo] of remoteMap.entries()) {
         const local = localMap.get(remoteName);
-        if (!local || remoteInfo.modifiedTime > local.updatedAt + 2000) {
+        // Download delta check: download if not in local db, or remote modifiedTime is newer than local updatedAt
+        const shouldDownload = !local || remoteInfo.modifiedTime > local.updatedAt;
+
+        if (shouldDownload) {
           downloadTasks.push({ remoteName, remoteInfo });
+        } else {
+          // Both sides in sync and not re-downloaded
+          stats.skipped++;
         }
       }
 
