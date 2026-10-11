@@ -144,8 +144,18 @@ export function applyThemeToDocument(theme: ThemeDefinition): void {
   root.style.setProperty('--card', theme.card);
   root.style.setProperty('--border', theme.border);
   root.style.setProperty('--accent', theme.accent);
-  root.style.setProperty('--primary', theme.primary);
-  root.style.setProperty('--font-family', theme.fontFamily);
+  // Guarantee universal color emoji font fallback across all themes
+  const withEmojiFallback = (font: string): string => {
+    if (!font) return '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+    if (font.includes('Color Emoji')) return font;
+    const emojiStack = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji"';
+    if (/\b(sans-serif|serif|monospace)\b/.test(font)) {
+      return font.replace(/\b(sans-serif|serif|monospace)\b/, `${emojiStack}, $1`);
+    }
+    return `${font}, ${emojiStack}, sans-serif`;
+  };
+
+  root.style.setProperty('--font-family', withEmojiFallback(theme.fontFamily));
 
   // Set Syntax Highlighting custom properties
   root.style.setProperty('--syntax-bg', theme.syntaxBg || theme.card);

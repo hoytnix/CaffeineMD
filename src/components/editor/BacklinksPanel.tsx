@@ -137,9 +137,9 @@ export function BacklinksPanel({
                       {ref.sourceTitle}
                     </span>
                   </div>
-                  {ref.contextSnippet && (
+                  {ref.snippet && (
                     <div className="text-[11px] text-neutral-500 line-clamp-2 pl-5.5 font-mono">
-                      {ref.contextSnippet}
+                      {ref.snippet}
                     </div>
                   )}
                 </div>

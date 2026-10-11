@@ -1,16 +1,16 @@
 # Active Context: Kite Workspace
 
 ## Current Focus
-Streamlined bottom editor toolbar and relocated document metrics:
+Universal emoji embedding and document metrics enhancements:
 1. Positioned `Copy All as Markdown` at the very left of the toolbar.
 2. Grouped Bold, Italic, Underline, and Strikethrough into `StyleSelectorPopover.tsx`.
 3. Consolidated bullet list, numbered list, task checklist, and indentation into `ListFormattingGroup.tsx`.
 4. Extracted Inline Code, Code Blocks, Quotes, Links, and Images into `MediaSelectorPopover.tsx`.
 5. Created `HistorySelectorPopover.tsx` grouping Undo (`⌘Z`) and Redo (`⌘⇧Z`) in a dedicated history popover menu.
 6. Relocated `TableControlsGroup.tsx` immediately to the left of `HistorySelectorPopover.tsx`.
-7. Created `NoteMetricsBar.tsx` positioned immediately above NOTE PROPERTIES (`BacklinksPanel.tsx`), displaying live Word Count and LLM Token Count in both Rich Text and Plaintext modes.
-8. Removed duplicate word count from the header of `PlaintextMarkdownEditor.tsx`.
-9. Decomposed `BacklinksPanel.tsx` by extracting `NotePropertiesCard.tsx` and `NoteMetricsBar.tsx`, ensuring all modules strictly meet the 100–250 LOC requirement.
+7. Created and enhanced `NoteMetricsBar.tsx` (207 LOC) positioned immediately above NOTE PROPERTIES (`BacklinksPanel.tsx`), displaying live Word Count, Character Count, LLM Token Count, Emoji Count, Link Count (Markdown, WikiLinks, HTML anchors, bare URLs), and Kilobytes (KB) in both Rich Text (`useSyncExternalStore`) and Plaintext modes.
+8. Embedded universal color emoji rendering via Google Fonts `Noto Color Emoji` with dynamic Unicode subsetting (`app/globals.css`, `app/layout.tsx`), prioritizing emoji fonts ahead of `sans-serif` and preserving fallbacks across all dynamic themes (`src/lib/themes/colorUtils.ts`), ensuring full-color emojis render on every machine without requiring OS font packages.
+9. Decomposed `BacklinksPanel.tsx` (183 LOC) by extracting `NotePropertiesCard.tsx` (164 LOC) and `NoteMetricsBar.tsx` (207 LOC), ensuring all modules strictly meet the 100–250 LOC requirement.
 
 ## Key Changes
 1. **Step 1: Modular Theme Definitions & Color Utilities (`/src/lib/themes/`)**:
