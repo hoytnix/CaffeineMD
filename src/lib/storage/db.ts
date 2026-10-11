@@ -7,7 +7,11 @@ export type EisenhowerQuadrant =
   | 'not_urgent_not_immediate' // Not Urgent & Not Immediate (Don't / Backlog)
   | 'urgent_important' // Backwards compatibility alias
   | 'not_urgent_important'
-  | 'urgent_not_important';
+  | 'urgent_not_important'
+  | 'Urgent & Immediate'
+  | 'Urgent & Not Immediate'
+  | 'Not Urgent & Immediate'
+  | 'Not Urgent & Not Immediate';
 
 export interface EisenhowerOption {
   key: EisenhowerQuadrant;
@@ -91,6 +95,46 @@ export const EISENHOWER_CONFIG: Record<string, EisenhowerOption> = {
     dotBg: 'bg-blue-500',
     badgeClass: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
     textColor: 'text-blue-500',
+  },
+  'Urgent & Immediate': {
+    key: 'Urgent & Immediate',
+    label: 'Urgent & Immediate',
+    shortLabel: 'Do First',
+    emoji: '🔴',
+    color: '#ef4444',
+    dotBg: 'bg-red-500',
+    badgeClass: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',
+    textColor: 'text-red-500',
+  },
+  'Urgent & Not Immediate': {
+    key: 'Urgent & Not Immediate',
+    label: 'Urgent & Not Immediate',
+    shortLabel: 'Schedule',
+    emoji: '🟡',
+    color: '#eab308',
+    dotBg: 'bg-yellow-500',
+    badgeClass: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20',
+    textColor: 'text-yellow-500',
+  },
+  'Not Urgent & Immediate': {
+    key: 'Not Urgent & Immediate',
+    label: 'Not Urgent & Immediate',
+    shortLabel: 'Delegate',
+    emoji: '🔵',
+    color: '#3b82f6',
+    dotBg: 'bg-blue-500',
+    badgeClass: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+    textColor: 'text-blue-500',
+  },
+  'Not Urgent & Not Immediate': {
+    key: 'Not Urgent & Not Immediate',
+    label: 'Not Urgent & Not Immediate',
+    shortLabel: 'Backlog',
+    emoji: '⚪',
+    color: '#9ca3af',
+    dotBg: 'bg-neutral-400',
+    badgeClass: 'bg-neutral-500/10 text-neutral-600 dark:text-neutral-400 border-neutral-500/20',
+    textColor: 'text-neutral-400',
   },
 };
 

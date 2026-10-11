@@ -1,19 +1,30 @@
 # Active Context: Kite Workspace
 
 ## Current Focus
-Implemented Gmail-style URL routing and hash permalinking with bi-directional state synchronization, dynamic Next.js App Router paths (`/w/[workspaceId]`), root redirection, and seamless deep linking.
+Implemented Default File Properties schema (`title`, `tags`, `status`, `author`, `eisenhower`) across note creation, frontmatter serialization, the editor inspector, and database views (Table, Board/Kanban, and List).
 
 ## Key Changes
-1. **Bi-Directional Hash Routing Hook (`/src/hooks/useWorkspaceRouter.ts`)**:
-   - Listens to `window.location.hash`, `popstate`, and `hashchange` events to hydrate workspace ID, active view tab (`editor`, `graph`, `table`, `kanban`, `board`, `list`, `tags`, `settings`), and note path.
-   - Silently synchronizes local Zustand store changes back to browser address bar without full page reloads using `window.history.replaceState`.
-   - Encodes and decodes note paths (e.g. `#/editor/Daily%20Notes%2F2026-10-10.md`).
+1. **Core Frontmatter Schema & Normalization (`/src/lib/markdown/frontmatter.ts`, `/src/hooks/useDatabaseSchema.ts`, `/src/lib/storage/db.ts`)**:
+   - Defined `NoteProperties` and `DEFAULT_NOTE_PROPERTIES` with default values (`status: 'Draft'`, `eisenhower: 'Not Urgent & Not Immediate'`).
+   - Extended `EisenhowerQuadrant` and `EISENHOWER_CONFIG` with full human-readable display names (`Urgent & Immediate`, `Urgent & Not Immediate`, `Not Urgent & Immediate`, `Not Urgent & Not Immediate`).
+   - Added `parseFrontmatter` which auto-merges raw frontmatter with `DEFAULT_NOTE_PROPERTIES` and normalizes missing keys.
+   - Updated `serializeMarkdownWithFrontmatter` to guarantee default schema fields are serialized to disk and IndexedDB.
 
-2. **Root Dynamic Route & Redirection Architecture (`/app/page.tsx` & `/app/w/[workspaceId]/page.tsx`)**:
-   - Root `/` page redirects to `/w/[workspaceId]#[view]` using active or default workspace and preserves existing hash fragments.
-   - Dynamic `/app/w/[workspaceId]/page.tsx` mounts the primary workspace shell and invokes `useWorkspaceRouter()` at top level.
+2. **Seeding Default Properties in New Notes & Ingestion (`/src/components/sidebar/NewNoteModal.tsx`, `/src/hooks/useNotePersistence.ts`, `/src/lib/storage/importPipeline.ts`, `/src/components/database/DatabaseView.tsx`)**:
+   - Initialized standard frontmatter header (`title`, `tags: []`, `status: "Draft"`, `author: ""`, `eisenhower: "Not Urgent & Not Immediate"`) on new note creation.
+   - Auto-populated default fields for notes imported or mounted without existing frontmatter while strictly preserving the existing note body.
 
-3. **Store Synchronization & Settings Embed (`/src/stores/workspaceStore.ts`, `/src/components/settings/SettingsView.tsx`)**:
-   - Extended `WorkspaceState` with `activeTab`, `activeNotePath`, `setActiveTab`, and `setActiveNotePath`.
-   - Preserved open tabs and file paths when confirming already active workspace ID.
-   - Integrated `SettingsView` directly into workspace views when navigating to `#/settings`.
+3. **Editor Header Interactive Properties (`/src/components/editor/EditorHeader.tsx`, `/src/components/editor/TiptapEditor.tsx`, `/src/components/editor/BacklinksPanel.tsx`)**:
+   - Added Notion/Obsidian-style metadata header with interactive controls:
+     - `title`: Editable input synced bidirectionally with document title.
+     - `tags`: Tag badge input with chip removal and inline addition.
+     - `status`: Select dropdown (`Draft`, `In Progress`, `Completed`, `Archived`).
+     - `author`: Editable text field.
+     - `eisenhower`: Quadrant selector with colored priority dots.
+   - Wired property edits to trigger persistence through IndexedDB (`db.files.put`), disk write-backs, and raw markdown updates.
+
+4. **Database Views & Grouping (`/src/components/database/TableView.tsx`, `/src/components/database/KanbanView.tsx`, `/src/components/database/ListView.tsx`, `/src/components/database/DatabaseToolbar.tsx`)**:
+   - Registered all 5 default fields in TableView with interactive cell editors and column header sorting.
+   - Upgraded KanbanView with first-class board grouping switcher between `status` (`Draft`, `In Progress`, `Completed`, `Archived`) and `eisenhower` quadrants, drag-and-drop column movement, and default property seeding.
+   - Updated ListView with status badges, author indicator, and Eisenhower priority dots.
+   - Added Status, Priority, and Sort filters in DatabaseToolbar.

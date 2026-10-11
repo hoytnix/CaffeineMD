@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { db, VaultFile, BacklinkRecord, EisenhowerQuadrant, EISENHOWER_CONFIG } from '@/src/lib/storage/db';
+import { normalizeEisenhower } from '@/src/lib/markdown/frontmatter';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { Link2, Unlink, ChevronDown, ChevronRight, Plus, Hash, Tag, FileText } from 'lucide-react';
 
@@ -133,29 +134,23 @@ export function BacklinksPanel({ currentFile, onUpdateFile }: BacklinksPanelProp
               <span>Eisenhower</span>
             </span>
             <select
-              value={currentFile.eisenhower || currentFile.frontmatter?.eisenhower || ''}
+              value={normalizeEisenhower(currentFile.eisenhower || currentFile.frontmatter?.eisenhower)}
               onChange={(e) => {
-                const val = e.target.value as EisenhowerQuadrant | '';
-                const updatedFrontmatter = { ...currentFile.frontmatter };
-                if (val) {
-                  updatedFrontmatter.eisenhower = val;
-                } else {
-                  delete updatedFrontmatter.eisenhower;
-                }
+                const val = e.target.value as any;
+                const updatedFrontmatter = { ...currentFile.frontmatter, eisenhower: val };
                 onUpdateFile({
                   ...currentFile,
-                  eisenhower: val ? (val as EisenhowerQuadrant) : undefined,
+                  eisenhower: val,
                   frontmatter: updatedFrontmatter,
                   updatedAt: Date.now(),
                 });
               }}
               className="flex-1 px-2 py-1 text-xs rounded bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] focus:outline-none focus:border-[var(--accent)] cursor-pointer"
             >
-              <option value="">None (Unassigned)</option>
-              <option value="urgent_immediate">🔴 Urgent & Immediate (Do First)</option>
-              <option value="urgent_not_immediate">🟡 Urgent & Not Immediate (Schedule)</option>
-              <option value="not_urgent_immediate">🔵 Not Urgent & Immediate (Delegate / Quick)</option>
-              <option value="not_urgent_not_immediate">⚪ Not Urgent & Not Immediate (Don&apos;t / Backlog)</option>
+              <option value="Urgent & Immediate">🔴 Urgent & Immediate (Do First)</option>
+              <option value="Urgent & Not Immediate">🟡 Urgent & Not Immediate (Schedule)</option>
+              <option value="Not Urgent & Immediate">🔵 Not Urgent & Immediate (Delegate / Quick)</option>
+              <option value="Not Urgent & Not Immediate">⚪ Not Urgent & Not Immediate (Backlog)</option>
             </select>
           </div>
 
@@ -167,12 +162,24 @@ export function BacklinksPanel({ currentFile, onUpdateFile }: BacklinksPanelProp
                 <div key={key} className="flex flex-col group py-0.5">
                   <div className="flex items-center justify-between">
                     <span className="w-28 text-neutral-500 font-medium truncate">{key}</span>
-                    <input
-                      type="text"
-                      value={displayValue}
-                      onChange={(e) => handlePropertyChange(key, e.target.value)}
-                      className="flex-1 px-2 py-1 text-xs rounded bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] focus:outline-none focus:border-[var(--accent)]"
-                    />
+                    {key === 'status' ? (
+                      <select
+                        value={String(value || 'Draft')}
+                        onChange={(e) => handlePropertyChange('status', e.target.value)}
+                        className="flex-1 px-2 py-1 text-xs rounded bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] focus:outline-none focus:border-[var(--accent)] cursor-pointer"
+                      >
+                        {['Draft', 'In Progress', 'Completed', 'Archived'].map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={displayValue}
+                        onChange={(e) => handlePropertyChange(key, e.target.value)}
+                        className="flex-1 px-2 py-1 text-xs rounded bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] focus:outline-none focus:border-[var(--accent)]"
+                      />
+                    )}
                     <button
                       onClick={() => handleRemoveProperty(key)}
                       className="opacity-0 group-hover:opacity-100 text-neutral-400 hover:text-rose-500 p-1 ml-1 transition-opacity cursor-pointer"

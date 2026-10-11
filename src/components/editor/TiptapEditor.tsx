@@ -59,6 +59,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
     setRawMarkdown,
     handleSave,
     handleSaveRaw,
+    updateProperties,
     saveTimeoutRef,
   } = useNotePersistence({ filePath });
 
@@ -544,6 +545,8 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
           }
         }}
         isSaveDisabled={isSaving || (editorMode === 'rich' && (!editor || editor.isDestroyed))}
+        onUpdateProperties={updateProperties}
+        onTitleChange={setTitle}
       />
 
       {/* Main Canvas Area */}
@@ -556,6 +559,12 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
               onChange={(e) => {
                 setTitle(e.target.value);
                 if (file) setFile({ ...file, title: e.target.value });
+              }}
+              onBlur={() => {
+                const trimmed = title.trim();
+                if (file && trimmed && trimmed !== file.title) {
+                  updateProperties({ title: trimmed });
+                }
               }}
               placeholder="Untitled Note"
               className="w-full text-3xl sm:text-4xl font-bold tracking-tight bg-transparent border-none focus:outline-none mb-6 placeholder-neutral-400 dark:placeholder-neutral-600 text-[var(--foreground)]"

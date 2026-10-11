@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { VaultFile, db, EisenhowerQuadrant, EISENHOWER_CONFIG } from '@/src/lib/storage/db';
+import { normalizeEisenhower, DEFAULT_NOTE_PROPERTIES } from '@/src/lib/markdown/frontmatter';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
-import { Plus, MoreHorizontal, FileText } from 'lucide-react';
+import { Plus, MoreHorizontal, FileText, Layers, Flag, User, Tag } from 'lucide-react';
 
 interface KanbanViewProps {
   files: VaultFile[];
@@ -11,44 +12,80 @@ interface KanbanViewProps {
   onRefresh: () => void;
 }
 
+const DEFAULT_STATUS_COLUMNS = ['Draft', 'In Progress', 'Completed', 'Archived'] as const;
+
+const EISENHOWER_COLUMNS = [
+  'Urgent & Immediate',
+  'Urgent & Not Immediate',
+  'Not Urgent & Immediate',
+  'Not Urgent & Not Immediate',
+] as const;
+
 export function KanbanView({ files, groupKey = 'status', onRefresh }: KanbanViewProps) {
   const { openFileTab, activeWorkspaceId } = useWorkspaceStore();
+  const [overrideGroupKey, setOverrideGroupKey] = useState<string | null>(null);
   const [newCardTitle, setNewCardTitle] = useState('');
   const [activeColumnForNew, setActiveColumnForNew] = useState<string | null>(null);
 
-  // Group files by groupKey
-  // Canonical columns: ToDO (first in order), Doing, Someday / Maybe, Completed, Won't Do
-  const defaultColumns = ['ToDO', 'Doing', 'Someday / Maybe', 'Completed', "Won't Do"];
+  const activeGroupKey = overrideGroupKey ?? groupKey;
+
+  const isGroupingByStatus = activeGroupKey === 'status';
+  const isGroupingByEisenhower = activeGroupKey === 'eisenhower';
 
   const normalizeStatus = (raw: any): string => {
-    if (!raw) return 'ToDO';
+    if (!raw) return 'Draft';
     const s = String(raw).trim();
-    if (s.toLowerCase() === 'in progress') return 'Doing';
-    if (s.toLowerCase() === 'planning') return 'Someday / Maybe';
-    if (s.toLowerCase() === 'backlog') return "Won't Do";
-    if (s.toLowerCase() === 'todo' || s.toLowerCase() === 'to do') return 'ToDO';
+    const lower = s.toLowerCase();
+    if (lower === 'in progress' || lower === 'doing') return 'In Progress';
+    if (lower === 'completed' || lower === 'done') return 'Completed';
+    if (lower === 'archived') return 'Archived';
+    if (lower === 'draft' || lower === 'todo' || lower === 'to do') return 'Draft';
     return s;
   };
 
-  // Discover existing custom values beyond defaults
-  const discoveredValues = new Set<string>();
-  files.forEach((f) => {
-    const val = f.frontmatter?.[groupKey] || (f as any)[groupKey];
-    if (val) {
-      const norm = normalizeStatus(val);
-      if (!defaultColumns.includes(norm)) {
-        discoveredValues.add(norm);
-      }
+  // Determine columns based on active group mode
+  const columns = useMemo(() => {
+    if (isGroupingByEisenhower) {
+      return Array.from(EISENHOWER_COLUMNS);
     }
-  });
 
-  const columns = [...defaultColumns, ...Array.from(discoveredValues)];
+    if (isGroupingByStatus) {
+      const discoveredValues = new Set<string>();
+      files.forEach((f) => {
+        const val = f.frontmatter?.status || (f as any).status;
+        if (val) {
+          const norm = normalizeStatus(val);
+          if (!DEFAULT_STATUS_COLUMNS.includes(norm as any)) {
+            discoveredValues.add(norm);
+          }
+        }
+      });
+      return [...DEFAULT_STATUS_COLUMNS, ...Array.from(discoveredValues)];
+    }
+
+    // Generic fallback for any other group key
+    const genericSet = new Set<string>();
+    files.forEach((f) => {
+      const val = f.frontmatter?.[activeGroupKey] || (f as any)[activeGroupKey];
+      if (val) genericSet.add(String(val));
+    });
+    return Array.from(genericSet);
+  }, [files, isGroupingByEisenhower, isGroupingByStatus, activeGroupKey]);
 
   const getFilesForColumn = (col: string) => {
     return files.filter((f) => {
-      const val = f.frontmatter?.[groupKey] || (f as any)[groupKey];
-      const norm = normalizeStatus(val);
-      return norm.toLowerCase() === col.toLowerCase();
+      if (isGroupingByEisenhower) {
+        const raw = f.eisenhower || f.frontmatter?.eisenhower;
+        const norm = normalizeEisenhower(raw);
+        return norm === col;
+      }
+      if (isGroupingByStatus) {
+        const val = f.frontmatter?.status || (f as any).status;
+        const norm = normalizeStatus(val);
+        return norm.toLowerCase() === col.toLowerCase();
+      }
+      const val = f.frontmatter?.[activeGroupKey] || (f as any)[activeGroupKey];
+      return String(val || '').toLowerCase() === col.toLowerCase();
     });
   };
 
@@ -58,29 +95,39 @@ export function KanbanView({ files, groupKey = 'status', onRefresh }: KanbanView
 
       const baseTitle = newCardTitle.trim();
       const fileName = `${baseTitle}.md`;
+
+      const cardStatus = isGroupingByStatus ? col : 'Draft';
+      const cardEisenhower = isGroupingByEisenhower ? (col as any) : 'Not Urgent & Not Immediate';
+
+      const content = `---
+title: "${baseTitle}"
+tags: []
+status: "${cardStatus}"
+author: ""
+eisenhower: "${cardEisenhower}"
+---
+
+# ${baseTitle}
+`;
+
       const newNote: VaultFile = {
         id: fileName,
         path: fileName,
         name: fileName,
         title: baseTitle,
         extension: 'md',
-        content: `---
-title: ${baseTitle}
-${groupKey}: ${col}
-eisenhower: urgent_immediate
----
-
-# ${baseTitle}
-`,
+        content,
         frontmatter: {
           title: baseTitle,
-          [groupKey]: col,
-          eisenhower: 'urgent_immediate',
+          tags: [],
+          status: cardStatus,
+          author: '',
+          eisenhower: cardEisenhower,
         },
         tags: [],
-        eisenhower: 'urgent_immediate',
+        eisenhower: cardEisenhower,
         isBinary: false,
-        size: 80,
+        size: content.length,
         createdAt: Date.now(),
         updatedAt: Date.now(),
         vaultId: activeWorkspaceId || 'default-vault',
@@ -91,43 +138,107 @@ eisenhower: urgent_immediate
       setActiveColumnForNew(null);
       onRefresh();
     },
-    [newCardTitle, groupKey, activeWorkspaceId, onRefresh]
+    [newCardTitle, isGroupingByStatus, isGroupingByEisenhower, activeWorkspaceId, onRefresh]
   );
 
   const [draggedPath, setDraggedPath] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
 
   const handleMoveStatus = React.useCallback(
-    async (file: VaultFile, targetStatus: string) => {
-      const updated = {
-        ...file,
-        frontmatter: {
-          ...file.frontmatter,
-          [groupKey]: targetStatus,
-        },
-        updatedAt: Date.now(),
-      };
+    async (file: VaultFile, targetCol: string) => {
+      let updated: VaultFile;
+      if (isGroupingByEisenhower) {
+        updated = {
+          ...file,
+          eisenhower: targetCol as any,
+          frontmatter: {
+            ...file.frontmatter,
+            eisenhower: targetCol,
+          },
+          updatedAt: Date.now(),
+        };
+      } else if (isGroupingByStatus) {
+        updated = {
+          ...file,
+          frontmatter: {
+            ...file.frontmatter,
+            status: targetCol,
+          },
+          updatedAt: Date.now(),
+        };
+      } else {
+        updated = {
+          ...file,
+          frontmatter: {
+            ...file.frontmatter,
+            [activeGroupKey]: targetCol,
+          },
+          updatedAt: Date.now(),
+        };
+      }
+
       await db.files.put(updated);
       onRefresh();
     },
-    [groupKey, onRefresh]
+    [isGroupingByEisenhower, isGroupingByStatus, activeGroupKey, onRefresh]
   );
 
   const updateNoteStatus = React.useCallback(
-    async (notePath: string, targetStatus: string) => {
+    async (notePath: string, targetCol: string) => {
       const targetFile = files.find((f) => f.path === notePath) || (await db.files.get(notePath));
       if (!targetFile) return;
 
-      const currentStatus = targetFile.frontmatter?.[groupKey] || (targetFile as any)[groupKey];
-      if (normalizeStatus(currentStatus).toLowerCase() === targetStatus.toLowerCase()) return;
+      if (isGroupingByEisenhower) {
+        const current = normalizeEisenhower(targetFile.eisenhower || targetFile.frontmatter?.eisenhower);
+        if (current === targetCol) return;
+      } else if (isGroupingByStatus) {
+        const current = normalizeStatus(targetFile.frontmatter?.status || (targetFile as any).status);
+        if (current.toLowerCase() === targetCol.toLowerCase()) return;
+      }
 
-      await handleMoveStatus(targetFile, targetStatus);
+      await handleMoveStatus(targetFile, targetCol);
     },
-    [files, groupKey, handleMoveStatus]
+    [files, isGroupingByEisenhower, isGroupingByStatus, handleMoveStatus]
   );
 
   return (
-    <div className="flex gap-4 overflow-x-auto pb-4 pt-1 items-start min-h-[500px]">
+    <div className="flex flex-col gap-3">
+      {/* Board Layout Switcher: Status vs Eisenhower Matrix */}
+      <div className="flex items-center justify-between pb-1">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-neutral-500">Group by:</span>
+          <div className="flex items-center p-0.5 rounded-lg bg-[var(--card)] border border-[var(--border)] text-xs shadow-2xs">
+            <button
+              type="button"
+              onClick={() => setOverrideGroupKey('status')}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                isGroupingByStatus
+                  ? 'bg-[var(--accent)] text-white shadow-xs'
+                  : 'text-neutral-400 hover:text-[var(--foreground)]'
+              }`}
+              title="Group cards by Status"
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Status</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setOverrideGroupKey('eisenhower')}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                isGroupingByEisenhower
+                  ? 'bg-[var(--accent)] text-white shadow-xs'
+                  : 'text-neutral-400 hover:text-[var(--foreground)]'
+              }`}
+              title="Group cards by Eisenhower Matrix priority"
+            >
+              <Flag className="w-3.5 h-3.5" />
+              <span>Eisenhower</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex gap-4 overflow-x-auto pb-4 pt-1 items-start min-h-[500px]">
       {columns.map((col) => {
         const columnFiles = getFilesForColumn(col);
         const isColumnOver = dragOverColumn === col;
@@ -213,7 +324,7 @@ eisenhower: urgent_immediate
 
                       {opt && (
                         <span
-                          title={opt.label}
+                          title={`Eisenhower: ${opt.label}`}
                           aria-label={opt.label}
                           className={`inline-block w-2.5 h-2.5 rounded-full shrink-0 ${opt.dotBg}`}
                         />
@@ -221,14 +332,27 @@ eisenhower: urgent_immediate
                     </div>
 
                     {/* Properties preview */}
-                    {file.frontmatter?.priority && (
-                      <div className="mt-2 text-[10px] text-neutral-500 font-mono">
-                        Priority: {file.frontmatter.priority}
-                      </div>
-                    )}
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px]">
+                      {isGroupingByEisenhower && (
+                        <span className="px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-medium">
+                          {file.frontmatter?.status || 'Draft'}
+                        </span>
+                      )}
+                      {file.frontmatter?.author && (
+                        <span className="flex items-center gap-0.5 text-neutral-500 font-mono">
+                          <User className="w-2.5 h-2.5" />
+                          <span>{file.frontmatter.author}</span>
+                        </span>
+                      )}
+                      {file.frontmatter?.priority && (
+                        <span className="text-neutral-500 font-mono">
+                          Priority: {file.frontmatter.priority}
+                        </span>
+                      )}
+                    </div>
 
                     {file.tags && file.tags.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1 text-[10px] text-neutral-400">
+                      <div className="mt-1.5 flex flex-wrap gap-1 text-[10px] text-neutral-400">
                         {file.tags.map((t) => (
                           <span key={t}>#{t}</span>
                         ))}
@@ -241,7 +365,7 @@ eisenhower: urgent_immediate
                       <select
                         value={col}
                         onChange={(e) => handleMoveStatus(file, e.target.value)}
-                        className="bg-transparent text-[11px] text-neutral-600 dark:text-neutral-300 outline-none cursor-pointer"
+                        className="bg-transparent text-[11px] text-neutral-600 dark:text-neutral-300 outline-none cursor-pointer max-w-[160px] truncate"
                       >
                         {columns.map((c) => (
                           <option key={c} value={c} className="bg-white dark:bg-neutral-900">
@@ -297,6 +421,7 @@ eisenhower: urgent_immediate
           </div>
         );
       })}
+      </div>
     </div>
   );
 }

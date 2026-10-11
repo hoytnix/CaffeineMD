@@ -1,5 +1,9 @@
 import { VaultFile, BacklinkRecord } from './db';
-import { parseMarkdownContent } from '../markdown/serializer';
+import {
+  parseMarkdownContent,
+  serializeMarkdownWithFrontmatter,
+  FRONTMATTER_REGEX,
+} from '../markdown/serializer';
 import { IngestedRawFile, normalizePath, scanDroppedItems, processStandardFileInput } from './entryCrawler';
 import { commitIngestionBatch } from './batchIndexer';
 
@@ -57,17 +61,23 @@ export async function runIngestionPipeline(
         const baseTitle = raw.name.replace(/\.[^/.]+$/, '');
         const parsed = parseMarkdownContent(textContent, baseTitle);
 
+        const hasFrontmatter = FRONTMATTER_REGEX.test(textContent);
+        const finalContent = hasFrontmatter
+          ? textContent
+          : serializeMarkdownWithFrontmatter(parsed.body, parsed.frontmatter);
+
         const vaultFile: VaultFile = {
           id: raw.relativePath,
           path: raw.relativePath,
           name: raw.name,
           title: parsed.title,
           extension: ext,
-          content: textContent,
+          content: finalContent,
           frontmatter: parsed.frontmatter,
           tags: parsed.tags,
+          eisenhower: parsed.eisenhower,
           isBinary: false,
-          size: raw.file.size,
+          size: finalContent.length,
           createdAt: raw.file.lastModified || Date.now(),
           updatedAt: raw.file.lastModified || Date.now(),
           vaultId,

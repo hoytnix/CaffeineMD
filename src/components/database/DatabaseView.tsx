@@ -33,47 +33,61 @@ export function DatabaseView({ mode }: { mode?: 'table' | 'board' | 'list' }) {
   const [filterFolder, setFilterFolder] = useState<string>('all');
   const [filterTag, setFilterTag] = useState<string>('all');
   const [searchFilter, setSearchFilter] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterEisenhower, setFilterEisenhower] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('updatedAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  const { folders, tags, columns, filteredFiles } = useDatabaseSchema(
+  const { folders, tags, columns, statuses, filteredFiles } = useDatabaseSchema(
     files,
     filterFolder,
     filterTag,
-    searchFilter
+    searchFilter,
+    filterStatus,
+    filterEisenhower,
+    sortBy,
+    sortOrder
   );
 
   const handleCreateNewNote = async () => {
     const timestamp = Date.now();
-    const fileName = `New Note ${timestamp.toString().slice(-4)}.md`;
+    const noteTitle = `New Note ${timestamp.toString().slice(-4)}`;
+    const fileName = `${noteTitle}.md`;
     const targetFolder = filterFolder !== 'all' ? `${filterFolder}/` : '';
     const fullPath = `${targetFolder}${fileName}`;
+    const initialTags = filterTag !== 'all' ? [filterTag] : [];
+
+    const content = `---
+title: "${noteTitle}"
+tags: [${initialTags.map((t) => `"${t}"`).join(', ')}]
+status: "Draft"
+author: ""
+eisenhower: "Not Urgent & Not Immediate"
+---
+
+# ${noteTitle}
+
+Start writing here...
+`;
 
     const newNote: VaultFile = {
       id: fullPath,
       path: fullPath,
       name: fileName,
-      title: `New Note ${timestamp.toString().slice(-4)}`,
+      title: noteTitle,
       extension: 'md',
-      content: `---
-title: New Note ${timestamp.toString().slice(-4)}
-status: ToDO
-priority: Medium
-eisenhower: urgent_immediate
-tags: [${filterTag !== 'all' ? filterTag : 'note'}]
----
-
-# New Note
-`,
+      content,
       frontmatter: {
-        title: `New Note ${timestamp.toString().slice(-4)}`,
-        status: 'ToDO',
-        priority: 'Medium',
-        eisenhower: 'urgent_immediate',
-        tags: filterTag !== 'all' ? [filterTag] : ['note'],
+        title: noteTitle,
+        status: 'Draft',
+        author: '',
+        eisenhower: 'Not Urgent & Not Immediate',
+        tags: initialTags,
       },
-      tags: filterTag !== 'all' ? [filterTag] : ['note'],
-      eisenhower: 'urgent_immediate',
+      tags: initialTags,
+      eisenhower: 'Not Urgent & Not Immediate',
       isBinary: false,
-      size: 120,
+      size: content.length,
       createdAt: timestamp,
       updatedAt: timestamp,
       vaultId: activeWorkspaceId || 'default-vault',
@@ -100,6 +114,13 @@ tags: [${filterTag !== 'all' ? filterTag : 'note'}]
         filterTag={filterTag}
         onTagChange={setFilterTag}
         tags={tags}
+        filterStatus={filterStatus}
+        onStatusChange={setFilterStatus}
+        statuses={statuses}
+        filterEisenhower={filterEisenhower}
+        onEisenhowerChange={setFilterEisenhower}
+        sortBy={sortBy}
+        onSortByChange={setSortBy}
         recordCount={filteredFiles.length}
       />
 

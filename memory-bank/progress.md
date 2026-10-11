@@ -41,6 +41,7 @@
 - [x] Incremental Google Drive delta sync with `modifiedTime` / `md5Checksum` checks, upload updates via `PATCH`, and skip tracking (`/src/lib/sync/googleDriveSync.ts`).
 - [x] Kanban HTML5 Drag-and-Drop card movement across status columns with instant frontmatter update and icon-only Eisenhower priority dots (`/src/components/database/KanbanView.tsx`).
 - [x] Gmail-style URL routing & hash permalinking (`/w/[workspaceId]#[view]`, `#[view]/[noteId]`) with bi-directional synchronization, root redirect, and deep linking (`/src/hooks/useWorkspaceRouter.ts`, `/app/page.tsx`, `/app/w/[workspaceId]/page.tsx`, `/src/stores/workspaceStore.ts`).
+- [x] Default file properties schema (`title`, `tags`, `status`, `author`, `eisenhower`) with automatic frontmatter merging, interactive editor header inspector, new note seeding, in-place table cell edits, first-class Kanban grouping (Status vs Eisenhower), and list view indicators (`/src/lib/markdown/frontmatter.ts`, `/src/hooks/useDatabaseSchema.ts`, `/src/components/sidebar/NewNoteModal.tsx`, `/src/hooks/useNotePersistence.ts`, `/src/components/editor/EditorHeader.tsx`, `/src/components/database/TableView.tsx`, `/src/components/database/KanbanView.tsx`, `/src/components/database/ListView.tsx`, `/src/components/database/DatabaseToolbar.tsx`, `/src/components/database/DatabaseView.tsx`).
 
 ## Verification Status
 - Production compilation (`pnpm build`): Passed (100% clean Next.js build).

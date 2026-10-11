@@ -24,17 +24,36 @@ export function NewNoteModal({ isOpen, onClose }: NewNoteModalProps) {
 
     const title = path.replace(/\.[^/.]+$/, '').split('/').pop() || path;
 
+    const content = `---
+title: "${title}"
+tags: []
+status: "Draft"
+author: ""
+eisenhower: "Not Urgent & Not Immediate"
+---
+
+# ${title}
+
+Start writing here...`;
+
     const newNote: VaultFile = {
       id: path,
       path,
       name: path.split('/').pop() || path,
       title,
       extension: 'md',
-      content: `# ${title}\n\nStart writing here...`,
-      frontmatter: { title },
+      content,
+      frontmatter: {
+        title,
+        tags: [],
+        status: 'Draft',
+        author: '',
+        eisenhower: 'Not Urgent & Not Immediate',
+      },
       tags: [],
+      eisenhower: 'Not Urgent & Not Immediate',
       isBinary: false,
-      size: 50,
+      size: content.length,
       createdAt: Date.now(),
       updatedAt: Date.now(),
       vaultId: activeWorkspaceId || 'default-vault',

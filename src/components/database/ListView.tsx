@@ -1,8 +1,10 @@
 'use client';
 
 import React from 'react';
-import { VaultFile, EisenhowerQuadrant, EISENHOWER_CONFIG } from '@/src/lib/storage/db';
+import { VaultFile, EISENHOWER_CONFIG } from '@/src/lib/storage/db';
+import { normalizeEisenhower, DEFAULT_NOTE_PROPERTIES } from '@/src/lib/markdown/frontmatter';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
+import { User, FileText } from 'lucide-react';
 
 interface ListViewProps {
   files: VaultFile[];
@@ -22,8 +24,10 @@ export function ListView({ files }: ListViewProps) {
   return (
     <div className="border border-neutral-200 dark:border-neutral-800 rounded-lg bg-white dark:bg-neutral-900 divide-y divide-neutral-100 dark:divide-neutral-800">
       {files.map((file) => {
-        const rawQuadrant = (file.eisenhower || file.frontmatter?.eisenhower) as EisenhowerQuadrant | undefined;
-        const opt = rawQuadrant && EISENHOWER_CONFIG[rawQuadrant] ? EISENHOWER_CONFIG[rawQuadrant] : null;
+        const currentEisenhower = normalizeEisenhower(file.eisenhower || file.frontmatter?.eisenhower);
+        const opt = EISENHOWER_CONFIG[currentEisenhower];
+        const status = file.frontmatter?.status || DEFAULT_NOTE_PROPERTIES.status;
+        const author = file.frontmatter?.author;
 
         return (
           <div
@@ -31,7 +35,7 @@ export function ListView({ files }: ListViewProps) {
             onClick={() => openFileTab(file.path, file.title)}
             className="p-3.5 flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-neutral-800/40 cursor-pointer transition-colors"
           >
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 min-w-0">
               {opt ? (
                 <span
                   className={`w-2 h-2 rounded-full shrink-0 ${opt.dotBg}`}
@@ -43,25 +47,42 @@ export function ListView({ files }: ListViewProps) {
                   title="Unassigned priority"
                 />
               )}
-              <span className="font-semibold text-xs text-neutral-900 dark:text-neutral-100">
+              <FileText className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+              <span className="font-semibold text-xs text-neutral-900 dark:text-neutral-100 truncate">
                 {file.title || file.name}
               </span>
-              {file.frontmatter?.status && (
-                <span className="text-[11px] font-mono text-indigo-600 dark:text-indigo-400">
-                  · {file.frontmatter.status}
+
+              {/* Status Badge */}
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 border border-[var(--border)] shrink-0">
+                {status}
+              </span>
+
+              {/* Author */}
+              {author && (
+                <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-neutral-400 truncate">
+                  <User className="w-3 h-3 text-neutral-400" />
+                  <span className="truncate">{author}</span>
                 </span>
               )}
-              {file.frontmatter?.priority && (
-                <span className="text-[11px] font-mono text-neutral-500">
-                  · {file.frontmatter.priority}
+
+              {/* Eisenhower Pill */}
+              {opt && (
+                <span className={`hidden md:inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium border ${opt.badgeClass} shrink-0`}>
+                  {opt.shortLabel}
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-4 text-xs text-neutral-400">
+
+            <div className="flex items-center gap-4 text-xs text-neutral-400 shrink-0 ml-4">
               {file.tags && file.tags.length > 0 && (
-                <div className="flex gap-1.5">
+                <div className="hidden sm:flex gap-1.5">
                   {file.tags.map((t) => (
-                    <span key={t}>#{t}</span>
+                    <span
+                      key={t}
+                      className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-neutral-50 dark:bg-neutral-800/60 text-neutral-500 border border-[var(--border)]"
+                    >
+                      #{t}
+                    </span>
                   ))}
                 </div>
               )}
