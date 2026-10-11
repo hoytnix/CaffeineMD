@@ -11,8 +11,14 @@
 - **Resizable File Explorer**: Draggable border resizer (`SidebarResizer.tsx` + `useSidebarResize.ts`) on the right side of `FileTree.tsx`, supporting drag resizing (180px–720px), double-click reset (256px), keyboard accessibility, and localStorage persistence.
 - **Rebranding**: Rebranded from "Kite Workspace"/"Kite" to "Kite MD" across metadata, UI, popovers, default seed notes, and workspace stores.
 - **Document Metrics**: `NoteMetricsBar.tsx` (207 LOC) above `NOTE PROPERTIES` in `BacklinksPanel.tsx`. Real-time words, chars, LLM tokens, emojis (with ZWJ detection), links, and KB size via `useSyncExternalStore`.
-- **Mobile Spacing & Prose Margins Optimization**: Fixed excessive vertical whitespace between note title and body content on mobile screens. Replaced static editor wrapper padding (`px-10 py-10`) with responsive utilities (`px-4 pt-2 sm:pt-4 md:pt-6 pb-8 sm:px-6 md:px-10`), reduced title bottom margin on mobile (`mb-2 sm:mb-4 md:mb-6`), collapsed first-child margins inside ProseMirror/Tiptap (`[&>*:first-child]:mt-0`), made plaintext editor responsive (`space-y-2 sm:space-y-4`), and added zero-overhead collapsible states to `NotePropertiesCard.tsx` (`mb-2 sm:mb-3` on mobile).
-- **Refactoring Status**: All modules adhere strictly to the 100–250 LOC boundary.
+- **Plaintext Markdown Editor Dynamic Wrapped Line Gutter Sync**: Synchronized vertical scrolling offset (`scrollTop`) between `<textarea>` and line numbers gutter in `PlaintextMarkdownEditor.tsx` with full support for soft line wrapping (`wordWrap = true` by default, with toolbar toggle). Implemented off-screen DOM mirror container with `ResizeObserver` to dynamically measure exact wrapped line heights for every logical markdown line, styling each gutter line item to match pixel-for-pixel. Bound height constraints (`h-[550px] sm:h-[680px] max-h-[calc(100vh-220px)] min-h-[350px] sm:min-h-[480px]`, `h-full`) to enable native overflow clipping and programmatic scrolling on `gutterRef.current`, with bidirectional wheel scrolling via `onWheel`.
+- **Diff Viewer (Unsaved Working Copy vs. Saved Persistent Copy)**:
+  - Added new `'diff'` editor mode to `EditorMode = 'rich' | 'plain' | 'diff'` in `EditorHeader.tsx`, with a dedicated `GitCompare` icon toggle button.
+  - Decomposed diff logic into `diffUtils.ts` (110 LOC) and `DiffViewer.tsx` (228 LOC) adhering strictly to the 100–250 LOC requirement.
+  - Implemented both Unified and Split (side-by-side) views with real-time stats (`No Unsaved Changes` vs `X line(s) modified`), additions (`bg-emerald-500/15 text-emerald-700 dark:text-emerald-300`), deletions (`bg-rose-500/15 text-rose-700 dark:text-rose-300`), and dual-pane aligned scrollable grids.
+  - Added immediate `Save Changes` and `Discard / Revert` action triggers in the diff micro-toolbar.
+  - Enhanced `useEditorAutosave.ts` to retain the in-memory working buffer across mode switches without prematurely flushing to IndexedDB, properly updating active diffs and providing safe reverts.
+- **Refactoring Status**: All modules adhere strictly to the 100–250 LOC boundary (DiffViewer at 228 LOC, diffUtils at 110 LOC, TiptapEditor at 239 LOC).
 
 ## Next Steps
 - Maintain clean, decomposed component architecture.

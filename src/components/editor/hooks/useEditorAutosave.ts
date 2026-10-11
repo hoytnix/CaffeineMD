@@ -10,6 +10,7 @@ import {
   editorHtmlToMarkdown,
 } from '@/src/lib/markdown/serializer';
 import { autoDetectUnlabeledCodeBlocks } from '../config/editorDomHandlers';
+import { EditorMode } from '../EditorHeader';
 
 export interface UseEditorAutosaveProps {
   filePath: string;
@@ -18,7 +19,7 @@ export interface UseEditorAutosaveProps {
 /**
  * useEditorAutosave
  * Coordinates debounced note persistence, dirty checking against IndexedDB,
- * seamless mode switching between rich-text (Tiptap) and plaintext (Markdown),
+ * seamless mode switching between rich-text (Tiptap), plaintext, and diff viewer,
  * and keyboard save listeners (⌘S).
  */
 export function useEditorAutosave({ filePath }: UseEditorAutosaveProps) {
@@ -38,31 +39,29 @@ export function useEditorAutosave({ filePath }: UseEditorAutosaveProps) {
     saveTimeoutRef,
   } = useNotePersistence({ filePath });
 
-  const [editorMode, setEditorMode] = useState<'rich' | 'plain'>('rich');
+  const [editorMode, setEditorMode] = useState<EditorMode>('rich');
 
   const switchToPlaintext = useCallback(
     (editor: Editor | null) => {
-      if (editor && !editor.isDestroyed && editor.schema) {
+      if (editorMode === 'rich' && editor && !editor.isDestroyed && editor.schema) {
         try {
           const markdownBody = editorHtmlToMarkdown(editor.getHTML());
           const fullRaw = serializeMarkdownWithFrontmatter(markdownBody, file?.frontmatter || {});
           setRawMarkdown(fullRaw);
-          if (file) handleSave(markdownBody, file);
         } catch {
           if (file) setRawMarkdown(file.content || '');
         }
-      } else if (file) {
+      } else if (file && !rawMarkdown) {
         setRawMarkdown(file.content || '');
       }
       setEditorMode('plain');
     },
-    [file, handleSave, setRawMarkdown]
+    [editorMode, file, rawMarkdown, setRawMarkdown]
   );
 
   const switchToRichText = useCallback(
     (editor: Editor | null) => {
       if (file) {
-        handleSaveRaw(rawMarkdown, file);
         try {
           const parsed = parseMarkdownContent(rawMarkdown, file.title);
           const html = markdownToEditorHtml(parsed.body);
@@ -76,12 +75,54 @@ export function useEditorAutosave({ filePath }: UseEditorAutosaveProps) {
       }
       setEditorMode('rich');
     },
-    [file, rawMarkdown, handleSaveRaw]
+    [file, rawMarkdown]
+  );
+
+  const switchToDiff = useCallback(
+    (editor: Editor | null) => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      if (editorMode === 'rich' && editor && !editor.isDestroyed && editor.schema) {
+        try {
+          const markdownBody = editorHtmlToMarkdown(editor.getHTML());
+          const fullRaw = serializeMarkdownWithFrontmatter(markdownBody, file?.frontmatter || {});
+          setRawMarkdown(fullRaw);
+        } catch {
+          if (file) setRawMarkdown(file.content || '');
+        }
+      }
+      setEditorMode('diff');
+    },
+    [editorMode, file, setRawMarkdown, saveTimeoutRef]
+  );
+
+  const handleRevert = useCallback(
+    (editor: Editor | null) => {
+      if (!file) return;
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      const baseline = file.content || '';
+      setRawMarkdown(baseline);
+      setTitle(file.title);
+      if (editor && !editor.isDestroyed && editor.schema) {
+        try {
+          const parsed = parseMarkdownContent(baseline, file.title);
+          const html = markdownToEditorHtml(parsed.body);
+          editor.commands.setContent(html);
+          autoDetectUnlabeledCodeBlocks(editor);
+        } catch (err) {
+          console.warn('Error reverting editor:', err);
+        }
+      }
+    },
+    [file, setRawMarkdown, setTitle, saveTimeoutRef]
   );
 
   const handleManualSave = useCallback(
     (editor: Editor | null) => {
-      if (editorMode === 'plain') {
+      if (editorMode === 'plain' || editorMode === 'diff') {
         if (file) handleSaveRaw(rawMarkdown, file);
       } else if (editor && !editor.isDestroyed && editor.schema && file) {
         handleSave(editorHtmlToMarkdown(editor.getHTML()), file);
@@ -95,14 +136,10 @@ export function useEditorAutosave({ filePath }: UseEditorAutosaveProps) {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
         e.preventDefault();
-        if (editorMode === 'plain') {
+        if (editorMode === 'plain' || editorMode === 'diff') {
           if (file) handleSaveRaw(rawMarkdown, file);
         } else if (file) {
-          // Trigger manual save
-          const activeEl = document.querySelector('.kite-editor-content .ProseMirror');
-          if (activeEl) {
-            // Handled via active editor instance
-          }
+          // Handled via manual save
         }
       }
     };
@@ -128,6 +165,8 @@ export function useEditorAutosave({ filePath }: UseEditorAutosaveProps) {
     saveTimeoutRef,
     switchToPlaintext,
     switchToRichText,
+    switchToDiff,
+    handleRevert,
     handleManualSave,
   };
 }

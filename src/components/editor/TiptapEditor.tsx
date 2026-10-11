@@ -15,6 +15,7 @@ import { EditorDragOverlay } from './components/EditorDragOverlay';
 import { EditorHeader } from './EditorHeader';
 import { BinaryAssetPreview } from './BinaryAssetPreview';
 import { PlaintextMarkdownEditor } from './modes/PlaintextMarkdownEditor';
+import { DiffViewer } from './modes/DiffViewer';
 import { FloatingToolbarHost } from './FloatingToolbarHost';
 import { EditorBottomToolbar } from './EditorBottomToolbar';
 import { FileQuestion } from 'lucide-react';
@@ -33,7 +34,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
     file, setFile, title, setTitle, isSaving, saveSuccess, loading,
     rawMarkdown, setRawMarkdown, editorMode,
     handleSave, handleSaveRaw, updateProperties, saveTimeoutRef,
-    switchToPlaintext, switchToRichText, handleManualSave,
+    switchToPlaintext, switchToRichText, switchToDiff, handleRevert, handleManualSave,
   } = useEditorAutosave({ filePath });
 
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -124,6 +125,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
             editorMode={editorMode}
             onSwitchToRichText={() => switchToRichText(editor)}
             onSwitchToPlaintext={() => switchToPlaintext(editor)}
+            onSwitchToDiff={() => switchToDiff(editor)}
             onManualSave={() => handleManualSave(editor)}
             isSaveDisabled={isSaving || (editorMode === 'rich' && (!editor || editor.isDestroyed))}
             onUpdateProperties={updateProperties}
@@ -173,7 +175,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
                   </div>
                 )}
               </>
-            ) : (
+            ) : editorMode === 'plain' ? (
               <PlaintextMarkdownEditor
                 rawMarkdown={rawMarkdown}
                 onMarkdownChange={setRawMarkdown}
@@ -183,6 +185,15 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
                 }}
                 gutterRef={gutterRef}
                 textareaRef={textareaRef}
+              />
+            ) : (
+              <DiffViewer
+                savedContent={file.content || ''}
+                unsavedContent={rawMarkdown}
+                onSave={() => {
+                  if (file) handleSaveRaw(rawMarkdown, file);
+                }}
+                onRevert={() => handleRevert(editor)}
               />
             )}
 
@@ -194,7 +205,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
               onUpdateFile={(updated) => {
                 setFile(updated);
                 db.files.put(updated);
-                if (editorMode === 'plain') {
+                if (editorMode === 'plain' || editorMode === 'diff') {
                   const parsed = parseMarkdownContent(rawMarkdown, updated.title);
                   setRawMarkdown(serializeMarkdownWithFrontmatter(parsed.body, updated.frontmatter || {}));
                 }

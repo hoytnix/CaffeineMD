@@ -18,15 +18,19 @@ import {
   X,
   ChevronDown,
   ChevronUp,
+  GitCompare,
 } from 'lucide-react';
+
+export type EditorMode = 'rich' | 'plain' | 'diff';
 
 interface EditorHeaderProps {
   file: VaultFile;
   isSaving: boolean;
   saveSuccess: boolean;
-  editorMode: 'rich' | 'plain';
+  editorMode: EditorMode;
   onSwitchToRichText: () => void;
   onSwitchToPlaintext: () => void;
+  onSwitchToDiff: () => void;
   onManualSave: () => void;
   isSaveDisabled: boolean;
   onUpdateProperties?: (props: Partial<NoteProperties>) => Promise<any> | void;
@@ -53,6 +57,7 @@ export function EditorHeader({
   editorMode,
   onSwitchToRichText,
   onSwitchToPlaintext,
+  onSwitchToDiff,
   onManualSave,
   isSaveDisabled,
   onUpdateProperties,
@@ -206,6 +211,19 @@ export function EditorHeader({
               aria-label="Plaintext Mode"
             >
               <Code className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={onSwitchToDiff}
+              className={`p-1.5 rounded-md transition-all cursor-pointer ${
+                editorMode === 'diff'
+                  ? 'bg-[var(--accent)] text-white shadow-xs'
+                  : 'text-neutral-400 hover:text-[var(--foreground)]'
+              }`}
+              title="Diff (Unsaved vs Saved)"
+              aria-label="Diff View"
+            >
+              <GitCompare className="w-3.5 h-3.5" />
             </button>
           </div>
 

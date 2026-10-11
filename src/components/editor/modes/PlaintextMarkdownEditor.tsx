@@ -1,31 +1,76 @@
 'use client';
 
-import React, { useRef } from 'react';
-import { Code } from 'lucide-react';
+import React, { useRef, useState, useMemo, useEffect, useLayoutEffect } from 'react';
+import { Code, WrapText } from 'lucide-react';
+
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 interface PlaintextMarkdownEditorProps {
   rawMarkdown: string;
   onMarkdownChange: (newContent: string) => void;
   onSaveTrigger: (content: string) => void;
   gutterRef?: React.RefObject<HTMLDivElement | null>;
-  textareaRef: React.RefObject<HTMLTextAreaElement | null>;
+  textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
 }
 
 export function PlaintextMarkdownEditor({
   rawMarkdown,
   onMarkdownChange,
   onSaveTrigger,
-  gutterRef,
-  textareaRef,
+  gutterRef: externalGutterRef,
+  textareaRef: externalTextareaRef,
 }: PlaintextMarkdownEditorProps) {
-  const lineNumbersRef = useRef<HTMLDivElement | null>(null);
+  const internalGutterRef = useRef<HTMLDivElement>(null);
+  const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const mirrorRef = useRef<HTMLDivElement>(null);
 
-  const handleScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
-    if (lineNumbersRef.current) {
-      lineNumbersRef.current.scrollTop = e.currentTarget.scrollTop;
+  const [wordWrap, setWordWrap] = useState(true);
+  const [lineHeights, setLineHeights] = useState<number[]>([]);
+
+  const gutterRef = externalGutterRef || internalGutterRef;
+  const textareaRef = externalTextareaRef || internalTextareaRef;
+
+  const lines = useMemo(() => rawMarkdown.split('\n'), [rawMarkdown]);
+
+  useIsomorphicLayoutEffect(() => {
+    if (!wordWrap) {
+      setLineHeights([]);
+      return;
     }
-    if (gutterRef?.current) {
-      gutterRef.current.scrollTop = e.currentTarget.scrollTop;
+
+    const textarea = textareaRef.current;
+    const mirror = mirrorRef.current;
+    if (!textarea || !mirror) return;
+
+    const updateHeights = () => {
+      mirror.style.width = `${textarea.clientWidth}px`;
+      const children = mirror.children;
+      const heights: number[] = [];
+      for (let i = 0; i < children.length; i++) {
+        heights.push((children[i] as HTMLElement).offsetHeight || 28);
+      }
+      setLineHeights(heights);
+    };
+
+    updateHeights();
+
+    const observer = new ResizeObserver(() => {
+      updateHeights();
+    });
+    observer.observe(textarea);
+
+    return () => observer.disconnect();
+  }, [rawMarkdown, wordWrap, textareaRef]);
+
+  const handleScroll = () => {
+    if (textareaRef.current && gutterRef.current) {
+      gutterRef.current.scrollTop = textareaRef.current.scrollTop;
+    }
+  };
+
+  const handleGutterWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (textareaRef.current) {
+      textareaRef.current.scrollTop += e.deltaY;
     }
   };
 
@@ -94,81 +139,61 @@ export function PlaintextMarkdownEditor({
           </div>
         </div>
 
-        {/* Quick Syntax Chips */}
+        {/* Quick Syntax Chips & Wrap Toggle */}
         <div className="flex items-center gap-1.5 flex-wrap text-xs">
           <button
             type="button"
-            onClick={() => insertMarkdownSnippet('[[', 2)}
-            className="px-2 py-0.5 rounded text-[11px] font-mono bg-[var(--card)] border border-[var(--border)] text-neutral-400 hover:text-[var(--accent)] hover:border-[var(--accent)] transition-colors cursor-pointer"
-            title="Insert WikiLink [[Target]]"
+            onClick={() => setWordWrap(!wordWrap)}
+            className={`px-2 py-0.5 rounded text-[11px] font-mono border transition-colors cursor-pointer flex items-center gap-1 ${
+              wordWrap
+                ? 'bg-[var(--accent)]/15 border-[var(--accent)] text-[var(--accent)]'
+                : 'bg-[var(--card)] border-[var(--border)] text-neutral-400 hover:text-[var(--foreground)]'
+            }`}
+            title={wordWrap ? 'Word wrap is ON (Click to disable)' : 'Word wrap is OFF (Click to enable)'}
           >
-            [[WikiLink]]
+            <WrapText className="w-3 h-3" />
+            <span>Wrap: {wordWrap ? 'On' : 'Off'}</span>
           </button>
-          <button
-            type="button"
-            onClick={() => insertMarkdownSnippet('# ')}
-            className="px-2 py-0.5 rounded text-[11px] font-mono bg-[var(--card)] border border-[var(--border)] text-neutral-400 hover:text-[var(--foreground)] hover:border-[var(--border)] transition-colors cursor-pointer"
-            title="Insert Heading"
-          >
-            # H1
-          </button>
-          <button
-            type="button"
-            onClick={() => insertMarkdownSnippet('## ')}
-            className="px-2 py-0.5 rounded text-[11px] font-mono bg-[var(--card)] border border-[var(--border)] text-neutral-400 hover:text-[var(--foreground)] hover:border-[var(--border)] transition-colors cursor-pointer"
-            title="Insert Subheading"
-          >
-            ## H2
-          </button>
-          <button
-            type="button"
-            onClick={() => insertMarkdownSnippet('- [ ] ')}
-            className="px-2 py-0.5 rounded text-[11px] font-mono bg-[var(--card)] border border-[var(--border)] text-neutral-400 hover:text-[var(--foreground)] hover:border-[var(--border)] transition-colors cursor-pointer"
-            title="Insert Task Checkbox"
-          >
-            - [ ] Task
-          </button>
-          <button
-            type="button"
-            onClick={() => insertMarkdownSnippet('**bold**', 6)}
-            className="px-2 py-0.5 rounded text-[11px] font-mono bg-[var(--card)] border border-[var(--border)] text-neutral-400 hover:text-[var(--foreground)] hover:border-[var(--border)] transition-colors cursor-pointer"
-            title="Insert Bold Text"
-          >
-            **Bold**
-          </button>
-          <button
-            type="button"
-            onClick={() => insertMarkdownSnippet('`code`', 5)}
-            className="px-2 py-0.5 rounded text-[11px] font-mono bg-[var(--card)] border border-[var(--border)] text-neutral-400 hover:text-[var(--foreground)] hover:border-[var(--border)] transition-colors cursor-pointer"
-            title="Insert Inline Code"
-          >
-            `Code`
-          </button>
-          <button
-            type="button"
-            onClick={() => insertMarkdownSnippet('> ')}
-            className="px-2 py-0.5 rounded text-[11px] font-mono bg-[var(--card)] border border-[var(--border)] text-neutral-400 hover:text-[var(--foreground)] hover:border-[var(--border)] transition-colors cursor-pointer"
-            title="Insert Quote"
-          >
-            &gt; Quote
-          </button>
+          {[
+            { label: '[[WikiLink]]', snippet: '[[', offset: 2, title: 'Insert WikiLink [[Target]]', highlight: true },
+            { label: '# H1', snippet: '# ', title: 'Insert Heading' },
+            { label: '## H2', snippet: '## ', title: 'Insert Subheading' },
+            { label: '- [ ] Task', snippet: '- [ ] ', title: 'Insert Task Checkbox' },
+            { label: '**Bold**', snippet: '**bold**', offset: 6, title: 'Insert Bold Text' },
+            { label: '`Code`', snippet: '`code`', offset: 5, title: 'Insert Inline Code' },
+            { label: '> Quote', snippet: '> ', title: 'Insert Quote' },
+          ].map((chip) => (
+            <button
+              key={chip.label}
+              type="button"
+              onClick={() => insertMarkdownSnippet(chip.snippet, chip.offset)}
+              className={`px-2 py-0.5 rounded text-[11px] font-mono border transition-colors cursor-pointer ${
+                chip.highlight
+                  ? 'bg-[var(--card)] border-[var(--border)] text-neutral-400 hover:text-[var(--accent)] hover:border-[var(--accent)]'
+                  : 'bg-[var(--card)] border-[var(--border)] text-neutral-400 hover:text-[var(--foreground)] hover:border-[var(--border)]'
+              }`}
+              title={chip.title}
+            >
+              {chip.label}
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Line Numbered Raw Markdown Editor */}
-      <div className="relative flex rounded-xl border border-[var(--border)] bg-[var(--card)]/60 overflow-hidden shadow-2xs focus-within:border-[var(--accent)] transition-colors">
+      <div className="relative flex rounded-xl border border-[var(--border)] bg-[var(--card)]/60 overflow-hidden shadow-2xs focus-within:border-[var(--accent)] transition-colors h-[550px] sm:h-[680px] max-h-[calc(100vh-220px)] min-h-[350px] sm:min-h-[480px]">
         {/* Line Numbers Gutter */}
         <div
-          ref={(node) => {
-            (lineNumbersRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-            if (gutterRef) {
-              (gutterRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-            }
-          }}
-          className="w-10 sm:w-11 select-none py-2.5 sm:py-4 pr-2 sm:pr-2.5 text-right font-mono text-[13px] leading-7 text-neutral-400 border-r border-[var(--border)] bg-[var(--card)] overflow-hidden shrink-0"
+          ref={gutterRef}
+          onWheel={handleGutterWheel}
+          className="w-10 sm:w-11 select-none py-2.5 sm:py-4 pr-2 sm:pr-2.5 text-right font-mono text-[13px] leading-7 text-neutral-400 border-r border-[var(--border)] bg-[var(--card)] overflow-hidden shrink-0 h-full"
         >
-          {rawMarkdown.split('\n').map((_, i) => (
-            <div key={i} className="h-7">
+          {lines.map((_, i) => (
+            <div
+              key={i}
+              style={{ height: wordWrap && lineHeights[i] ? `${lineHeights[i]}px` : '28px' }}
+              className="leading-7"
+            >
               {i + 1}
             </div>
           ))}
@@ -186,8 +211,22 @@ export function PlaintextMarkdownEditor({
           autoCapitalize="off"
           autoComplete="off"
           autoCorrect="off"
-          className="flex-1 w-full resize-none p-2.5 sm:p-4 font-mono text-[13.5px] leading-7 bg-transparent text-[var(--foreground)] placeholder-neutral-400 dark:placeholder-neutral-600 focus:outline-none min-h-[300px] sm:min-h-[480px]"
+          wrap={wordWrap ? 'soft' : 'off'}
+          className={`flex-1 w-full h-full resize-none overflow-y-auto py-2.5 sm:py-4 px-2.5 sm:px-4 font-mono text-[13px] leading-7 bg-transparent text-[var(--foreground)] placeholder-neutral-400 dark:placeholder-neutral-600 focus:outline-none ${
+            wordWrap ? 'whitespace-pre-wrap break-words' : 'overflow-x-auto whitespace-pre'
+          }`}
         />
+      </div>
+
+      {/* Offscreen Mirror to Measure Wrapped Line Heights */}
+      <div
+        ref={mirrorRef}
+        aria-hidden="true"
+        className="absolute -top-[99999px] -left-[99999px] invisible pointer-events-none font-mono text-[13px] leading-7 whitespace-pre-wrap break-words py-2.5 sm:py-4 px-2.5 sm:px-4 box-border"
+      >
+        {lines.map((line, i) => (
+          <div key={i}>{line || '\u00A0'}</div>
+        ))}
       </div>
     </div>
   );
