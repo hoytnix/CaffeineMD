@@ -80,6 +80,7 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [syncProgressText, setSyncProgressText] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState<DriveSyncStatus>({
     isConnected: false,
     isSyncing: false,
@@ -177,8 +178,14 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
     }
 
     setIsSyncing(true);
+    setSyncProgressText('Starting sync...');
     try {
-      const result = await GoogleDriveSyncService.syncNow(vaultName);
+      const result = await GoogleDriveSyncService.syncNow(
+        vaultName,
+        undefined,
+        undefined,
+        (progress) => setSyncProgressText(progress)
+      );
       setSyncStatus(result);
       if (result.lastError) {
         if (
@@ -195,6 +202,7 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
       setSyncStatus((prev) => ({ ...prev, lastError: err?.message || 'Sync failed' }));
     } finally {
       setIsSyncing(false);
+      setSyncProgressText(null);
     }
   };
 
@@ -248,7 +256,12 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
       setMountedMode('indexeddb', cleanName);
 
       // Perform sync to download files from that Google Drive folder
-      const result = await GoogleDriveSyncService.syncNow(cleanName, remote.id, wsId);
+      const result = await GoogleDriveSyncService.syncNow(
+        cleanName,
+        remote.id,
+        wsId,
+        (progress) => setSyncProgressText(progress)
+      );
       setSyncStatus(result);
       fetchRemoteWorkspaces();
       showToast(`Switched and synced workspace "${cleanName}" from Google Drive`);
@@ -425,7 +438,7 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
                       className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium transition-colors shadow-xs cursor-pointer disabled:opacity-50"
                     >
                       <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-                      <span>{isSyncing ? 'Syncing...' : 'Sync Now'}</span>
+                      <span>{isSyncing ? (syncProgressText || 'Syncing...') : 'Sync Now'}</span>
                     </button>
                     <button
                       onClick={handleGoogleLogout}

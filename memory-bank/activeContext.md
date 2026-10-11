@@ -1,12 +1,11 @@
 # Active Context: Kite Workspace
 
 ## Current Focus
-Implemented Editor Toolbar & File Explorer UX Updates:
-1. Multi-line code blocks now feature a hover-activated copy-to-clipboard button with transient checkmark confirmation.
-2. Mode toggles (`Rich Text` / `Plaintext`) and manual `Save` buttons in the editor header are now streamlined to icon-only buttons with tooltips.
-3. Editor tab row plus button now triggers "New Note" creation directly instead of vault import.
-4. Removed redundant brand/header above the file explorer tree so it begins immediately with search.
-5. Replaced the simple file tree filter input with an integrated `⌘K` Quick Search bar and removed the duplicate search button from the top navbar.
+Implemented Bidirectional Google Drive Sync (Reconciliation Pass for Missing Remote Files):
+1. Recursive Remote File Tree Scanner (`listAllRemoteFiles`): Recursively walks Google Drive folders and paginates through `nextPageToken` with query `'${folderId}' in parents and trashed = false` returning a mapped lookup of all remote files.
+2. Inbound Downloader & Dexie Writer (`downloadRemoteFile`, `downloadRemoteBinary`): Downloads missing or updated notes from Google Drive, parses YAML frontmatter with `parseFrontmatter` and `normalizeEisenhower`, and writes records directly into IndexedDB (`db.files.put`).
+3. Two-Way Diff and Reconciliation Pass: Diffed local vs remote maps, detecting missing local files to download, missing remote files to upload, and comparing timestamps with a 2-second tolerance threshold.
+4. Concurrency & Rate Limit Safety: Uses pooled concurrency (3 workers) and wraps Dexie downloads in atomic database transactions (`db.transaction('rw', db.files, ...)`), reporting granular progress states (`"Scanning Google Drive..."`, `"Downloading N remote files..."`, `"Uploading N local notes..."`, `"Synced"`).
 
 ## Key Changes
 1. **Core Frontmatter Schema & Normalization (`/src/lib/markdown/frontmatter.ts`, `/src/hooks/useDatabaseSchema.ts`, `/src/lib/storage/db.ts`)**:
