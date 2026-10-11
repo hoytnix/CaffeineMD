@@ -234,7 +234,12 @@ export default function WorkspacePage() {
                     e.stopPropagation();
                     closeFileTab(tab.path);
                   }}
-                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-[var(--foreground)]/10 text-[var(--foreground)]/40 hover:text-[var(--foreground)] transition-opacity ml-1"
+                  className={`p-0.5 rounded hover:bg-[var(--foreground)]/10 text-[var(--foreground)]/40 hover:text-[var(--foreground)] transition-opacity ml-1 ${
+                    isActive
+                      ? 'opacity-100'
+                      : 'opacity-100 md:opacity-0 md:group-hover:opacity-100'
+                  }`}
+                  title="Close tab"
                 >
                   <X className="w-3 h-3" />
                 </button>

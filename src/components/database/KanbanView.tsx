@@ -12,7 +12,7 @@ interface KanbanViewProps {
 }
 
 export function KanbanView({ files, groupKey = 'status', onRefresh }: KanbanViewProps) {
-  const { openFileTab } = useWorkspaceStore();
+  const { openFileTab, activeWorkspaceId } = useWorkspaceStore();
   const [newCardTitle, setNewCardTitle] = useState('');
   const [activeColumnForNew, setActiveColumnForNew] = useState<string | null>(null);
 
@@ -81,7 +81,7 @@ eisenhower: urgent_immediate
       size: 80,
       createdAt: Date.now(),
       updatedAt: Date.now(),
-      vaultId: 'default-vault',
+      vaultId: activeWorkspaceId || 'default-vault',
     };
 
     await db.files.put(newNote);

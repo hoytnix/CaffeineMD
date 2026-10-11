@@ -45,7 +45,7 @@ interface TiptapEditorProps {
 }
 
 export function TiptapEditor({ filePath }: TiptapEditorProps) {
-  const { openFileTab, setActiveEditor } = useWorkspaceStore();
+  const { openFileTab, setActiveEditor, activeWorkspaceId } = useWorkspaceStore();
 
   const {
     file,
@@ -299,7 +299,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
                             size: 100,
                             createdAt: Date.now(),
                             updatedAt: Date.now(),
-                            vaultId: 'default-vault',
+                            vaultId: activeWorkspaceId || 'default-vault',
                           };
                           db.files.put(newNote).then(() => {
                             openFileTab(newPath, targetTitle);

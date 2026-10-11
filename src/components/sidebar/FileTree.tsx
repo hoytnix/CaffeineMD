@@ -225,11 +225,11 @@ export function FileTree() {
                     <span className="truncate text-[11px] line-through opacity-75">
                       {tf.title || tf.name}
                     </span>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => restoreNote(tf.path)}
                         title="Restore note"
-                        className="p-1 rounded hover:bg-neutral-800 text-neutral-300 hover:text-emerald-400 transition-colors cursor-pointer"
+                        className="min-h-[28px] min-w-[28px] flex items-center justify-center p-1 rounded hover:bg-neutral-800 text-neutral-300 hover:text-emerald-400 transition-colors cursor-pointer"
                       >
                         <Undo2 className="w-3 h-3" />
                       </button>
@@ -240,7 +240,7 @@ export function FileTree() {
                           }
                         }}
                         title="Delete permanently"
-                        className="p-1 rounded hover:bg-neutral-800 text-neutral-400 hover:text-rose-400 transition-colors cursor-pointer"
+                        className="min-h-[28px] min-w-[28px] flex items-center justify-center p-1 rounded hover:bg-neutral-800 text-neutral-400 hover:text-rose-400 transition-colors cursor-pointer"
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>

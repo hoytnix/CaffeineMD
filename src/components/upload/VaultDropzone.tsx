@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
+import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { useVaultMounting } from '@/src/hooks/useVaultMounting';
 import { DropzoneUploadCards } from './DropzoneUploadCards';
 import { UploadCloud, X } from 'lucide-react';
@@ -11,6 +12,7 @@ interface VaultDropzoneProps {
 }
 
 export function VaultDropzone({ isOpen, onClose }: VaultDropzoneProps) {
+  const { activeWorkspaceId } = useWorkspaceStore();
   const [isDragging, setIsDragging] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -21,7 +23,7 @@ export function VaultDropzone({ isOpen, onClose }: VaultDropzoneProps) {
     handleFolderInputUpload,
     handleFileInputUpload,
     handleDroppedItems,
-  } = useVaultMounting({ onClose, setStatusMessage });
+  } = useVaultMounting({ onClose, setStatusMessage, targetWorkspaceId: activeWorkspaceId });
 
   if (!isOpen) return null;
 

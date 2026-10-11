@@ -36,7 +36,8 @@
 - [x] Complete theming of top menu bar, 6 icon-only peer views, search/emoji triggers, settings navigation, open document tabs, and Workspace Popover switcher via CSS custom properties (`/app/page.tsx`, `/src/components/workspace/WorkspacePopover.tsx`).
 - [x] Resized bottom editor toolbox buttons to half height (`h-[26px]`, `w-4 h-4` icons, `py-1` container) with preserved drag reordering and horizontal wheel/mouse panning (`/src/components/editor/EditorBottomToolbar.tsx`).
 - [x] High-throughput 5-worker parallel concurrency sync engine eliminating upload rate throttling and removing forbidden Content-Length CORS preflight headers (`/src/lib/sync/googleDriveSync.ts`).
-- [x] Universal Workspace Creation modal supporting Google Drive and Local Drive (Browser IndexedDB & Live Disk Folder) with automatic welcome note seeding and workspace scoping (`/src/components/workspace/CreateWorkspaceModal.tsx`, `/src/components/workspace/WorkspacePopover.tsx`, `/src/lib/workspaces/workspaceManager.ts`, `/app/settings/page.tsx`).
+- [x] Scoped folder, disk, and file upload ingestion pipelines directly to `activeWorkspaceId`, preventing automatic fallback to 'default-vault' (`/src/components/upload/VaultDropzone.tsx`, `/src/hooks/useVaultMounting.ts`, `/src/lib/storage/importPipeline.ts`).
+- [x] Touch & mobile viewport visibility with minimum `28px` tap targets for File Tree delete buttons, trash actions, and document tab close triggers (`/src/components/sidebar/FileTreeItem.tsx`, `/src/components/sidebar/FileTree.tsx`, `/app/page.tsx`).
 
 ## Verification Status
 - Production compilation (`pnpm build`): Passed (100% clean Next.js build).

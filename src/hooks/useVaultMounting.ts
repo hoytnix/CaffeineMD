@@ -12,14 +12,17 @@ import {
 interface UseVaultMountingProps {
   onClose: () => void;
   setStatusMessage: (msg: string | null) => void;
+  targetWorkspaceId?: string;
 }
 
-export function useVaultMounting({ onClose, setStatusMessage }: UseVaultMountingProps) {
+export function useVaultMounting({ onClose, setStatusMessage, targetWorkspaceId: propWorkspaceId }: UseVaultMountingProps) {
   const {
     setImportProgress,
     setMountedMode,
     openFileTab,
+    activeWorkspaceId,
   } = useWorkspaceStore();
+  const targetWorkspaceId = propWorkspaceId || activeWorkspaceId || 'default-vault';
 
   // 1. Native Directory Picker (File System Access API)
   const handleOpenLocalDiskFolder = async () => {
@@ -45,7 +48,7 @@ export function useVaultMounting({ onClose, setStatusMessage }: UseVaultMounting
       setMountedMode('filesystem', name);
       setStatusMessage(`Ingesting ${rawFiles.length} files...`);
 
-      await runIngestionPipeline(rawFiles, 'default-vault', (progress) => {
+      await runIngestionPipeline(rawFiles, targetWorkspaceId, (progress) => {
         setImportProgress(progress);
       });
 
@@ -73,7 +76,7 @@ export function useVaultMounting({ onClose, setStatusMessage }: UseVaultMounting
     const firstFolder = rawFiles[0]?.relativePath.split('/')[0] || 'Imported Vault';
     setMountedMode('indexeddb', firstFolder);
 
-    await runIngestionPipeline(rawFiles, 'default-vault', (progress) => {
+    await runIngestionPipeline(rawFiles, targetWorkspaceId, (progress) => {
       setImportProgress(progress);
     });
 
@@ -95,7 +98,7 @@ export function useVaultMounting({ onClose, setStatusMessage }: UseVaultMounting
       file: f,
     }));
 
-    await runIngestionPipeline(rawFiles, 'default-vault', (progress) => {
+    await runIngestionPipeline(rawFiles, targetWorkspaceId, (progress) => {
       setImportProgress(progress);
     });
 
@@ -122,7 +125,7 @@ export function useVaultMounting({ onClose, setStatusMessage }: UseVaultMounting
     const folderName = firstPath.includes('/') ? firstPath.split('/')[0] : 'Dropped Files';
     setMountedMode('indexeddb', folderName);
 
-    await runIngestionPipeline(rawFiles, 'default-vault', (progress) => {
+    await runIngestionPipeline(rawFiles, targetWorkspaceId, (progress) => {
       setImportProgress(progress);
     });
 

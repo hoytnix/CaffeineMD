@@ -113,7 +113,7 @@ export const FileTreeItem = React.memo(function FileTreeItem({
 
       <button
         onClick={(e) => onDeleteFile(e, node.path)}
-        className="opacity-0 group-hover:opacity-100 p-1 text-neutral-400 hover:text-rose-500 transition-opacity"
+        className="opacity-100 md:opacity-0 md:group-hover:opacity-100 min-h-[28px] min-w-[28px] flex items-center justify-center p-1 rounded text-neutral-400 hover:text-rose-500 transition-opacity"
         title="Delete file"
       >
         <Trash2 className="w-3 h-3" />
