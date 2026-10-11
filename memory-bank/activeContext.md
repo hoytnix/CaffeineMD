@@ -1,7 +1,12 @@
 # Active Context: Kite Workspace
 
 ## Current Focus
-Implemented Default File Properties schema (`title`, `tags`, `status`, `author`, `eisenhower`) across note creation, frontmatter serialization, the editor inspector, and database views (Table, Board/Kanban, and List).
+Implemented Editor Toolbar & File Explorer UX Updates:
+1. Multi-line code blocks now feature a hover-activated copy-to-clipboard button with transient checkmark confirmation.
+2. Mode toggles (`Rich Text` / `Plaintext`) and manual `Save` buttons in the editor header are now streamlined to icon-only buttons with tooltips.
+3. Editor tab row plus button now triggers "New Note" creation directly instead of vault import.
+4. Removed redundant brand/header above the file explorer tree so it begins immediately with search.
+5. Replaced the simple file tree filter input with an integrated `⌘K` Quick Search bar and removed the duplicate search button from the top navbar.
 
 ## Key Changes
 1. **Core Frontmatter Schema & Normalization (`/src/lib/markdown/frontmatter.ts`, `/src/hooks/useDatabaseSchema.ts`, `/src/lib/storage/db.ts`)**:

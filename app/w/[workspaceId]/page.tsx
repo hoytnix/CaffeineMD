@@ -18,8 +18,8 @@ import { useEmojiDrawer } from '@/src/hooks/useEmojiDrawer';
 import { WorkspacePopover } from '@/src/components/workspace/WorkspacePopover';
 import { THEME_PRESETS, applyThemeToDocument } from '@/src/lib/themes/themeDefinitions';
 import { DeleteConfirmModal } from '@/src/components/common/DeleteConfirmModal';
+import { NewNoteModal } from '@/src/components/sidebar/NewNoteModal';
 import {
-  Search,
   PanelLeftClose,
   PanelLeftOpen,
   X,
@@ -60,6 +60,7 @@ export default function WorkspacePage() {
   // Activate universal emoji drawer global listener (Shift + Space)
   useEmojiDrawer();
 
+  const [isNewNoteModalOpen, setIsNewNoteModalOpen] = useState(false);
   const [, setHasInitialized] = useState(false);
 
   // Initial vault seed and theme rehydration
@@ -186,7 +187,7 @@ export default function WorkspacePage() {
           </button>
         </nav>
 
-        {/* Zone 3: Search, Emoji Drawer & Settings */}
+        {/* Zone 3: Emoji Drawer & Settings */}
         <div className="flex items-center gap-1.5 shrink-0">
           <button
             onClick={() => toggleEmojiDrawer()}
@@ -194,17 +195,6 @@ export default function WorkspacePage() {
             className="p-1.5 rounded-lg text-[var(--foreground)]/60 hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/10 transition-colors cursor-pointer"
           >
             <Smile className="w-4 h-4 text-amber-500" />
-          </button>
-
-          <button
-            onClick={() => setIsSearchOpen(true)}
-            title="Quick Search (⌘K)"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[var(--foreground)]/70 hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/10 border border-[var(--border)] transition-colors cursor-pointer text-xs bg-[var(--card)]/40"
-          >
-            <Search className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline font-mono text-[10px] text-[var(--foreground)]/50 border border-[var(--border)] bg-[var(--background)]/60 px-1 py-0.5 rounded">
-              ⌘K
-            </span>
           </button>
 
           <button
@@ -257,9 +247,10 @@ export default function WorkspacePage() {
           })}
 
           <button
-            onClick={() => setImportModalOpen(true)}
+            onClick={() => setIsNewNoteModalOpen(true)}
             className="p-1.5 text-[var(--foreground)]/50 hover:text-[var(--foreground)] ml-1 rounded hover:bg-[var(--foreground)]/10 transition-colors cursor-pointer"
-            title="Import folder or notes"
+            title="New Note"
+            aria-label="New Note"
           >
             <Plus className="w-3.5 h-3.5" />
           </button>
@@ -319,6 +310,7 @@ export default function WorkspacePage() {
 
       {/* Modals & Overlays */}
       <VaultDropzone isOpen={isImportModalOpen} onClose={() => setImportModalOpen(false)} />
+      <NewNoteModal isOpen={isNewNoteModalOpen} onClose={() => setIsNewNoteModalOpen(false)} />
       <ImportProgressModal />
       <QuickSearchModal />
       <EmojiDrawer />

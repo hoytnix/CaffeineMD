@@ -161,45 +161,45 @@ export function EditorHeader({
             <span className="text-xs text-neutral-400">Synced</span>
           )}
 
-          {/* Mode Toggle: Rich Text Mode vs Plaintext Mode */}
+          {/* Mode Toggle: Rich Text Mode vs Plaintext Mode (Icon-Only) */}
           <div className="flex items-center p-0.5 rounded-lg bg-[var(--card)] border border-[var(--border)] text-xs shadow-2xs">
             <button
               type="button"
               onClick={onSwitchToRichText}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
+              className={`p-1.5 rounded-md transition-all cursor-pointer ${
                 editorMode === 'rich'
                   ? 'bg-[var(--accent)] text-white shadow-xs'
                   : 'text-neutral-400 hover:text-[var(--foreground)]'
               }`}
               title="Rich Text Mode (WYSIWYG formatted editing)"
+              aria-label="Rich Text Mode"
             >
               <FileText className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Rich Text</span>
             </button>
             <button
               type="button"
               onClick={onSwitchToPlaintext}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
+              className={`p-1.5 rounded-md transition-all cursor-pointer ${
                 editorMode === 'plain'
                   ? 'bg-[var(--accent)] text-white shadow-xs'
                   : 'text-neutral-400 hover:text-[var(--foreground)]'
               }`}
               title="Plaintext Mode (Raw Markdown editing)"
+              aria-label="Plaintext Mode"
             >
               <Code className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Plaintext</span>
             </button>
           </div>
 
-          {/* Save Button */}
+          {/* Save Button (Icon-Only) */}
           <button
             onClick={onManualSave}
             disabled={isSaveDisabled}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-[var(--card)] hover:bg-[var(--border)]/60 text-[var(--foreground)] border border-[var(--border)] disabled:opacity-50 transition-colors cursor-pointer disabled:cursor-not-allowed"
+            className="p-1.5 rounded-md bg-[var(--card)] hover:bg-[var(--border)]/60 text-[var(--foreground)] border border-[var(--border)] disabled:opacity-50 transition-colors cursor-pointer disabled:cursor-not-allowed"
             title="Save note (⌘S)"
+            aria-label="Save note (⌘S)"
           >
             <Save className="w-3.5 h-3.5 text-neutral-400" />
-            <span>Save</span>
           </button>
 
           {/* Trash Can / Delete Note Button */}

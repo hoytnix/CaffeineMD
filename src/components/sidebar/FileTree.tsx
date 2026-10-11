@@ -8,9 +8,8 @@ import { scanDroppedItems, runIngestionPipeline } from '@/src/lib/storage/import
 import { useTreeStructure } from '@/src/hooks/useTreeStructure';
 import { FileTreeItem } from './FileTreeItem';
 import { NewNoteModal } from './NewNoteModal';
-import { Plus, Search, FolderUp, X, Settings, Trash2, Undo2, ChevronDown, ChevronRight } from 'lucide-react';
+import { Search, FolderUp, Settings, Trash2, Undo2, ChevronDown, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
-import { WorkspacePopover } from '@/src/components/workspace/WorkspacePopover';
 
 export function FileTree() {
   const rawFiles = useLiveQuery(() => db.files.toArray());
@@ -18,7 +17,6 @@ export function FileTree() {
   const [openFolders, setOpenFolders] = useState<Set<string>>(new Set(['Projects', 'Engineering']));
   const [isTrashOpen, setIsTrashOpen] = useState(false);
   const [isDragOverTree, setIsDragOverTree] = useState(false);
-  const [filterQuery, setFilterQuery] = useState('');
   const [newNoteModal, setNewNoteModal] = useState(false);
 
   const {
@@ -30,6 +28,7 @@ export function FileTree() {
     activeView,
     setActiveView,
     setImportModalOpen,
+    setIsSearchOpen,
     promptDeleteNote,
     deleteNote,
     restoreNote,
@@ -62,7 +61,7 @@ export function FileTree() {
     });
   }, [files, activeWorkspaceId]);
 
-  const treeData = useTreeStructure(activeFiles, filterQuery);
+  const treeData = useTreeStructure(activeFiles, '');
 
   const toggleFolder = (path: string) => {
     setOpenFolders((prev) => {
@@ -115,40 +114,23 @@ export function FileTree() {
         isDragOverTree ? 'ring-2 ring-indigo-500 bg-indigo-50/20' : ''
       }`}
     >
-      {/* Top Vault Brand & Actions */}
-      <div className="p-2.5 border-b border-[var(--border)]">
-        <div className="flex items-center justify-between mb-1.5">
-          <div className="flex items-center gap-1.5 truncate">
-            <WorkspacePopover />
-            <span className="font-semibold text-xs tracking-tight truncate">{vaultName}</span>
+      {/* ⌘K Search Bar */}
+      <div className="p-2 border-b border-[var(--border)]">
+        <button
+          type="button"
+          onClick={() => setIsSearchOpen(true)}
+          className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-[var(--background)] hover:bg-[var(--border)]/40 border border-[var(--border)] text-xs text-neutral-400 hover:text-[var(--foreground)] transition-colors cursor-pointer group"
+          title="Search notes (⌘K)"
+          aria-label="Search notes (⌘K)"
+        >
+          <div className="flex items-center gap-2 truncate">
+            <Search className="w-3.5 h-3.5 text-neutral-400 group-hover:text-[var(--foreground)] shrink-0 transition-colors" />
+            <span className="truncate text-xs">Search notes...</span>
           </div>
-          <button
-            onClick={() => setNewNoteModal(true)}
-            className="p-1 rounded-md text-neutral-400 hover:text-[var(--foreground)] hover:bg-neutral-800/40 transition-colors cursor-pointer"
-            title="Create new note"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* Filter / Search input */}
-      <div className="px-3 py-2">
-        <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[var(--background)] border border-[var(--border)] text-xs">
-          <Search className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-          <input
-            type="text"
-            placeholder="Filter files..."
-            value={filterQuery}
-            onChange={(e) => setFilterQuery(e.target.value)}
-            className="w-full bg-transparent border-none outline-none text-[var(--foreground)] placeholder-neutral-400 text-xs"
-          />
-          {filterQuery && (
-            <button onClick={() => setFilterQuery('')} className="text-neutral-400 hover:text-neutral-200 cursor-pointer">
-              <X className="w-3 h-3" />
-            </button>
-          )}
-        </div>
+          <kbd className="font-mono text-[10px] text-neutral-400 group-hover:text-[var(--foreground)] border border-[var(--border)] bg-[var(--card)] px-1 py-0.5 rounded shrink-0 transition-colors">
+            ⌘K
+          </kbd>
+        </button>
       </div>
 
       {/* File Tree List */}
