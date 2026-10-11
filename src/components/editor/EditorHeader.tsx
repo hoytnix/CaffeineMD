@@ -60,7 +60,7 @@ export function EditorHeader({
 }: EditorHeaderProps) {
   const { promptDeleteNote } = useWorkspaceStore();
 
-  const [isPropertiesExpanded, setIsPropertiesExpanded] = useState(true);
+  const [isPropertiesExpanded, setIsPropertiesExpanded] = useState(false);
   const [editingTitle, setEditingTitle] = useState<string | null>(null);
   const [editingAuthor, setEditingAuthor] = useState<string | null>(null);
   const [newTagInput, setNewTagInput] = useState('');
@@ -233,11 +233,12 @@ export function EditorHeader({
 
       {/* Interactive Default Properties Controls */}
       {isPropertiesExpanded && (
-        <div className="px-6 py-2 border-t border-[var(--border)]/60 bg-[var(--card)]/40 text-xs">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-center">
+        <div className="px-6 py-2.5 border-t border-[var(--border)]/60 bg-[var(--card)]/40 text-xs space-y-2.5">
+          {/* Row 1: Title & Author */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
             {/* 1. Title */}
             <div className="flex items-center gap-2 min-w-0">
-              <span className="flex items-center gap-1 text-[11px] font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-12">
+              <span className="flex items-center gap-1 text-[11px] font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-14">
                 <FileText className="w-3 h-3 text-neutral-400" />
                 Title
               </span>
@@ -252,9 +253,29 @@ export function EditorHeader({
               />
             </div>
 
-            {/* 2. Status */}
+            {/* 2. Author */}
             <div className="flex items-center gap-2 min-w-0">
-              <span className="flex items-center gap-1 text-[11px] font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-12">
+              <span className="flex items-center gap-1 text-[11px] font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-14">
+                <User className="w-3 h-3 text-neutral-400" />
+                Author
+              </span>
+              <input
+                type="text"
+                value={displayAuthor}
+                onChange={(e) => setEditingAuthor(e.target.value)}
+                onBlur={handleAuthorBlur}
+                onKeyDown={(e) => e.key === 'Enter' && handleAuthorBlur()}
+                placeholder="Author name"
+                className="w-full px-2 py-1 rounded bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] outline-none focus:border-[var(--accent)] transition-colors truncate"
+              />
+            </div>
+          </div>
+
+          {/* Row 2: Status & Priority */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+            {/* 3. Status */}
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="flex items-center gap-1 text-[11px] font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-14">
                 <Layers className="w-3 h-3 text-neutral-400" />
                 Status
               </span>
@@ -274,9 +295,9 @@ export function EditorHeader({
               </select>
             </div>
 
-            {/* 3. Eisenhower */}
+            {/* 4. Priority (Eisenhower) */}
             <div className="flex items-center gap-2 min-w-0">
-              <span className="flex items-center gap-1 text-[11px] font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-16">
+              <span className="flex items-center gap-1 text-[11px] font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-14">
                 <Flag className="w-3 h-3 text-neutral-400" />
                 Priority
               </span>
@@ -300,77 +321,60 @@ export function EditorHeader({
                 />
               </div>
             </div>
+          </div>
 
-            {/* 4. Author */}
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="flex items-center gap-1 text-[11px] font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-12">
-                <User className="w-3 h-3 text-neutral-400" />
-                Author
-              </span>
-              <input
-                type="text"
-                value={displayAuthor}
-                onChange={(e) => setEditingAuthor(e.target.value)}
-                onBlur={handleAuthorBlur}
-                onKeyDown={(e) => e.key === 'Enter' && handleAuthorBlur()}
-                placeholder="Author name"
-                className="w-full px-2 py-1 rounded bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] outline-none focus:border-[var(--accent)] transition-colors truncate"
-              />
-            </div>
-
-            {/* 5. Tags */}
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="flex items-center gap-1 text-[11px] font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-10">
-                <TagIcon className="w-3 h-3 text-neutral-400" />
-                Tags
-              </span>
-              <div className="flex flex-wrap items-center gap-1 flex-1 min-w-0 max-h-16 overflow-y-auto">
-                {currentTags.map((tag: string) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] font-mono bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-[var(--border)]"
-                  >
-                    #{tag}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTag(tag)}
-                      className="text-neutral-400 hover:text-rose-500 p-0.5 cursor-pointer"
-                      title={`Remove tag #${tag}`}
-                    >
-                      <X className="w-2.5 h-2.5" />
-                    </button>
-                  </span>
-                ))}
-                {isAddingTag ? (
-                  <input
-                    type="text"
-                    value={newTagInput}
-                    onChange={(e) => setNewTagInput(e.target.value)}
-                    onBlur={handleAddTag}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ',') {
-                        e.preventDefault();
-                        handleAddTag();
-                      } else if (e.key === 'Escape') {
-                        setIsAddingTag(false);
-                      }
-                    }}
-                    autoFocus
-                    placeholder="tag..."
-                    className="w-16 px-1.5 py-0.5 text-[11px] rounded bg-[var(--background)] border border-[var(--accent)] outline-none"
-                  />
-                ) : (
+          {/* Row 3: Tags */}
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="flex items-center gap-1 text-[11px] font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-14">
+              <TagIcon className="w-3 h-3 text-neutral-400" />
+              Tags
+            </span>
+            <div className="flex flex-wrap items-center gap-1 flex-1 min-w-0 max-h-16 overflow-y-auto">
+              {currentTags.map((tag: string) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] font-mono bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-[var(--border)]"
+                >
+                  #{tag}
                   <button
                     type="button"
-                    onClick={() => setIsAddingTag(true)}
-                    className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] text-[var(--accent)] hover:bg-[var(--accent)]/10 transition-colors cursor-pointer"
-                    title="Add tag"
+                    onClick={() => handleRemoveTag(tag)}
+                    className="text-neutral-400 hover:text-rose-500 p-0.5 cursor-pointer"
+                    title={`Remove tag #${tag}`}
                   >
-                    <Plus className="w-3 h-3" />
-                    <span>Tag</span>
+                    <X className="w-2.5 h-2.5" />
                   </button>
-                )}
-              </div>
+                </span>
+              ))}
+              {isAddingTag ? (
+                <input
+                  type="text"
+                  value={newTagInput}
+                  onChange={(e) => setNewTagInput(e.target.value)}
+                  onBlur={handleAddTag}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ',') {
+                      e.preventDefault();
+                      handleAddTag();
+                    } else if (e.key === 'Escape') {
+                      setIsAddingTag(false);
+                    }
+                  }}
+                  autoFocus
+                  placeholder="tag..."
+                  className="w-16 px-1.5 py-0.5 text-[11px] rounded bg-[var(--background)] border border-[var(--accent)] outline-none"
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsAddingTag(true)}
+                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] text-[var(--accent)] hover:bg-[var(--accent)]/10 transition-colors cursor-pointer"
+                  title="Add tag"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Tag</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

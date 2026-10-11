@@ -11,6 +11,8 @@ import { FileTreeModals } from './tree/FileTreeModals';
 import { TrashSection } from './TrashSection';
 import { useFileTreeActions } from './useFileTreeActions';
 import { useTreeDragAndDrop } from './hooks/useTreeDragAndDrop';
+import { useSidebarResize } from './hooks/useSidebarResize';
+import { SidebarResizer } from './SidebarResizer';
 import { Search, FolderUp, Settings } from 'lucide-react';
 import Link from 'next/link';
 
@@ -38,6 +40,14 @@ export function FileTree() {
     showToast,
     purgeExpiredTrashNotes,
   } = useWorkspaceStore();
+
+  const {
+    sidebarWidth,
+    isResizing,
+    startResize,
+    resetWidth,
+    setSidebarWidth,
+  } = useSidebarResize();
 
   React.useEffect(() => {
     purgeExpiredTrashNotes();
@@ -109,10 +119,13 @@ export function FileTree() {
 
   return (
     <div
+      style={{ width: `${sidebarWidth}px` }}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`w-64 h-full flex flex-col bg-[var(--card)] border-r border-[var(--border)] text-[var(--foreground)] select-none transition-all ${
+      className={`relative shrink-0 h-full flex flex-col bg-[var(--card)] border-r border-[var(--border)] text-[var(--foreground)] select-none ${
+        isResizing ? '' : 'transition-[background-color,border-color]'
+      } ${
         isDragOverTree ? 'ring-2 ring-indigo-500 bg-indigo-50/20' : ''
       }`}
     >
@@ -207,6 +220,15 @@ export function FileTree() {
         renameNode={renameNode}
         moveNode={moveNode}
         promptDeleteNote={promptDeleteNote}
+      />
+
+      {/* Draggable Sidebar Resizer Handle */}
+      <SidebarResizer
+        onStartResize={startResize}
+        onReset={resetWidth}
+        currentWidth={sidebarWidth}
+        onKeyDownResize={setSidebarWidth}
+        isResizing={isResizing}
       />
     </div>
   );

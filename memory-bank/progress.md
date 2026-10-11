@@ -11,6 +11,8 @@
 - [x] **Cloud Sync & Themes**: Google Drive 5MB resumable chunk sync; 14 CSS variable themes with AI Theme Studio; universal `Noto Color Emoji` web font embedding; updated brand logo to Kite emoji `🪁`.
 - [x] **7-Stage Architectural Refactoring**: Decomposed all large legacy god modules into modular 100–250 LOC components.
 - [x] **Brand Refresh**: Rebranded all user-facing product references and metadata from "Kite Workspace"/"Kite" to "Kite MD".
+- [x] **File Explorer Resizing**: Draggable right border on sidebar with persistent custom width (180px–720px), double-click reset, and keyboard accessibility.
+- [x] **Editor Properties Layout**: Rearranged properties bar into 3 structured rows (Title & Author; Status & Priority; Tags) and collapsed by default.
 
 ## Verification
 - Linting (`pnpm lint`): 0 errors, 0 warnings.
