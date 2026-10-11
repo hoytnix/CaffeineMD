@@ -7,7 +7,7 @@ interface PlaintextMarkdownEditorProps {
   rawMarkdown: string;
   onMarkdownChange: (newContent: string) => void;
   onSaveTrigger: (content: string) => void;
-  gutterRef: React.RefObject<HTMLDivElement | null>;
+  gutterRef?: React.RefObject<HTMLDivElement | null>;
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
 }
 
@@ -18,9 +18,14 @@ export function PlaintextMarkdownEditor({
   gutterRef,
   textareaRef,
 }: PlaintextMarkdownEditorProps) {
-  const handleScroll = () => {
-    if (textareaRef.current && gutterRef.current) {
-      gutterRef.current.scrollTop = textareaRef.current.scrollTop;
+  const lineNumbersRef = useRef<HTMLDivElement | null>(null);
+
+  const handleScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
+    if (lineNumbersRef.current) {
+      lineNumbersRef.current.scrollTop = e.currentTarget.scrollTop;
+    }
+    if (gutterRef?.current) {
+      gutterRef.current.scrollTop = e.currentTarget.scrollTop;
     }
   };
 
@@ -156,7 +161,12 @@ export function PlaintextMarkdownEditor({
       <div className="relative flex rounded-xl border border-[var(--border)] bg-[var(--card)]/60 overflow-hidden shadow-2xs focus-within:border-[var(--accent)] transition-colors">
         {/* Line Numbers Gutter */}
         <div
-          ref={gutterRef}
+          ref={(node) => {
+            (lineNumbersRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+            if (gutterRef) {
+              (gutterRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+            }
+          }}
           className="w-11 select-none py-4 pr-2.5 text-right font-mono text-[13px] leading-7 text-neutral-400 border-r border-[var(--border)] bg-[var(--card)] overflow-hidden shrink-0"
         >
           {rawMarkdown.split('\n').map((_, i) => (

@@ -1,8 +1,35 @@
 # Active Context: Kite Workspace
 
 ## Current Focus
-Completed Strategic Modular Refactoring (Phase 1 & Phase 2):
-Refactored all 7 monolithic modules (>400 LOC) across storage, sync, editor, database, and graph canvas into clean, decoupled submodules with every file strictly within 30–250 LOC (and backwards-compatible barrel façades where appropriate), guaranteeing zero regression in storage persistence, sync reconciliation, and editor UX.
+Standardized list bullet vertical alignment and nested indentation hierarchy across rich-text editor:
+- Configured explicit indentation units (`padding-left: 1.5rem`) on `.tiptap ul` / `.ProseMirror ul` and `ol`.
+- Established distinct nested bullet markers: `disc` (level 1) -> `circle` (level 2) -> `square` (level 3+), and ordered lists `decimal` -> `lower-alpha` -> `lower-roman`.
+- Fixed list item vertical alignment: switched `.tiptap li > p` to `display: block` with `line-height: 1.6` and `margin: 0`, eliminating floating or misplaced bullet markers.
+- Nested sub-lists inside list items now indent cleanly and flush with parent content (`padding-left: 1.5rem`, `margin: 0.125rem 0`).
+- Standardized task checklist item alignments (`ul[data-type="taskList"] li`) with flex container and explicit nested task list indentation.
+- Bound `kite-editor-content` utility class to `EditorContent` in `TiptapEditor.tsx`.
+- Synchronized PlaintextMarkdownEditor line numbers gutter scroll position with textarea vertical scroll (`lineNumbersRef`, `handleScroll`).
+
+## Key Changes
+1. **Editor Enter-Key Cursor Loss Bug Fix (`/src/components/editor/TiptapEditor.tsx`, `/src/components/editor/config/editorExtensions.ts`)**:
+   - Identified root cause: debounced persistence updates parent file state which triggers `useEffect` comparing HTML lengths. Stripped empty paragraphs or whitespace on Enter resulted in length differences, calling `editor.commands.setContent()` and blowing away ProseMirror cursor selection.
+   - Added `loadedPathRef` to strictly control initial note loads and note switches.
+   - Added active typing guard: `if (editor.isFocused) return;` inside note synchronization `useEffect` to ensure active editing never resets document state or cursor position.
+   - Configured `paragraph: {}` and `hardBreak: { keepMarks: true }` in `StarterKit.configure` to prevent aggressive collapsing of empty block nodes during typing.
+
+2. **Google Drive Sync Progress Engine & Event Bus (`/src/lib/sync/syncProgress.ts`)**:
+   - Defined `SyncProgressState` data model (`status`, `currentAction`, `totalFiles`, `processedFiles`, `currentFileName`, `progressPercentage`, `errorMessage`).
+   - Implemented reactive `SyncProgressEmitter` event bus with automatic 3.5s reset timer to `idle` upon completion or error.
+   - Created `useSyncProgress()` React hook for live UI subscriptions.
+
+3. **Granular Sync Batch Updates (`/src/lib/sync/syncExecutor.ts`, `/src/lib/sync/googleDriveSync.ts`)**:
+   - Added file-level processing callbacks (`onFileProcessed`) to `executeDownloadBatch` and `executeUploadBatch`.
+   - Wired `syncProgressEmitter` in `GoogleDriveSyncService.syncNow` to emit progress across `scanning`, `syncing`, `completed`, and `error` states.
+
+4. **Visual Sync Progress Bar (`/src/components/workspace/WorkspacePopover.tsx`)**:
+   - Integrated `useSyncProgress()` in `WorkspacePopover`.
+   - Added pulsing indigo activity indicator to Kite Logo trigger while syncing is active.
+   - Rendered animated file-by-file progress bar displaying operation (`Uploading` / `Downloading`), current file name, processed count (`x/y`), percentage, and smooth progress track.
 
 ## Key Changes
 1. **Phase 1: Core Storage Architecture Deconstruction (`/src/lib/storage/`)**:
