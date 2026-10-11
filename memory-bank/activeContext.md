@@ -1,7 +1,7 @@
 # Active Context: Kite Workspace
 
 ## Current Focus
-Completed architectural deconstruction of the 7 largest, most complex files in the codebase, decomposing them into clean, modular components, hooks, and services strictly adhering to the 100–250 LOC threshold without regressions in Dexie persistence, WebFS disk sync, or Google Drive cloud reconciliation.
+Enhanced note title behavior in `TiptapEditor.tsx` by converting the single-line text input into an auto-resizing, multi-line textarea with dynamic scrollHeight adjustment, word breaking, and Enter-key focus transition to the editor canvas, preventing horizontal text scrolling and allowing long note titles to naturally overflow into new lines.
 
 ## Key Changes
 1. **Step 1: Modular Theme Definitions & Color Utilities (`/src/lib/themes/`)**:

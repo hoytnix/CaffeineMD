@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { EditorContent } from '@tiptap/react';
 import { db } from '@/src/lib/storage/db';
 import { parseMarkdownContent, serializeMarkdownWithFrontmatter } from '@/src/lib/markdown/serializer';
@@ -27,6 +27,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
   const { openFileTab, activeWorkspaceId } = useWorkspaceStore();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const gutterRef = useRef<HTMLDivElement | null>(null);
+  const titleTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const {
     file, setFile, title, setTitle, isSaving, saveSuccess, loading,
@@ -36,6 +37,19 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
   } = useEditorAutosave({ filePath });
 
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+
+  // Auto-resize title textarea to overflow to new lines without scrolling
+  useEffect(() => {
+    const adjustHeight = () => {
+      if (titleTextareaRef.current) {
+        titleTextareaRef.current.style.height = 'auto';
+        titleTextareaRef.current.style.height = `${titleTextareaRef.current.scrollHeight}px`;
+      }
+    };
+    adjustHeight();
+    window.addEventListener('resize', adjustHeight);
+    return () => window.removeEventListener('resize', adjustHeight);
+  }, [title]);
 
   const { handleDrop, handlePaste } = useEditorDropUpload({
     activeWorkspaceId: activeWorkspaceId || 'default-vault',
@@ -109,19 +123,26 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
       <div className="max-w-4xl w-full mx-auto px-10 py-10 flex-1">
         {editorMode === 'rich' ? (
           <>
-            <input
-              type="text"
+            <textarea
+              ref={titleTextareaRef}
+              rows={1}
               value={title}
               onChange={(e) => {
                 setTitle(e.target.value);
                 if (file) setFile({ ...file, title: e.target.value });
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  editor?.commands.focus('start');
+                }
               }}
               onBlur={() => {
                 const trimmed = title.trim();
                 if (file && trimmed && trimmed !== file.title) updateProperties({ title: trimmed });
               }}
               placeholder="Untitled Note"
-              className="w-full text-3xl sm:text-4xl font-bold tracking-tight bg-transparent border-none focus:outline-none mb-6 placeholder-neutral-400 dark:placeholder-neutral-600 text-[var(--foreground)]"
+              className="w-full text-3xl sm:text-4xl font-bold tracking-tight bg-transparent border-none focus:outline-none mb-6 placeholder-neutral-400 dark:placeholder-neutral-600 text-[var(--foreground)] resize-none overflow-hidden break-words leading-tight block"
             />
             {editor && !editor.isDestroyed && <BlockHandle editor={editor} />}
             {editor && !editor.isDestroyed ? (

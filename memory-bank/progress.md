@@ -67,6 +67,8 @@
   - **Stage 5 (Recursive File Tree Operations)**: Decomposed `FileTree.tsx` (213 LOC) into `useTreeDragAndDrop.ts` (105 LOC), `FolderNode.tsx` (103 LOC), `FileNodeRow.tsx` (112 LOC), and `FileTreeModals.tsx` (111 LOC).
   - **Stage 6 (Tiptap Editor Lifecycle & Persistence)**: Decomposed `TiptapEditor.tsx` (172 LOC) into `useTiptapInit.ts` (130 LOC), `useEditorAutosave.ts` (133 LOC), and `EditorDragOverlay.tsx` (109 LOC).
   - **Stage 7 (Google Drive Cloud Sync Engine)**: Decomposed `googleDriveSync.ts` (213 LOC) into `driveAuthService.ts` (117 LOC), `drivePayloadBuilder.ts` (121 LOC), `driveReconciler.ts` (108 LOC), and `driveSyncRunner.ts` (125 LOC).
+- [x] Streamlined top editor bar in [EditorHeader.tsx](file:///home/oloty/Dev/Kite/src/components/editor/EditorHeader.tsx): removed redundant page title to the left of the breadcrumb/file path, leaving the path cleanly visible alongside the properties dropdown toggle.
+- [x] Converted note title in [TiptapEditor.tsx](file:///home/oloty/Dev/Kite/src/components/editor/TiptapEditor.tsx) from single-line `<input>` to an auto-resizing, multi-line `<textarea>` with `break-words` and auto-height calculation, allowing long titles to wrap/overflow across new lines instead of horizontally scrolling.
 
 ## Verification Status
 - Codebase linting (`pnpm lint`): Passed (0 errors, 0 warnings).

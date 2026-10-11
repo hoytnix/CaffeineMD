@@ -131,12 +131,9 @@ export function EditorHeader({
       <div className="flex items-center justify-between px-6 py-2.5">
         <div className="flex items-center gap-2 text-xs text-neutral-500 min-w-0 flex-1 mr-3">
           <span
-            className="font-medium text-[12px] text-[var(--foreground)] truncate whitespace-nowrap overflow-hidden text-ellipsis min-w-0 max-w-[280px] sm:max-w-[400px]"
-            title={`${file.title || file.name} (${file.path})`}
+            className="truncate font-mono text-[11px] text-[var(--foreground)]/60 shrink min-w-0"
+            title={file.path}
           >
-            {file.title || file.name.replace(/\.[^/.]+$/, '')}
-          </span>
-          <span className="truncate font-mono text-[10px] opacity-50 shrink min-w-0 hidden md:inline">
             {file.path}
           </span>
           <button
