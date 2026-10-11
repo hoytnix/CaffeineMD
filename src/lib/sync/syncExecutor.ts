@@ -57,7 +57,8 @@ export async function executeDownloadBatch(
   token: string,
   downloadTasks: RemoteDriveFile[],
   currentWorkspaceId: string,
-  onProgress?: (text: string) => void
+  onProgress?: (text: string) => void,
+  onFileProcessed?: (fileName: string, action: 'downloading' | 'uploading') => void
 ): Promise<number> {
   if (downloadTasks.length === 0) return 0;
   onProgress?.(`Downloading ${downloadTasks.length} remote files...`);
@@ -120,6 +121,8 @@ export async function executeDownloadBatch(
       updatedAt: remoteModifiedMs,
       vaultId: currentWorkspaceId,
     });
+
+    onFileProcessed?.(fileName, 'downloading');
   });
 
   if (downloadedRecords.length > 0) {
@@ -140,7 +143,8 @@ export async function executeUploadBatch(
   token: string,
   uploadTasks: UploadSyncTask[],
   folderId: string,
-  onProgress?: (text: string) => void
+  onProgress?: (text: string) => void,
+  onFileProcessed?: (fileName: string, action: 'downloading' | 'uploading') => void
 ): Promise<number> {
   if (uploadTasks.length === 0) return 0;
   onProgress?.(`Uploading ${uploadTasks.length} local notes...`);
@@ -160,6 +164,10 @@ export async function executeUploadBatch(
       task.remoteId
     );
     count++;
+    const friendlyName = task.driveFileName.includes('___')
+      ? task.driveFileName.replace(/___/g, '/')
+      : task.driveFileName;
+    onFileProcessed?.(friendlyName, 'uploading');
   });
 
   return count;

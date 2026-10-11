@@ -34,6 +34,8 @@ export function getEditorExtensions(callbacks: EditorExtensionCallbacks): AnyExt
     StarterKit.configure({
       codeBlock: false,
       heading: { levels: [1, 2, 3] },
+      paragraph: {},
+      hardBreak: { keepMarks: true },
     }),
     CodeBlockLowlight.extend({
       addNodeView() {

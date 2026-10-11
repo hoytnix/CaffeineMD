@@ -9,6 +9,7 @@ export * from './google/resumableChunkUploader';
 export * from './google/remoteCrawler';
 export * from './reconciler';
 export * from './syncExecutor';
+export * from './syncProgress';
 
 import {
   RemoteWorkspace,
@@ -30,6 +31,7 @@ import {
 import { listAllRemoteFiles } from './google/remoteCrawler';
 import { reconcileSyncSets } from './reconciler';
 import { executeDownloadBatch, executeUploadBatch } from './syncExecutor';
+import { SyncProgressState, syncProgressEmitter } from './syncProgress';
 
 export class GoogleDriveSyncService {
   public static readonly CHUNK_SIZE = CHUNK_SIZE;
@@ -124,11 +126,21 @@ export class GoogleDriveSyncService {
     workspaceName: string,
     targetFolderId?: string,
     targetWorkspaceId?: string,
-    onProgress?: (statusText: string) => void
+    onProgress?: (statusText: string) => void,
+    onProgressState?: (state: SyncProgressState) => void
   ): Promise<DriveSyncStatus> {
     const stats = { uploaded: 0, downloaded: 0, skipped: 0 };
 
     try {
+      syncProgressEmitter.emit({
+        status: 'scanning',
+        totalFiles: 0,
+        processedFiles: 0,
+        progressPercentage: 0,
+        errorMessage: undefined,
+      });
+      onProgressState?.(syncProgressEmitter.getState());
+
       const token = await getAccessToken();
       if (!token) {
         throw new Error('Google Drive access token is not available. Please sign in with Google first.');
@@ -164,11 +176,69 @@ export class GoogleDriveSyncService {
       const { uploadTasks, downloadTasks, skippedCount } = reconcileSyncSets(localMap, remoteMap, 2000);
       stats.skipped += skippedCount;
 
-      stats.downloaded += await executeDownloadBatch(token, downloadTasks, currentWorkspaceId, onProgress);
-      stats.uploaded += await executeUploadBatch(token, uploadTasks, folderId, onProgress);
+      const totalFiles = downloadTasks.length + uploadTasks.length;
+      let processedFiles = 0;
+
+      if (totalFiles > 0) {
+        syncProgressEmitter.emit({
+          status: 'syncing',
+          totalFiles,
+          processedFiles: 0,
+          progressPercentage: 0,
+        });
+        onProgressState?.(syncProgressEmitter.getState());
+      }
+
+      // Execute downloads
+      stats.downloaded += await executeDownloadBatch(
+        token,
+        downloadTasks,
+        currentWorkspaceId,
+        onProgress,
+        (fileName) => {
+          processedFiles++;
+          syncProgressEmitter.emit({
+            status: 'syncing',
+            currentAction: 'downloading',
+            currentFileName: fileName,
+            totalFiles,
+            processedFiles,
+          });
+          onProgressState?.(syncProgressEmitter.getState());
+        }
+      );
+
+      // Execute uploads
+      stats.uploaded += await executeUploadBatch(
+        token,
+        uploadTasks,
+        folderId,
+        onProgress,
+        (fileName) => {
+          processedFiles++;
+          syncProgressEmitter.emit({
+            status: 'syncing',
+            currentAction: 'uploading',
+            currentFileName: fileName,
+            totalFiles,
+            processedFiles,
+          });
+          onProgressState?.(syncProgressEmitter.getState());
+        }
+      );
 
       this.lastSyncTime = Date.now();
       onProgress?.('Synced');
+
+      syncProgressEmitter.emit({
+        status: 'completed',
+        totalFiles,
+        processedFiles: totalFiles,
+        progressPercentage: 100,
+        currentFileName: undefined,
+        currentAction: undefined,
+      });
+      onProgressState?.(syncProgressEmitter.getState());
 
       return {
         isConnected: true,
@@ -181,6 +251,12 @@ export class GoogleDriveSyncService {
       };
     } catch (err: any) {
       console.error('Google Drive Sync error:', err);
+      syncProgressEmitter.emit({
+        status: 'error',
+        errorMessage: err?.message || 'Sync failed',
+      });
+      onProgressState?.(syncProgressEmitter.getState());
+
       return {
         isConnected: false,
         isSyncing: false,

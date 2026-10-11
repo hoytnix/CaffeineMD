@@ -38,6 +38,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
   const [editorMode, setEditorMode] = useState<'rich' | 'plain'>('rich');
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const gutterRef = useRef<HTMLDivElement | null>(null);
+  const loadedPathRef = useRef<string | null>(null);
 
   const { handleDrop, handlePaste } = useEditorDropUpload({ activeWorkspaceId: activeWorkspaceId || 'default-vault' });
 
@@ -75,21 +76,44 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
     },
   }, [filePath, handleDrop, handlePaste, extensions]);
 
+  // Sync Note Content to Tiptap when file loads or switches
+  // CRITICAL: Guard against re-injecting content when editor is focused to prevent Enter-key cursor jumping!
   useEffect(() => {
-    if (editor && !editor.isDestroyed && editor.schema && file && !file.isBinary) {
+    if (!editor || editor.isDestroyed || !editor.schema || !file || file.isBinary) return;
+
+    const isFileSwitch = loadedPathRef.current !== file.path;
+
+    if (isFileSwitch) {
       try {
         const parsed = parseMarkdownContent(file.content || '', file.title);
         const editorHtml = markdownToEditorHtml(parsed.body);
-        const currentHtml = editor.getHTML();
-        if (currentHtml === '<p></p>' || Math.abs(currentHtml.length - editorHtml.length) > 5) {
-          editor.commands.setContent(editorHtml);
-          autoDetectUnlabeledCodeBlocks(editor);
-        }
+        editor.commands.setContent(editorHtml);
+        autoDetectUnlabeledCodeBlocks(editor);
+        loadedPathRef.current = file.path;
       } catch (err) {
         console.warn('Failed to parse note markdown for editor:', err);
       }
+      return;
     }
-  }, [file, editor]);
+
+    // If currently focused and typing, NEVER overwrite document state from reactive local saves
+    if (editor.isFocused) {
+      return;
+    }
+
+    // Only update unfocused editor if significant external change occurred (e.g. sync reconciliation)
+    try {
+      const parsed = parseMarkdownContent(file.content || '', file.title);
+      const editorHtml = markdownToEditorHtml(parsed.body);
+      const currentHtml = editor.getHTML();
+      if (currentHtml === '<p></p>' || Math.abs(currentHtml.length - editorHtml.length) > 10) {
+        editor.commands.setContent(editorHtml);
+        autoDetectUnlabeledCodeBlocks(editor);
+      }
+    } catch (err) {
+      console.warn('Failed to parse note markdown for editor:', err);
+    }
+  }, [file, editor, filePath]);
 
   useEffect(() => {
     if (editor) setActiveEditor(editor);
