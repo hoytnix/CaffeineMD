@@ -222,7 +222,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
             />
             {editor && !editor.isDestroyed && <BlockHandle editor={editor} />}
             {editor && !editor.isDestroyed ? (
-              <EditorContent editor={editor} className="min-h-[400px]" />
+              <EditorContent editor={editor} className="min-h-[400px] kite-editor-content" />
             ) : (
               <div className="min-h-[400px] flex items-center justify-center text-neutral-400 animate-pulse text-xs font-mono">Loading note content...</div>
             )}
