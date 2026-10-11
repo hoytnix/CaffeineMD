@@ -68,7 +68,8 @@
   - **Stage 6 (Tiptap Editor Lifecycle & Persistence)**: Decomposed `TiptapEditor.tsx` (172 LOC) into `useTiptapInit.ts` (130 LOC), `useEditorAutosave.ts` (133 LOC), and `EditorDragOverlay.tsx` (109 LOC).
   - **Stage 7 (Google Drive Cloud Sync Engine)**: Decomposed `googleDriveSync.ts` (213 LOC) into `driveAuthService.ts` (117 LOC), `drivePayloadBuilder.ts` (121 LOC), `driveReconciler.ts` (108 LOC), and `driveSyncRunner.ts` (125 LOC).
 - [x] Streamlined top editor bar in [EditorHeader.tsx](file:///home/oloty/Dev/Kite/src/components/editor/EditorHeader.tsx): removed redundant page title to the left of the breadcrumb/file path, leaving the path cleanly visible alongside the properties dropdown toggle.
-- [x] Converted note title in [TiptapEditor.tsx](file:///home/oloty/Dev/Kite/src/components/editor/TiptapEditor.tsx) from single-line `<input>` to an auto-resizing, multi-line `<textarea>` with `break-words` and auto-height calculation, allowing long titles to wrap/overflow across new lines instead of horizontally scrolling.
+- [x] Streamlined bottom toolbar in [EditorBottomToolbar.tsx](file:///home/oloty/Dev/Kite/src/components/editor/EditorBottomToolbar.tsx): removed word count and save status metrics to format into a clean, centered floating toolbar pill.
+- [x] Fixed Heading Selector Popover in [HeadingSelectorPopover.tsx](file:///home/oloty/Dev/Kite/src/components/editor/toolbar/HeadingSelectorPopover.tsx): rendered menu via React `createPortal` with coordinate positioning to eliminate container `overflow-x-auto` clipping, with backdrop/outside-click listeners and increased drag jitter threshold.
 
 ## Verification Status
 - Codebase linting (`pnpm lint`): Passed (0 errors, 0 warnings).

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Editor } from '@tiptap/react';
 import { Heading, ChevronDown } from 'lucide-react';
 
@@ -23,18 +24,66 @@ export function HeadingSelectorPopover({
   checkHasDragged,
 }: HeadingSelectorPopoverProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [coords, setCoords] = useState<{ bottom: number; left: number } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  const updateCoords = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setCoords({
+        bottom: window.innerHeight - rect.top + 8,
+        left: rect.left + rect.width / 2,
+      });
+    }
+  };
+
+  const toggleOpen = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (checkHasDragged?.()) return;
+
+    if (!isOpen) {
+      updateCoords();
+      setIsOpen(true);
+    } else {
+      setIsOpen(false);
+    }
+  };
+
   useEffect(() => {
+    if (!isOpen) return;
+
     const handleOutsideClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        menuRef.current && !menuRef.current.contains(target) &&
+        buttonRef.current && !buttonRef.current.contains(target)
+      ) {
         setIsOpen(false);
       }
     };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleOutsideClick);
-    }
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
+
+    const handleScrollOrResize = () => {
+      setIsOpen(false);
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    window.addEventListener('resize', handleScrollOrResize);
+    window.addEventListener('scroll', handleScrollOrResize, true);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      window.removeEventListener('resize', handleScrollOrResize);
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, [isOpen]);
 
   const isHeadingActive = editor.isActive('heading');
@@ -50,16 +99,12 @@ export function HeadingSelectorPopover({
   };
 
   return (
-    <div ref={menuRef} className="relative flex items-center shrink-0 rounded-lg">
+    <div className="relative flex items-center shrink-0 rounded-lg">
       <button
+        ref={buttonRef}
         type="button"
-        onClick={(e) => {
-          if (checkHasDragged?.()) {
-            e.stopPropagation();
-            return;
-          }
-          setIsOpen((prev) => !prev);
-        }}
+        onMouseDown={(e) => e.stopPropagation()}
+        onClick={toggleOpen}
         title="Headings (H1–H6)"
         aria-expanded={isOpen}
         aria-haspopup="true"
@@ -73,10 +118,17 @@ export function HeadingSelectorPopover({
         <ChevronDown className="w-2.5 h-2.5 opacity-70 pointer-events-none" />
       </button>
 
-      {isOpen && (
+      {isOpen && coords && typeof document !== 'undefined' && createPortal(
         <div
+          ref={menuRef}
           onMouseDown={(e) => e.stopPropagation()}
-          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 rounded-xl bg-[var(--card)] border border-[var(--border)] shadow-2xl p-1.5 flex flex-col gap-0.5 z-50 text-[var(--foreground)] animate-in fade-in slide-in-from-bottom-2"
+          style={{
+            position: 'fixed',
+            bottom: `${coords.bottom}px`,
+            left: `${coords.left}px`,
+            transform: 'translateX(-50%)',
+          }}
+          className="w-44 rounded-xl bg-[var(--card)] border border-[var(--border)] shadow-2xl p-1.5 flex flex-col gap-0.5 z-[9999] text-[var(--foreground)] animate-in fade-in slide-in-from-bottom-2"
         >
           <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--foreground)]/50">
             Heading Levels
@@ -131,7 +183,8 @@ export function HeadingSelectorPopover({
               P
             </span>
           </button>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

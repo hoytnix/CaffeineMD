@@ -1,7 +1,7 @@
 # Active Context: Kite Workspace
 
 ## Current Focus
-Enhanced note title behavior in `TiptapEditor.tsx` by converting the single-line text input into an auto-resizing, multi-line textarea with dynamic scrollHeight adjustment, word breaking, and Enter-key focus transition to the editor canvas, preventing horizontal text scrolling and allowing long note titles to naturally overflow into new lines.
+Removed redundant document metrics (word count, save status) from `EditorBottomToolbar.tsx` to streamline the bottom toolbar into a compact centered floating pill. Fixed the `HeadingSelectorPopover.tsx` dropdown by mounting it via `createPortal` with coordinate positioning, preventing toolbar `overflow-x-auto` clipping and drag threshold interference.
 
 ## Key Changes
 1. **Step 1: Modular Theme Definitions & Color Utilities (`/src/lib/themes/`)**:

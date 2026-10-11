@@ -6,7 +6,6 @@ import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { HeadingSelectorPopover } from './toolbar/HeadingSelectorPopover';
 import { TableControlsGroup } from './toolbar/TableControlsGroup';
 import { ListFormattingGroup } from './toolbar/ListFormattingGroup';
-import { EditorStatusMetrics } from './toolbar/EditorStatusMetrics';
 import { MarkFormattingGroup } from './toolbar/MarkFormattingGroup';
 
 export interface EditorBottomToolbarProps {
@@ -34,7 +33,7 @@ export function EditorBottomToolbar({ editor }: EditorBottomToolbarProps) {
     if (!isMouseDownRef.current || !containerRef.current) return;
     const x = e.pageX - containerRef.current.offsetLeft;
     const walk = (x - mouseStartXRef.current) * 1.5;
-    if (Math.abs(walk) > 5) {
+    if (Math.abs(walk) > 10) {
       hasDraggedDistRef.current = true;
     }
     containerRef.current.scrollLeft = scrollLeftRef.current - walk;
@@ -63,34 +62,30 @@ export function EditorBottomToolbar({ editor }: EditorBottomToolbarProps) {
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
       onWheel={handleWheel}
-      className="sticky bottom-6 z-30 mx-auto w-[calc(100%-3rem)] max-w-2xl overflow-x-auto scrollbar-none no-scrollbar py-1 px-3 rounded-2xl bg-[var(--card)]/95 backdrop-blur-xl border border-[var(--border)] shadow-xl flex items-center justify-between gap-2 select-none transition-all cursor-grab active:cursor-grabbing shrink-0"
+      className="sticky bottom-6 z-30 mx-auto w-fit max-w-[calc(100%-2rem)] sm:max-w-2xl overflow-x-auto scrollbar-none no-scrollbar py-1 px-3 rounded-2xl bg-[var(--card)]/95 backdrop-blur-xl border border-[var(--border)] shadow-xl flex items-center gap-1.5 select-none transition-all cursor-grab active:cursor-grabbing shrink-0"
     >
-      <div className="flex items-center gap-1.5 shrink-0">
-        <MarkFormattingGroup
-          editor={editor}
-          onActionNotice={(msg) => showToast(msg)}
-        />
+      <MarkFormattingGroup
+        editor={editor}
+        onActionNotice={(msg) => showToast(msg)}
+      />
 
-        <div className="w-[1px] h-4 bg-[var(--border)] mx-0.5 shrink-0" />
+      <div className="w-[1px] h-4 bg-[var(--border)] mx-0.5 shrink-0" />
 
-        <HeadingSelectorPopover
-          editor={editor}
-          checkHasDragged={() => hasDraggedDistRef.current}
-        />
+      <HeadingSelectorPopover
+        editor={editor}
+        checkHasDragged={() => hasDraggedDistRef.current}
+      />
 
-        <div className="w-[1px] h-4 bg-[var(--border)] mx-0.5 shrink-0" />
+      <div className="w-[1px] h-4 bg-[var(--border)] mx-0.5 shrink-0" />
 
-        <ListFormattingGroup editor={editor} />
+      <ListFormattingGroup editor={editor} />
 
-        <div className="w-[1px] h-4 bg-[var(--border)] mx-0.5 shrink-0" />
+      <div className="w-[1px] h-4 bg-[var(--border)] mx-0.5 shrink-0" />
 
-        <TableControlsGroup
-          editor={editor}
-          onActionNotice={(msg) => showToast(msg)}
-        />
-      </div>
-
-      <EditorStatusMetrics editor={editor} />
+      <TableControlsGroup
+        editor={editor}
+        onActionNotice={(msg) => showToast(msg)}
+      />
     </div>
   );
 }
