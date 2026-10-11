@@ -1,4 +1,4 @@
-# Project Brief: Kite
+# Project Brief: Kite MD
 
 Local-first, high-performance personal knowledge management system modeled after Obsidian and Notion, powered by Tiptap v2.
 

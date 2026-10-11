@@ -1,4 +1,4 @@
-# Progress: Kite
+# Progress: Kite MD
 
 ## Milestone Status
 - [x] **Core Storage & Ingestion**: Dexie schema, Native File System Access API mounting, recursive WebKit crawler, ephemeral trash can (`/src/lib/storage/`).
@@ -10,6 +10,7 @@
 - [x] **Search & Navigation**: `⌘K` fuzzy search modal, hash routing permalinks (`/w/[id]#[view]`), memoized file tree with ellipsis actions.
 - [x] **Cloud Sync & Themes**: Google Drive 5MB resumable chunk sync; 14 CSS variable themes with AI Theme Studio; universal `Noto Color Emoji` web font embedding; updated brand logo to Kite emoji `🪁`.
 - [x] **7-Stage Architectural Refactoring**: Decomposed all large legacy god modules into modular 100–250 LOC components.
+- [x] **Brand Refresh**: Rebranded all user-facing product references and metadata from "Kite Workspace"/"Kite" to "Kite MD".
 
 ## Verification
 - Linting (`pnpm lint`): 0 errors, 0 warnings.

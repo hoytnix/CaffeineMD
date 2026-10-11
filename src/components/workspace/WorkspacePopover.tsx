@@ -22,7 +22,7 @@ export function KiteLogoMark({ size = 22, className = '' }: { size?: number; cla
   return (
     <span
       role="img"
-      aria-label="Kite"
+      aria-label="Kite MD"
       style={{ fontSize: `${size}px`, lineHeight: 1 }}
       className={`inline-flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-110 select-none ${className}`}
     >
@@ -103,7 +103,7 @@ export function WorkspacePopover() {
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="group flex items-center justify-center p-1.5 rounded-lg hover:bg-[var(--foreground)]/10 transition-colors cursor-pointer select-none relative"
-            title="Kite Workspaces"
+            title="Kite MD Workspaces"
           >
             <KiteLogoMark size={22} />
             {syncState.status === 'syncing' && (
