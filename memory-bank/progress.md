@@ -29,5 +29,5 @@
 
 ## Verification
 - Production build (`pnpm build`): 0 errors, all 7 static/dynamic routes compiled cleanly (including `/icon`).
-- LOC Boundaries: 100% compliant (100–250 LOC; useEditorAutosave at 233 LOC, EditorSettingsSection at 229 LOC, TiptapEditor at 207 LOC, useEditorModeSwitch at 95 LOC, markdownToHtml at 240 LOC, htmlToMarkdown at 198 LOC, markdownInline at 102 LOC, editorExtensions at 91 LOC).
+- LOC Boundaries: 100% compliant with tiered architecture (100 LOC sweet spot, 250 LOC soft limit, 400 LOC hard limit; useEditorAutosave at 233 LOC, EditorSettingsSection at 229 LOC, TiptapEditor at 207 LOC, useEditorModeSwitch at 95 LOC, markdownToHtml at 240 LOC, htmlToMarkdown at 198 LOC, markdownInline at 102 LOC, editorExtensions at 91 LOC).
 - Roundtrip Validation: Comprehensive tests verified lossless roundtrips for remote URLs, query parameters, titles, empty alts, data URIs, and balanced URL parentheses.

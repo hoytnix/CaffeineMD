@@ -205,7 +205,7 @@ caffeinemd/
 │   └── progress.md           # Completed milestones & verification
 ├── src/
 │   ├── app/                  # Next.js App Router entrypoints & layouts
-│   ├── components/           # 100-250 LOC decomposed UI components
+│   ├── components/           # Tiered modular UI components (100 LOC sweet spot)
 │   │   ├── editor/           # Tiptap, Plaintext, DiffViewer, Toolbars
 │   │   ├── database/         # Table, Kanban, List, Tag views
 │   │   ├── graph/            # D3 Knowledge Graph physics renderers
@@ -225,7 +225,7 @@ caffeinemd/
 
 ## 📐 Engineering Principles
 
-1. **LOC Discipline**: Every module adheres to a strict **100–250 LOC boundary**. God components are systematically refactored into focused hooks, subcomponents, and barrel contracts.
+1. **LOC Discipline**: Every module adheres to a tiered architecture where **100 LOC** is the sweet spot, **250 LOC** is the soft limit, and **400 LOC** is the strict hard limit. God components are systematically refactored into focused hooks, subcomponents, and barrel contracts.
 2. **Lossless Markdown Serialization**: Frontmatter YAML metadata and markdown content are parsed and regenerated with absolute fidelity—never corrupting user files.
 3. **Zero Cloud Requirement**: The entire core PKM operates standalone in the browser without requiring external servers or accounts. Cloud sync is strictly opt-in.
 4. **Portal Popover Viewport Safety**: All floating toolbars and selectors render via `createPortal` to `document.body` with clamped viewport boundaries to eliminate overflow clipping.

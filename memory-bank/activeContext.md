@@ -16,12 +16,12 @@
   - Updated [SettingsView.tsx](file:///home/oloty/Dev/Kite/src/components/settings/SettingsView.tsx) header to display "☕ CaffeineMD Settings" and added About CaffeineMD footer.
   - Updated [GoogleDriveSyncSection.tsx](file:///home/oloty/Dev/Kite/src/components/settings/sections/GoogleDriveSyncSection.tsx) descriptions to `"Sync CaffeineMD notes"` and root folder fallback to `"CaffeineMD Vault"`.
   - Preserved internal code syntax (CSS classes `.caffeine-editor-content`, components `CaffeineLogoMark`, store hooks, and variables).
-  - Maintained 100% compliance with strict 100–250 LOC constraints across all modified files.
+  - Maintained 100% compliance with modular LOC constraints across all modified files (100 LOC sweet spot, 250 LOC soft limit, 400 LOC hard limit).
 - **Document Metrics**: `NoteMetricsBar.tsx` (207 LOC) above `NOTE PROPERTIES` in `BacklinksPanel.tsx`. Real-time words, chars, LLM tokens, emojis (with ZWJ detection), links, and KB size via `useSyncExternalStore`.
 - **Plaintext Markdown Editor Dynamic Wrapped Line Gutter Sync**: Synchronized vertical scrolling offset (`scrollTop`) between `<textarea>` and line numbers gutter in `PlaintextMarkdownEditor.tsx` with full support for soft line wrapping (`wordWrap = true` by default, with toolbar toggle). Implemented off-screen DOM mirror container with `ResizeObserver` to dynamically measure exact wrapped line heights for every logical markdown line, styling each gutter line item to match pixel-for-pixel. Bound height constraints (`h-[550px] sm:h-[680px] max-h-[calc(100vh-220px)] min-h-[350px] sm:min-h-[480px]`, `h-full`) to enable native overflow clipping and programmatic scrolling on `gutterRef.current`, with bidirectional wheel scrolling via `onWheel`.
 - **Diff Viewer (Unsaved Working Copy vs. Saved Persistent Copy)**:
   - Added new `'diff'` editor mode to `EditorMode = 'rich' | 'plain' | 'diff'` in `EditorHeader.tsx`, with a dedicated `GitCompare` icon toggle button.
-  - Decomposed diff logic into `diffUtils.ts` (110 LOC) and `DiffViewer.tsx` (228 LOC) adhering strictly to the 100–250 LOC requirement.
+  - Decomposed diff logic into `diffUtils.ts` (110 LOC) and `DiffViewer.tsx` (228 LOC) adhering strictly to the modular LOC requirements.
   - Implemented both Unified and Split (side-by-side) views with real-time stats (`No Unsaved Changes` vs `X line(s) modified`), additions (`bg-emerald-500/15 text-emerald-700 dark:text-emerald-300`), deletions (`bg-rose-500/15 text-rose-700 dark:text-rose-300`), and dual-pane aligned scrollable grids.
   - Added immediate `Save Changes` and `Discard / Revert` action triggers in the diff micro-toolbar.
   - Enhanced `useEditorAutosave.ts` to retain the in-memory working buffer across mode switches without prematurely flushing to IndexedDB, properly updating active diffs and providing safe reverts.
@@ -29,7 +29,7 @@
 - **Shortcuts & Controls in Settings**:
   - Fully synchronized the "Shortcuts & Controls" section in `StorageSettingsSection.tsx` with all 8 keyboard shortcuts from `README.md` (Quick Search `⌘K` / `Ctrl+K`, Slash Commands `/`, WikiLinks `[[`, Universal Emoji Drawer `Shift+Space` / `⌘⇧Space`, Force Save `⌘S` / `Ctrl+S`, Bold `⌘B` / `Ctrl+B`, Italic `⌘I` / `Ctrl+I`, and Dismiss/Close `Esc`).
   - Added scope indicator badges (`App-wide`, `Rich Editor`, `Editor`, `Global`) and registered shortcuts counter, fully styled with theme-aware CSS variables.
-  - Maintained strict module LOC constraints (232 LOC in `StorageSettingsSection.tsx`, within 100–250 LOC).
+  - Maintained strict module LOC constraints (232 LOC in `StorageSettingsSection.tsx`, within the 250 LOC soft limit).
 - **Editor Header & Side Toolbar Notch Decoupling**:
   - Resolved the layout notch/gap between the sidebar divider and `EditorHeader` when `toolboxPosition` is set to `'left'` or `'right'`.
   - Hoisted `<EditorHeader />` to the outer column level of `TiptapEditor.tsx`, guaranteeing 100% full-width span flush against the left sidebar border without any indentation or horizontal displacement.
@@ -50,15 +50,15 @@
   - Implemented Autosave Frequency configuration row in [EditorSettingsSection.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/settings/sections/EditorSettingsSection.tsx) connected directly to store updates and toast notifications.
   - Re-architected [useEditorAutosave.ts](file:///home/oloty/Dev/CaffeineMD/src/components/editor/hooks/useEditorAutosave.ts) to manage configurable interval timer scheduling, debounced updates with max-wait flush, reactive `isDirty` tracking, and amber indicator dot in [EditorHeader.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/EditorHeader.tsx).
   - Guaranteed zero data loss via immediate synchronous flush handlers on note switch (`filePath` change), component unmount, and browser tab closing (`beforeunload`).
-  - Extracted mode switching transitions into [useEditorModeSwitch.ts](file:///home/oloty/Dev/CaffeineMD/src/components/editor/hooks/useEditorModeSwitch.ts) (88 LOC), maintaining 100% adherence to 100–250 LOC boundaries.
+  - Extracted mode switching transitions into [useEditorModeSwitch.ts](file:///home/oloty/Dev/CaffeineMD/src/components/editor/hooks/useEditorModeSwitch.ts) (95 LOC), adhering closely to the ~100 LOC sweet spot.
 - **Image Markdown Roundtrip Across Rich Text & Plaintext Modes**:
   - Resolved bidirectional serialization loss between Tiptap HTML/DOM and Markdown image representations (`![alt](url)` and `![alt](url "title")`).
   - Added robust Markdown image tokenization and HTML conversion in `markdownInline.ts` (102 LOC) executing prior to generic anchor link parsing, preserving alt descriptions, titles, base64 data URIs, and query parameters without broken escape slashes or orphaned `!<a href=...>` markup.
   - Implemented lossless HTML-to-Markdown image serialization in `htmlToMarkdown.ts` (198 LOC) supporting DOM `getAttribute('title')`, empty `src` validation, and resilient non-DOM regex fallback attribute parsing with HTML entity decoding.
   - Configured `@tiptap/extension-image` in `editorExtensions.ts` with `inline: true`, `allowBase64: true`, and standard styling `HTMLAttributes: { class: 'editor-image rounded-md max-w-full my-2' }`.
   - Added `{ emitUpdate: false }` to `editor.commands.setContent()` transitions in `useEditorModeSwitch.ts` (95 LOC) and `useEditorAutosave.ts` (233 LOC) preventing dirty trigger loops.
-  - Modularized `src/lib/markdown/` into focused submodules (`markdownInline.ts` at 102 LOC, `markdownTable.ts` at 33 LOC, `codeLanguageDetector.ts` at 36 LOC, `markdownToHtml.ts` at 240 LOC, `htmlToMarkdown.ts` at 198 LOC), strictly adhering to the 100–250 LOC boundary and passing production build verification (`pnpm build`).
-- **Refactoring Status**: All modules adhere strictly to the 100–250 LOC boundary (HeadingSelectorPopover at 179 LOC, StyleSelectorPopover at 201 LOC, ListFormattingGroup at 246 LOC, MediaSelectorPopover at 246 LOC, HistorySelectorPopover at 163 LOC, useToolbarPopover at 164 LOC, TiptapEditor at 207 LOC, useEditorAutosave at 233 LOC, useEditorModeSwitch at 95 LOC, EditorSettingsSection at 229 LOC, markdownToHtml at 240 LOC, htmlToMarkdown at 198 LOC, markdownInline at 102 LOC).
+  - Modularized `src/lib/markdown/` into focused submodules (`markdownInline.ts` at 102 LOC, `markdownTable.ts` at 33 LOC, `codeLanguageDetector.ts` at 36 LOC, `markdownToHtml.ts` at 240 LOC, `htmlToMarkdown.ts` at 198 LOC), strictly adhering to the 100 LOC sweet spot / 250 LOC soft limit architecture and passing production build verification (`pnpm build`).
+- **Refactoring Status & LOC Policy**: Modules follow a tiered size model where **100 LOC** is the sweet spot, **250 LOC** is the soft limit, and **400 LOC** is the strict hard limit. All active modules currently sit well within the soft limit (HeadingSelectorPopover at 179 LOC, StyleSelectorPopover at 201 LOC, ListFormattingGroup at 246 LOC, MediaSelectorPopover at 246 LOC, HistorySelectorPopover at 163 LOC, useToolbarPopover at 164 LOC, TiptapEditor at 207 LOC, useEditorAutosave at 233 LOC, useEditorModeSwitch at 95 LOC, EditorSettingsSection at 229 LOC, markdownToHtml at 240 LOC, htmlToMarkdown at 198 LOC, markdownInline at 102 LOC, codeLanguageDetector at 36 LOC, markdownTable at 33 LOC).
 
 ## Next Steps
 - Maintain clean, decomposed component architecture.
