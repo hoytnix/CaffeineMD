@@ -27,6 +27,10 @@
 
 [Features](#-key-features) • [Architecture](#-architecture) • [Keyboard Shortcuts](#-keyboard-shortcuts) • [Quick Start](#-quick-start) • [Tech Stack](#-tech-stack)
 
+<br /><br />
+
+<img src="./public/og-caffeinemd.png" alt="CaffeineMD - Lofi Girl Studying workspace illustration with coffee and code" width="100%" />
+
 ---
 
 </div>
