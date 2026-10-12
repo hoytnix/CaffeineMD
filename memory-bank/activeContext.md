@@ -19,7 +19,11 @@
   - Added immediate `Save Changes` and `Discard / Revert` action triggers in the diff micro-toolbar.
   - Enhanced `useEditorAutosave.ts` to retain the in-memory working buffer across mode switches without prematurely flushing to IndexedDB, properly updating active diffs and providing safe reverts.
 - **Documentation & Presentation**: Created high-impact, badass `README.md` featuring a custom ASCII art header, product manifesto, feature pillars (local-first filesystem mounting, Tiptap v2, D3 knowledge graph, frontmatter databases, precision plaintext gutter sync, diff viewer), architecture diagram, keyboard shortcuts reference, and quickstart guides.
-- **Refactoring Status**: All modules adhere strictly to the 100–250 LOC boundary (DiffViewer at 228 LOC, diffUtils at 110 LOC, TiptapEditor at 239 LOC).
+- **Shortcuts & Controls in Settings**:
+  - Fully synchronized the "Shortcuts & Controls" section in `StorageSettingsSection.tsx` with all 8 keyboard shortcuts from `README.md` (Quick Search `⌘K` / `Ctrl+K`, Slash Commands `/`, WikiLinks `[[`, Universal Emoji Drawer `Shift+Space` / `⌘⇧Space`, Force Save `⌘S` / `Ctrl+S`, Bold `⌘B` / `Ctrl+B`, Italic `⌘I` / `Ctrl+I`, and Dismiss/Close `Esc`).
+  - Added scope indicator badges (`App-wide`, `Rich Editor`, `Editor`, `Global`) and registered shortcuts counter, fully styled with theme-aware CSS variables.
+  - Maintained strict module LOC constraints (232 LOC in `StorageSettingsSection.tsx`, within 100–250 LOC).
+- **Refactoring Status**: All modules adhere strictly to the 100–250 LOC boundary (StorageSettingsSection at 232 LOC, DiffViewer at 228 LOC, diffUtils at 110 LOC, TiptapEditor at 239 LOC).
 
 ## Next Steps
 - Maintain clean, decomposed component architecture.
