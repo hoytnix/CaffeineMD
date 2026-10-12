@@ -107,16 +107,16 @@ export interface WorkspaceState {
 }
 
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
-  vaultName: 'Local Vault',
+  vaultName: 'CaffeineMD Vault',
   activeWorkspaceId: 'default-vault',
   mountedMode: 'indexeddb',
   mountedFolderName: null,
-  activeFilePath: 'Welcome to Caffeine.md',
-  activeNotePath: 'Welcome to Caffeine.md',
+  activeFilePath: 'Welcome to CaffeineMD.md',
+  activeNotePath: 'Welcome to CaffeineMD.md',
   activeView: 'editor',
   activeTab: 'editor',
   openTabs: [
-    { path: 'Welcome to Caffeine.md', title: 'Welcome to Caffeine' },
+    { path: 'Welcome to CaffeineMD.md', title: 'Welcome to CaffeineMD' },
     { path: 'Projects/Product Roadmap 2026.md', title: 'Product Roadmap 2026' },
   ],
   isImportModalOpen: false,
@@ -421,7 +421,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     set({
       mountedMode: mode,
       mountedFolderName: folderName || null,
-      vaultName: folderName ? folderName : 'Local Vault',
+      vaultName: folderName ? folderName : 'CaffeineMD Vault',
     }),
   setActiveWorkspaceId: (id, name) => {
     const currentId = get().activeWorkspaceId;
@@ -431,7 +431,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     }
     set({
       activeWorkspaceId: id,
-      vaultName: name || (id === 'default-vault' || id === 'local-vault' ? 'Local Vault' : id),
+      vaultName: name || (id === 'default-vault' || id === 'local-vault' ? 'CaffeineMD Vault' : id),
       activeFilePath: null,
       activeNotePath: null,
       openTabs: [],

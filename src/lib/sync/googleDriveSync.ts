@@ -149,7 +149,7 @@ export class GoogleDriveSyncService {
 
       const currentWorkspaceId =
         targetWorkspaceId ||
-        (workspaceName === 'Local Vault'
+        (workspaceName === 'Local Vault' || workspaceName === 'CaffeineMD Vault'
           ? 'default-vault'
           : `drive-${workspaceName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`);
 

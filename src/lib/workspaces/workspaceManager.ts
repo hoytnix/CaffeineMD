@@ -14,7 +14,7 @@ export class WorkspaceManager {
 
     const defaultWs: WorkspaceRecord = {
       id: 'default-vault',
-      name: 'Local Vault',
+      name: 'CaffeineMD Vault',
       mode: 'indexeddb',
       createdAt: Date.now(),
       updatedAt: Date.now(),

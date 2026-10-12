@@ -91,7 +91,7 @@ export function WorkspacePopover() {
     if (confirm('Disconnect this workspace? (Files stored on disk or Google Drive will not be deleted)')) {
       await WorkspaceManager.disconnectWorkspace(wsId);
       if (activeWorkspaceId === wsId) {
-        setActiveWorkspaceId('default-vault', 'Local Vault');
+        setActiveWorkspaceId('default-vault', 'CaffeineMD Vault');
         setMountedMode('indexeddb');
       }
     }
@@ -127,7 +127,7 @@ export function WorkspacePopover() {
                     <span className="text-xs font-bold text-[var(--foreground)] truncate">{vaultName}</span>
                   </div>
                   <span className="text-[10px] font-mono text-[var(--foreground)]/60 bg-[var(--background)] border border-[var(--border)] px-1.5 py-0.5 rounded">
-                    {activeWorkspaceId.startsWith('drive-') ? 'Google Drive' : activeWorkspaceId.startsWith('disk-') ? 'Live Disk' : 'Local Vault'}
+                    {activeWorkspaceId.startsWith('drive-') ? 'Google Drive' : activeWorkspaceId.startsWith('disk-') ? 'Live Disk' : 'CaffeineMD Vault'}
                   </span>
                 </div>
               </div>
@@ -157,12 +157,12 @@ export function WorkspacePopover() {
                 <span className="px-2.5 text-[10px] font-medium text-[var(--foreground)]/50">Workspaces</span>
                 {workspaces.length === 0 ? (
                   <div
-                    onClick={() => handleSelectWorkspace({ id: 'default-vault', name: 'Local Vault', mode: 'indexeddb', createdAt: Date.now(), updatedAt: Date.now() })}
+                    onClick={() => handleSelectWorkspace({ id: 'default-vault', name: 'CaffeineMD Vault', mode: 'indexeddb', createdAt: Date.now(), updatedAt: Date.now() })}
                     className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs hover:bg-[var(--foreground)]/10 cursor-pointer"
                   >
                     <div className="flex items-center gap-2 truncate">
                       <Database className="w-3.5 h-3.5 text-[var(--accent)]" />
-                      <span className="truncate">Local Vault</span>
+                      <span className="truncate">CaffeineMD Vault</span>
                     </div>
                     <Check className="w-3.5 h-3.5 text-[var(--accent)]" />
                   </div>

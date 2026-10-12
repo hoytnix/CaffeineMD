@@ -1,14 +1,17 @@
 # Active Context: CaffeineMD
 
 ## Current State
-- **Global Rebranding to CaffeineMD / Caffeine**:
-  - Rebranded application name across [metadata.json](file:///home/oloty/Dev/Kite/metadata.json), [package.json](file:///home/oloty/Dev/Kite/package.json), [app/layout.tsx](file:///home/oloty/Dev/Kite/app/layout.tsx), and [README.md](file:///home/oloty/Dev/Kite/README.md).
-  - Updated logo marks and emojis from kite (`🪁`) to coffee cup (`☕`).
-  - Updated default seed note to `Welcome to Caffeine.md` with coffee header and links in [seedData.ts](file:///home/oloty/Dev/Kite/src/lib/storage/seedData.ts), [workspaceStore.ts](file:///home/oloty/Dev/Kite/src/stores/workspaceStore.ts), and [workspaceManager.ts](file:///home/oloty/Dev/Kite/src/lib/workspaces/workspaceManager.ts).
-  - Renamed [WorkspacePopover.tsx](file:///home/oloty/Dev/Kite/src/components/workspace/WorkspacePopover.tsx) logo mark to `CaffeineLogoMark` (with backward-compatible `KiteLogoMark` export alias) and updated workspace trigger title to "CaffeineMD Workspaces".
-  - Updated Google Drive sync folder naming to `CaffeineMD-${workspaceName}` with backwards-compatible search querying both `CaffeineMD` and legacy `Kite` folders.
-  - Added `.caffeine-editor-content` styling in [globals.css](file:///home/oloty/Dev/Kite/app/globals.css) and updated [TiptapEditor.tsx](file:///home/oloty/Dev/Kite/src/components/editor/TiptapEditor.tsx).
-  - Maintained strict 100–250 LOC module constraints across all touched files.
+- **Strict Branding Distinction Enforced (`CaffeineMD` vs `caffeine` / `Caffeine`)**:
+  - User-facing display text strictly enforced as **`CaffeineMD`** across all UI surfaces, headers, breadcrumb fallbacks, settings, dialogs, metadata, and default seed documents.
+  - Default seed note renamed to `Welcome to CaffeineMD.md` with Heading 1 `# Welcome to CaffeineMD`, Subheading `## Welcome to CaffeineMD Workspace ☕`, overview text, and updated bidirectional WikiLinks `[[Welcome to CaffeineMD]]` across [seedData.ts](file:///home/oloty/Dev/Kite/src/lib/storage/seedData.ts) and [workspaceStore.ts](file:///home/oloty/Dev/Kite/src/stores/workspaceStore.ts).
+  - Configured HTML title template (`title: { default: "CaffeineMD", template: "%s | CaffeineMD" }`), `applicationName`, OpenGraph, and Twitter cards to `"CaffeineMD"` in [app/layout.tsx](file:///home/oloty/Dev/Kite/app/layout.tsx).
+  - Updated [metadata.json](file:///home/oloty/Dev/Kite/metadata.json) with `name` and `short_name` set to `"CaffeineMD"` and description referencing `"CaffeineMD"`.
+  - Updated [EditorHeader.tsx](file:///home/oloty/Dev/Kite/src/components/editor/EditorHeader.tsx) breadcrumb fallback to `"CaffeineMD"`.
+  - Standardized workspace selector labels and default fallback vault names to `"CaffeineMD Vault"` across [WorkspacePopover.tsx](file:///home/oloty/Dev/Kite/src/components/workspace/WorkspacePopover.tsx), [workspaceStore.ts](file:///home/oloty/Dev/Kite/src/stores/workspaceStore.ts), and [workspaceManager.ts](file:///home/oloty/Dev/Kite/src/lib/workspaces/workspaceManager.ts).
+  - Updated [SettingsView.tsx](file:///home/oloty/Dev/Kite/src/components/settings/SettingsView.tsx) header to display "☕ CaffeineMD Settings" and added About CaffeineMD footer.
+  - Updated [GoogleDriveSyncSection.tsx](file:///home/oloty/Dev/Kite/src/components/settings/sections/GoogleDriveSyncSection.tsx) descriptions to `"Sync CaffeineMD notes"` and root folder fallback to `"CaffeineMD Vault"`.
+  - Preserved internal code syntax (CSS classes `.caffeine-editor-content`, components `CaffeineLogoMark`, store hooks, and variables).
+  - Maintained 100% compliance with strict 100–250 LOC constraints across all modified files.
 - **Document Metrics**: `NoteMetricsBar.tsx` (207 LOC) above `NOTE PROPERTIES` in `BacklinksPanel.tsx`. Real-time words, chars, LLM tokens, emojis (with ZWJ detection), links, and KB size via `useSyncExternalStore`.
 - **Plaintext Markdown Editor Dynamic Wrapped Line Gutter Sync**: Synchronized vertical scrolling offset (`scrollTop`) between `<textarea>` and line numbers gutter in `PlaintextMarkdownEditor.tsx` with full support for soft line wrapping (`wordWrap = true` by default, with toolbar toggle). Implemented off-screen DOM mirror container with `ResizeObserver` to dynamically measure exact wrapped line heights for every logical markdown line, styling each gutter line item to match pixel-for-pixel. Bound height constraints (`h-[550px] sm:h-[680px] max-h-[calc(100vh-220px)] min-h-[350px] sm:min-h-[480px]`, `h-full`) to enable native overflow clipping and programmatic scrolling on `gutterRef.current`, with bidirectional wheel scrolling via `onWheel`.
 - **Diff Viewer (Unsaved Working Copy vs. Saved Persistent Copy)**:

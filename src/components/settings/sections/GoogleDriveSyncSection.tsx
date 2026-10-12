@@ -50,7 +50,7 @@ export function GoogleDriveSyncSection({
             Cloud Sync &amp; Google Drive
           </span>
           <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">
-            Authenticate with Google to backup and synchronize Markdown notes
+            Sync CaffeineMD notes across devices with Google Drive
           </p>
         </div>
         {user && (
@@ -97,7 +97,7 @@ export function GoogleDriveSyncSection({
                   Sign in with Google
                 </h3>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                  Sync your notes across devices with Google Drive
+                  Sync CaffeineMD notes across devices with Google Drive
                 </p>
               </div>
             </div>
@@ -157,7 +157,7 @@ export function GoogleDriveSyncSection({
             <div className="space-y-0.5">
               <span className="text-neutral-500 dark:text-neutral-400">Workspace Root Folder:</span>
               <p className="font-mono text-neutral-800 dark:text-neutral-200">
-                {syncStatus.folderName || `CaffeineMD-${vaultName}`}
+                {syncStatus.folderName || 'CaffeineMD Vault'}
               </p>
             </div>
 

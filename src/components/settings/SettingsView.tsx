@@ -58,8 +58,9 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
             </Link>
           )}
 
-          <h1 className="text-sm font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">
-            Settings
+          <h1 className="text-sm font-semibold tracking-tight text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5">
+            <span>☕</span>
+            <span>CaffeineMD Settings</span>
           </h1>
 
           <div className="w-16" />
@@ -109,6 +110,12 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
           emptyTrashAll={emptyTrashAll}
           trashCount={trashCount}
         />
+
+        {/* About CaffeineMD */}
+        <div className="pt-6 border-t border-[var(--border)] text-center text-xs text-neutral-400 dark:text-neutral-500 space-y-1">
+          <p className="font-semibold text-neutral-700 dark:text-neutral-300">CaffeineMD</p>
+          <p className="text-[11px]">Local-first, high-performance personal knowledge management workspace ☕</p>
+        </div>
       </main>
 
       {/* Create Workspace Modal */}

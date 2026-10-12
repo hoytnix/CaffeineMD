@@ -137,9 +137,9 @@ export function EditorHeader({
         <div className="flex items-center gap-2 text-xs text-neutral-500 min-w-0 flex-1 mr-3">
           <span
             className="truncate font-mono text-[11px] text-[var(--foreground)]/60 shrink min-w-0"
-            title={file.path}
+            title={file.path || 'CaffeineMD'}
           >
-            {file.path}
+            {file.path || 'CaffeineMD'}
           </span>
           <button
             type="button"

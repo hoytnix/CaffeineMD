@@ -184,7 +184,7 @@ export function useGoogleDriveSyncSettings({
     try {
       const cleanName = remote.name;
       const wsId =
-        cleanName === 'Local Vault'
+        cleanName === 'Local Vault' || cleanName === 'CaffeineMD Vault'
           ? 'default-vault'
           : `drive-${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
 
