@@ -1,65 +1,17 @@
 # Active Context: CaffeineMD
 
 ## Current State
-- **Canonical Origin (`https://www.caffeinemd.wiki`), Dynamic Favicon & Lofi Girl Banner**:
-  - Configured canonical `https://www.caffeinemd.wiki` across `metadataBase`, alternates canonical URL, OpenGraph (`og:url`, `og:image`), Twitter cards, and Schema.org `WebApplication` JSON-LD in [app/layout.tsx](file:///home/oloty/Dev/Kite/app/layout.tsx).
-  - Created dynamic App Router favicon at [app/icon.tsx](file:///home/oloty/Dev/Kite/app/icon.tsx) using `ImageResponse` rendering the coffee emoji `☕` crisply at all DPI resolutions, plus SVG fallback link in layout metadata.
-  - Generated and composited high-fidelity 1200x630 social preview card at [public/og-caffeinemd.png](file:///home/oloty/Dev/Kite/public/og-caffeinemd.png) depicting a cozy Lofi Girl Studying workspace with headphones, warm desk lamp, steaming coffee cup, dark-mode markdown knowledge graph on laptop screen, sleeping cat, rainy neon window, and stylized `CaffeineMD` branding badge.
-  - Configured PWA Web App Manifest at [public/manifest.json](file:///home/oloty/Dev/Kite/public/manifest.json) and [metadata.json](file:///home/oloty/Dev/Kite/metadata.json) with `start_url` and `scope` set to `https://www.caffeinemd.wiki/` and icons referencing `/og-caffeinemd.png`.
-- **Strict Branding Distinction Enforced (`CaffeineMD` vs `caffeine` / `Caffeine`)**:
-  - User-facing display text strictly enforced as **`CaffeineMD`** across all UI surfaces, headers, breadcrumb fallbacks, settings, dialogs, metadata, and default seed documents.
-  - Default seed note renamed to `Welcome to CaffeineMD.md` with Heading 1 `# Welcome to CaffeineMD`, Subheading `## Welcome to CaffeineMD Workspace ☕`, overview text, and updated bidirectional WikiLinks `[[Welcome to CaffeineMD]]` across [seedData.ts](file:///home/oloty/Dev/Kite/src/lib/storage/seedData.ts) and [workspaceStore.ts](file:///home/oloty/Dev/Kite/src/stores/workspaceStore.ts).
-  - Configured HTML title template (`title: { default: "CaffeineMD", template: "%s | CaffeineMD" }`), `applicationName`, OpenGraph, and Twitter cards to `"CaffeineMD"` in [app/layout.tsx](file:///home/oloty/Dev/Kite/app/layout.tsx).
-  - Updated [metadata.json](file:///home/oloty/Dev/Kite/metadata.json) with `name` and `short_name` set to `"CaffeineMD"` and description referencing `"CaffeineMD"`.
-  - Updated [EditorHeader.tsx](file:///home/oloty/Dev/Kite/src/components/editor/EditorHeader.tsx) breadcrumb fallback to `"CaffeineMD"`.
-  - Standardized workspace selector labels and default fallback vault names to `"CaffeineMD Vault"` across [WorkspacePopover.tsx](file:///home/oloty/Dev/Kite/src/components/workspace/WorkspacePopover.tsx), [workspaceStore.ts](file:///home/oloty/Dev/Kite/src/stores/workspaceStore.ts), and [workspaceManager.ts](file:///home/oloty/Dev/Kite/src/lib/workspaces/workspaceManager.ts).
-  - Updated [SettingsView.tsx](file:///home/oloty/Dev/Kite/src/components/settings/SettingsView.tsx) header to display "☕ CaffeineMD Settings" and added About CaffeineMD footer.
-  - Updated [GoogleDriveSyncSection.tsx](file:///home/oloty/Dev/Kite/src/components/settings/sections/GoogleDriveSyncSection.tsx) descriptions to `"Sync CaffeineMD notes"` and root folder fallback to `"CaffeineMD Vault"`.
-  - Preserved internal code syntax (CSS classes `.caffeine-editor-content`, components `CaffeineLogoMark`, store hooks, and variables).
-  - Maintained 100% compliance with modular LOC constraints across all modified files (100 LOC sweet spot, 250 LOC soft limit, 400 LOC hard limit).
-- **Document Metrics**: `NoteMetricsBar.tsx` (207 LOC) above `NOTE PROPERTIES` in `BacklinksPanel.tsx`. Real-time words, chars, LLM tokens, emojis (with ZWJ detection), links, and KB size via `useSyncExternalStore`.
-- **Plaintext Markdown Editor Dynamic Wrapped Line Gutter Sync**: Synchronized vertical scrolling offset (`scrollTop`) between `<textarea>` and line numbers gutter in `PlaintextMarkdownEditor.tsx` with full support for soft line wrapping (`wordWrap = true` by default, with toolbar toggle). Implemented off-screen DOM mirror container with `ResizeObserver` to dynamically measure exact wrapped line heights for every logical markdown line, styling each gutter line item to match pixel-for-pixel. Bound height constraints (`h-[550px] sm:h-[680px] max-h-[calc(100vh-220px)] min-h-[350px] sm:min-h-[480px]`, `h-full`) to enable native overflow clipping and programmatic scrolling on `gutterRef.current`, with bidirectional wheel scrolling via `onWheel`.
-- **Diff Viewer (Unsaved Working Copy vs. Saved Persistent Copy)**:
-  - Added new `'diff'` editor mode to `EditorMode = 'rich' | 'plain' | 'diff'` in `EditorHeader.tsx`, with a dedicated `GitCompare` icon toggle button.
-  - Decomposed diff logic into `diffUtils.ts` (110 LOC) and `DiffViewer.tsx` (228 LOC) adhering strictly to the modular LOC requirements.
-  - Implemented both Unified and Split (side-by-side) views with real-time stats (`No Unsaved Changes` vs `X line(s) modified`), additions (`bg-emerald-500/15 text-emerald-700 dark:text-emerald-300`), deletions (`bg-rose-500/15 text-rose-700 dark:text-rose-300`), and dual-pane aligned scrollable grids.
-  - Added immediate `Save Changes` and `Discard / Revert` action triggers in the diff micro-toolbar.
-  - Enhanced `useEditorAutosave.ts` to retain the in-memory working buffer across mode switches without prematurely flushing to IndexedDB, properly updating active diffs and providing safe reverts.
-- **Documentation & Presentation**: Created high-impact, badass `README.md` featuring a custom ASCII art header, product manifesto, embedded Lofi Girl Studying social preview banner (`og-caffeinemd.png`), feature pillars (local-first filesystem mounting, Tiptap v2, D3 knowledge graph, frontmatter databases, precision plaintext gutter sync, diff viewer), architecture diagram, keyboard shortcuts reference, and quickstart guides.
-- **Shortcuts & Controls in Settings**:
-  - Fully synchronized the "Shortcuts & Controls" section in `StorageSettingsSection.tsx` with all 8 keyboard shortcuts from `README.md` (Quick Search `⌘K` / `Ctrl+K`, Slash Commands `/`, WikiLinks `[[`, Universal Emoji Drawer `Shift+Space` / `⌘⇧Space`, Force Save `⌘S` / `Ctrl+S`, Bold `⌘B` / `Ctrl+B`, Italic `⌘I` / `Ctrl+I`, and Dismiss/Close `Esc`).
-  - Added scope indicator badges (`App-wide`, `Rich Editor`, `Editor`, `Global`) and registered shortcuts counter, fully styled with theme-aware CSS variables.
-  - Maintained strict module LOC constraints (232 LOC in `StorageSettingsSection.tsx`, within the 250 LOC soft limit).
-- **Editor Header & Side Toolbar Notch Decoupling**:
-  - Resolved the layout notch/gap between the sidebar divider and `EditorHeader` when `toolboxPosition` is set to `'left'` or `'right'`.
-  - Hoisted `<EditorHeader />` to the outer column level of `TiptapEditor.tsx`, guaranteeing 100% full-width span flush against the left sidebar border without any indentation or horizontal displacement.
-  - Placed the side toolbar and document viewport in a dedicated body flex-row beneath `EditorHeader`.
-  - Added `w-full shrink-0` to the root container of `EditorHeader.tsx` to maintain continuous boundary alignment.
-- **Mobile Toolbar Popover Cursor & Selection Preservation**:
-  - Resolved cursor jumping to EOF (`doc.content.size`) when opening the Headings toolbar popover or selecting heading/style/list options on mobile devices.
-  - Implemented `savedSelectionRef` and `snapshotSelection` in `useToolbarPopover.ts`, capturing `{ from, to }` before blur can occur on touch or mousedown interactions.
-  - Added `onMouseDown={(e) => e.preventDefault()}`, `onTouchStart={(e) => e.preventDefault()}`, and `onTouchEnd` handlers to trigger buttons and popover options to prevent contenteditable blur and synthetic click drops.
-  - Restored precise text selection ranges before chaining formatting commands across `HeadingSelectorPopover`, `StyleSelectorPopover`, `ListFormattingGroup`, `MediaSelectorPopover`, and `HistorySelectorPopover`.
-- **Document Title Banner Removal & Canvas Alignment**:
-  - Eliminated the redundant standalone document title `<textarea>` and its auto-resizing `useEffect` hook in [TiptapEditor.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/TiptapEditor.tsx) that previously duplicated above the note's Markdown H1 title.
-  - Adjusted editor viewport container top padding to `pt-4 sm:pt-6 md:pt-8` so the first block of note markdown begins with natural vertical rhythm beneath `EditorHeader`.
-  - Preserved note renaming through `EditorHeader.tsx`'s expandable properties drawer and the sidebar context menu (`RenameModal.tsx`).
-  - Verified no standalone title banners are rendered in `PlaintextMarkdownEditor.tsx` or `DiffViewer.tsx`.
-- **Configurable Autosave Frequency & Editor Hook Integration**:
-  - Added `autosaveInterval: number` to [workspaceStore.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/workspaceStore.ts) with 6 standard presets (Off / Manual `0`, 30s `30000`, 1m `60000`, 2m `120000`, 5m `300000` [Default], 10m `600000`) and persistence under `caffeinemd-autosave-interval`.
-  - Implemented Autosave Frequency configuration row in [EditorSettingsSection.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/settings/sections/EditorSettingsSection.tsx) connected directly to store updates and toast notifications.
-  - Re-architected [useEditorAutosave.ts](file:///home/oloty/Dev/CaffeineMD/src/components/editor/hooks/useEditorAutosave.ts) to manage configurable interval timer scheduling, debounced updates with max-wait flush, reactive `isDirty` tracking, and amber indicator dot in [EditorHeader.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/EditorHeader.tsx).
-  - Guaranteed zero data loss via immediate synchronous flush handlers on note switch (`filePath` change), component unmount, and browser tab closing (`beforeunload`).
-  - Extracted mode switching transitions into [useEditorModeSwitch.ts](file:///home/oloty/Dev/CaffeineMD/src/components/editor/hooks/useEditorModeSwitch.ts) (95 LOC), adhering closely to the ~100 LOC sweet spot.
-- **Image Markdown Roundtrip Across Rich Text & Plaintext Modes**:
-  - Resolved bidirectional serialization loss between Tiptap HTML/DOM and Markdown image representations (`![alt](url)` and `![alt](url "title")`).
-  - Added robust Markdown image tokenization and HTML conversion in `markdownInline.ts` (102 LOC) executing prior to generic anchor link parsing, preserving alt descriptions, titles, base64 data URIs, and query parameters without broken escape slashes or orphaned `!<a href=...>` markup.
-  - Implemented lossless HTML-to-Markdown image serialization in `htmlToMarkdown.ts` (198 LOC) supporting DOM `getAttribute('title')`, empty `src` validation, and resilient non-DOM regex fallback attribute parsing with HTML entity decoding.
-  - Configured `@tiptap/extension-image` in `editorExtensions.ts` with `inline: true`, `allowBase64: true`, and standard styling `HTMLAttributes: { class: 'editor-image rounded-md max-w-full my-2' }`.
-  - Added `{ emitUpdate: false }` to `editor.commands.setContent()` transitions in `useEditorModeSwitch.ts` (95 LOC) and `useEditorAutosave.ts` (233 LOC) preventing dirty trigger loops.
-  - Modularized `src/lib/markdown/` into focused submodules (`markdownInline.ts` at 102 LOC, `markdownTable.ts` at 33 LOC, `codeLanguageDetector.ts` at 36 LOC, `markdownToHtml.ts` at 240 LOC, `htmlToMarkdown.ts` at 198 LOC), strictly adhering to the 100 LOC sweet spot / 250 LOC soft limit architecture and passing production build verification (`pnpm build`).
-- **Refactoring Status & LOC Policy**: Modules follow a tiered size model where **100 LOC** is the sweet spot, **250 LOC** is the soft limit, and **400 LOC** is the strict hard limit. All active modules currently sit well within the soft limit (HeadingSelectorPopover at 179 LOC, StyleSelectorPopover at 201 LOC, ListFormattingGroup at 246 LOC, MediaSelectorPopover at 246 LOC, HistorySelectorPopover at 163 LOC, useToolbarPopover at 164 LOC, TiptapEditor at 207 LOC, useEditorAutosave at 233 LOC, useEditorModeSwitch at 95 LOC, EditorSettingsSection at 229 LOC, markdownToHtml at 240 LOC, htmlToMarkdown at 198 LOC, markdownInline at 102 LOC, codeLanguageDetector at 36 LOC, markdownTable at 33 LOC).
+- **Landing & PWA**: High-converting, multi-section landing page at `/` ([app/page.tsx](file:///home/oloty/Dev/CaffeineMD/app/page.tsx), 46 LOC) with 6 interspersed `Install CaffeineMD` CTAs across Nav, Hero, Features, Comparison, Shortcuts, and MegaCTA.
+- **Native PWA Engine**: Local-first Service Worker ([public/sw.js](file:///home/oloty/Dev/CaffeineMD/public/sw.js)), compliant 192/512px icons, native `beforeinstallprompt` handling, and direct editor launch (`/w/default-vault#/editor/Welcome%20to%20CaffeineMD.md`). Standalone mode bypasses landing directly into workspace.
+- **SEO & Structured Data**: Comprehensive Schema.org `@graph` (WebSite, WebPage, WebApplication/SoftwareApplication, Organization) in [app/layout.tsx](file:///home/oloty/Dev/CaffeineMD/app/layout.tsx).
+- **Core Editor**: Tiptap v2 rich text, raw plaintext with off-screen DOM gutter scroll sync, side-by-side diff viewer (`diffUtils.ts`, `DiffViewer.tsx`), configurable autosave interval, and lossless markdown image roundtrips.
+- **Branding & Architecture**: Strict `CaffeineMD` user-facing naming, TehWiz Production footer, and strict tiered LOC compliance (<100 LOC sweet spot, <250 LOC soft limit).
+- **Verification Rule**: Run `pnpm run lint` after every request (0 errors, 0 warnings). Do NOT run `pnpm run build` after every request.
+- **Recent Fixes**:
+  - Simplified top navbar CTA button in [LandingNav.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/landing/LandingNav.tsx) from "Install CaffeineMD (Native App)" to "Install".
+  - Resolved Service Worker hydration override: upgraded [public/sw.js](file:///home/oloty/Dev/CaffeineMD/public/sw.js) to `caffeinemd-v2` with **Network-First** strategy.
+  - Added programmatic cache busting in [usePwaInstall.ts](file:///home/oloty/Dev/CaffeineMD/src/components/landing/hooks/usePwaInstall.ts) and immediate `reg.update()`.
 
 ## Next Steps
-- Maintain clean, decomposed component architecture.
-- Verify storage and cloud sync workflows as features evolve.
+- Maintain modular <100-250 LOC boundaries across all components.
+- Run `pnpm run lint` verification on every turn without building.

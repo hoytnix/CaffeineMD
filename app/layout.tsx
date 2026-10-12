@@ -43,18 +43,80 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'WebApplication',
-    name: 'CaffeineMD',
-    url: 'https://www.caffeinemd.wiki',
-    description: 'High-performance, local-first personal knowledge management workspace and Markdown wiki.',
-    applicationCategory: 'ProductivityApplication',
-    operatingSystem: 'All',
-    image: 'https://www.caffeinemd.wiki/og-caffeinemd.png',
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: 'USD',
-    },
+    '@graph': [
+      {
+        '@type': 'WebSite',
+        '@id': 'https://www.caffeinemd.wiki/#website',
+        url: 'https://www.caffeinemd.wiki',
+        name: 'CaffeineMD',
+        description: 'High-performance, local-first Markdown knowledge base and personal wiki.',
+        inLanguage: 'en-US',
+        publisher: {
+          '@id': 'https://www.caffeinemd.wiki/#organization',
+        },
+      },
+      {
+        '@type': 'WebPage',
+        '@id': 'https://www.caffeinemd.wiki/#webpage',
+        url: 'https://www.caffeinemd.wiki',
+        name: 'CaffeineMD — Local-First Markdown Wiki',
+        description: 'Zero latency. Zero lock-in. A keyboard-driven Markdown wiki powered by IndexedDB and the File System Access API. Install the native app directly to your desktop or phone in one click.',
+        isPartOf: {
+          '@id': 'https://www.caffeinemd.wiki/#website',
+        },
+        about: {
+          '@id': 'https://www.caffeinemd.wiki/#software',
+        },
+        inLanguage: 'en-US',
+      },
+      {
+        '@type': ['WebApplication', 'SoftwareApplication'],
+        '@id': 'https://www.caffeinemd.wiki/#software',
+        name: 'CaffeineMD',
+        alternateName: 'Caffeine MD',
+        url: 'https://www.caffeinemd.wiki',
+        description: 'Zero latency. Zero lock-in. A keyboard-driven Markdown wiki powered by IndexedDB and the File System Access API. Install the native app directly to your desktop or phone in one click.',
+        applicationCategory: 'ProductivityApplication',
+        applicationSubCategory: 'Knowledge Management System',
+        operatingSystem: 'All',
+        browserRequirements: 'Requires modern browser with HTML5 and JavaScript support.',
+        image: 'https://www.caffeinemd.wiki/og-caffeinemd.png',
+        screenshot: 'https://www.caffeinemd.wiki/og-caffeinemd.png',
+        softwareVersion: '1.0.0',
+        featureList: [
+          'Local-First Storage via IndexedDB and File System Access API',
+          'Rich text editor powered by Tiptap v2 and ProseMirror',
+          'Bi-directional WikiLinks and D3 physics knowledge graph',
+          'Lossless Markdown and YAML frontmatter roundtrip',
+          'Frontmatter database views (Table, Kanban, List)',
+          'Installable Progressive Web App (PWA) with native offline execution',
+          'Unsaved working copy diff comparison and configurable autosave',
+        ],
+        offers: {
+          '@type': 'Offer',
+          price: '0',
+          priceCurrency: 'USD',
+        },
+        creator: {
+          '@id': 'https://www.caffeinemd.wiki/#organization',
+        },
+        publisher: {
+          '@id': 'https://www.caffeinemd.wiki/#organization',
+        },
+      },
+      {
+        '@type': 'Organization',
+        '@id': 'https://www.caffeinemd.wiki/#organization',
+        name: 'ISICECAKEOISIS INC.',
+        url: 'https://tehwiz.com',
+        logo: 'https://www.caffeinemd.wiki/icon-512.png',
+        brand: {
+          '@type': 'Brand',
+          name: 'TehWiz Production',
+          url: 'https://tehwiz.com',
+        },
+      },
+    ],
   };
 
   return (

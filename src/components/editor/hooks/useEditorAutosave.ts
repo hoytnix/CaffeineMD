@@ -38,7 +38,9 @@ export function useEditorAutosave({ filePath }: UseEditorAutosaveProps) {
   const [isDirty, setIsDirty] = useState(false);
 
   const fileRef = useRef(file);
-  fileRef.current = file;
+  useEffect(() => {
+    fileRef.current = file;
+  }, [file]);
 
   const isDirtyRef = useRef(false);
   const dirtyContentRef = useRef<{ mode: 'rich' | 'plain'; content: string } | null>(null);

@@ -6,3 +6,4 @@
 - **State**: `zustand` (`workspaceStore.ts`) for navigation & modals; `dexie-react-hooks` (`useLiveQuery`) for reactive UI.
 - **LOC Constraint**: Tiered LOC architecture: **100 LOC** is the sweet spot, **250 LOC** is the soft limit, and **400 LOC** is the strict hard limit. God components are decomposed into focused hooks, subcomponents, and barrel contracts.
 - **Portal Popovers**: Editor toolbar menus (Style, Headings, Lists, Media, History) rendered via `createPortal` to `document.body` with fixed coordinates to prevent overflow clipping.
+- **Verification Protocol**: Execute `pnpm run lint` after every request to ensure code quality. Do NOT run `pnpm run build` after every request.

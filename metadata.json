@@ -2,14 +2,32 @@
   "name": "CaffeineMD",
   "short_name": "CaffeineMD",
   "description": "High-performance, local-first Markdown knowledge base",
-  "start_url": "https://www.caffeinemd.wiki/",
-  "scope": "https://www.caffeinemd.wiki/",
+  "start_url": "/w/default-vault#/editor/Welcome%20to%20CaffeineMD.md",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#090d0b",
   "theme_color": "#090d0b",
   "icons": [
     {
-      "src": "/og-caffeinemd.png",
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "https://www.caffeinemd.wiki/og-caffeinemd.png",
       "sizes": "1200x630",
       "type": "image/png",
       "purpose": "any"

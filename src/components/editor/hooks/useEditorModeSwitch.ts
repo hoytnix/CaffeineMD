@@ -82,7 +82,7 @@ export function useEditorModeSwitch({
       }
       setEditorMode('diff');
     },
-    [editorMode, file, setRawMarkdown]
+    [editorMode, file, rawMarkdown, setRawMarkdown]
   );
 
   return {

@@ -1,29 +1,45 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useWorkspaceStore } from '@/src/stores/workspaceStore';
+import React from 'react';
+import { usePwaInstall } from '@/src/components/landing/hooks/usePwaInstall';
+import { LandingNav } from '@/src/components/landing/LandingNav';
+import { LandingHero } from '@/src/components/landing/LandingHero';
+import { LandingFeatures } from '@/src/components/landing/LandingFeatures';
+import { LandingComparison } from '@/src/components/landing/LandingComparison';
+import { LandingShortcuts } from '@/src/components/landing/LandingShortcuts';
+import { LandingMegaCTA } from '@/src/components/landing/LandingMegaCTA';
+import { LandingFooter } from '@/src/components/landing/LandingFooter';
+import { InstallModal } from '@/src/components/landing/InstallModal';
 
-export default function RootPage() {
-  const router = useRouter();
-  const { activeWorkspaceId, activeTab } = useWorkspaceStore();
+export default function SqueezePage() {
+  const installState = usePwaInstall();
 
-  // Redirect to active workspace on mount
-  useEffect(() => {
-    const wsId = activeWorkspaceId || 'default-vault';
-    const tab = activeTab || 'editor';
-    const hash = typeof window !== 'undefined' && window.location.hash
-      ? window.location.hash
-      : `#/${tab}`;
-    router.replace(`/w/${encodeURIComponent(wsId)}${hash}`);
-  }, [activeWorkspaceId, activeTab, router]);
+  if (installState.isStandalone) {
+    return null;
+  }
 
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-[var(--background)] text-[var(--foreground)]">
-      <div className="flex items-center gap-2 text-xs text-neutral-400">
-        <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-        <span>Loading workspace...</span>
-      </div>
+    <div className="min-h-screen bg-[#090d0b] text-[#e1e7e4] flex flex-col justify-between selection:bg-emerald-500/30 selection:text-emerald-200 relative overflow-x-hidden">
+      {/* Background ambient radial glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-96 bg-emerald-500/10 blur-[130px] pointer-events-none" />
+
+      {/* Sticky Navigation Bar with Install CTA */}
+      <LandingNav installState={installState} />
+
+      {/* Main Long-form Hero & Feature Stream */}
+      <main className="flex-1 flex flex-col z-10">
+        <LandingHero installState={installState} />
+        <LandingFeatures installState={installState} />
+        <LandingComparison installState={installState} />
+        <LandingShortcuts installState={installState} />
+        <LandingMegaCTA installState={installState} />
+      </main>
+
+      {/* Interactive Platform-Specific Install Guide Modal */}
+      <InstallModal installState={installState} />
+
+      {/* Official TehWiz Production Footer */}
+      <LandingFooter />
     </div>
   );
 }
