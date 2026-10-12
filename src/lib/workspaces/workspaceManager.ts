@@ -53,7 +53,7 @@ export class WorkspaceManager {
       name: welcomePath,
       title: welcomeTitle,
       extension: 'md',
-      content: `---\ntitle: ${welcomeTitle}\ntags: [workspace, notes]\nstatus: Doing\npriority: Medium\n---\n\n# ${welcomeTitle} 🪁\n\nWelcome to your new local workspace! This vault is saved locally in your browser's IndexedDB storage.\n\n- Create notes with the **+** button in the sidebar\n- Organize ideas with bidirectional links \`[[Note Title]]\`\n- View knowledge graphs and Notion-style databases above\n`,
+      content: `---\ntitle: ${welcomeTitle}\ntags: [workspace, notes]\nstatus: Doing\npriority: Medium\n---\n\n# ${welcomeTitle} ☕\n\nWelcome to your new local workspace! This vault is saved locally in your browser's IndexedDB storage.\n\n- Create notes with the **+** button in the sidebar\n- Organize ideas with bidirectional links \`[[Note Title]]\`\n- View knowledge graphs and Notion-style databases above\n`,
       frontmatter: {
         title: welcomeTitle,
         tags: ['workspace', 'notes'],

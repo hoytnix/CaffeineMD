@@ -169,7 +169,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
                 {editor && !editor.isDestroyed ? (
                   <EditorContent
                     editor={editor}
-                    className="min-h-[280px] sm:min-h-[400px] kite-editor-content pt-1 sm:pt-2 first:mt-0 [&>*:first-child]:mt-0 [&_.ProseMirror>*:first-child]:mt-0 [&_.tiptap>*:first-child]:mt-0"
+                    className="min-h-[280px] sm:min-h-[400px] caffeine-editor-content pt-1 sm:pt-2 first:mt-0 [&>*:first-child]:mt-0 [&_.ProseMirror>*:first-child]:mt-0 [&_.tiptap>*:first-child]:mt-0"
                   />
                 ) : (
                   <div className="min-h-[280px] sm:min-h-[400px] flex items-center justify-center text-neutral-400 animate-pulse text-xs font-mono">

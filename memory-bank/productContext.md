@@ -1,4 +1,4 @@
-# Product Context: Kite MD
+# Product Context: CaffeineMD
 
 Combines Obsidian's local-first Markdown filesystem ownership with Notion's structured database views and fluid block editing—zero cloud lock-in, zero latency.
 

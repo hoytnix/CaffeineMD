@@ -52,7 +52,7 @@ export class GoogleDriveSyncService {
   private static cachedFolderId: string | null = null;
 
   public static setWorkspaceFolder(workspaceName: string, folderId: string) {
-    const safeName = `Kite-${workspaceName.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+    const safeName = `CaffeineMD-${workspaceName.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
     this.folderCache.set(safeName, folderId);
     this.folderCache.set(workspaceName, folderId);
     this.cachedFolderId = folderId;
@@ -63,14 +63,17 @@ export class GoogleDriveSyncService {
     if (!token) return [];
 
     try {
-      const query = `mimeType = 'application/vnd.google-apps.folder' and trashed = false and name contains 'Kite'`;
+      const query = `mimeType = 'application/vnd.google-apps.folder' and trashed = false and (name contains 'CaffeineMD' or name contains 'Kite')`;
       const data = await fetchDriveFiles(token, query, 'files(id,name,modifiedTime)');
       const files: Array<{ id: string; name: string; modifiedTime?: string }> = data.files || [];
 
       return files.map((f) => {
-        const cleanName = f.name.startsWith('Kite-')
-          ? f.name.replace(/^Kite-/, '').replace(/_/g, ' ')
-          : f.name;
+        let cleanName = f.name;
+        if (cleanName.startsWith('CaffeineMD-')) {
+          cleanName = cleanName.replace(/^CaffeineMD-/, '').replace(/_/g, ' ');
+        } else if (cleanName.startsWith('Kite-')) {
+          cleanName = cleanName.replace(/^Kite-/, '').replace(/_/g, ' ');
+        }
         return {
           id: f.id,
           folderName: f.name,
@@ -86,13 +89,13 @@ export class GoogleDriveSyncService {
 
   public static async createRemoteWorkspace(workspaceName: string): Promise<RemoteWorkspace> {
     const folderId = await this.getOrCreateWorkspaceFolder(workspaceName);
-    const safeName = `Kite-${workspaceName.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+    const safeName = `CaffeineMD-${workspaceName.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
     this.setWorkspaceFolder(workspaceName, folderId);
     return { id: folderId, name: workspaceName, folderName: safeName };
   }
 
   public static async getOrCreateWorkspaceFolder(workspaceName: string): Promise<string> {
-    const safeName = `Kite-${workspaceName.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+    const safeName = `CaffeineMD-${workspaceName.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
     if (this.folderCache.has(safeName)) {
       return this.folderCache.get(safeName)!;
     }
@@ -175,7 +178,7 @@ export class GoogleDriveSyncService {
         isConnected: false,
         isSyncing: false,
         folderId: this.cachedFolderId,
-        folderName: `Kite-${workspaceName}`,
+        folderName: `CaffeineMD-${workspaceName}`,
         lastSyncedAt: this.lastSyncTime,
         lastError: errMsg,
         stats: { uploaded: 0, downloaded: 0, skipped: 0 },

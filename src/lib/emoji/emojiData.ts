@@ -156,7 +156,7 @@ export const EMOJI_LIST: EmojiItem[] = [
   { char: '🌈', name: 'Rainbow', category: 'nature', keywords: ['color', 'pride', 'sky'] },
 
   // Food & Drink
-  { char: '☕', name: 'Hot Beverage', category: 'food', keywords: ['coffee', 'tea', 'cafe', 'morning'] },
+  { char: '☕', name: 'Hot Beverage', category: 'food', keywords: ['coffee', 'caffeine', 'tea', 'cafe', 'morning', 'logo'] },
   { char: '🍵', name: 'Teacup Without Handle', category: 'food', keywords: ['matcha', 'green tea', 'zen'] },
   { char: '🧃', name: 'Beverage Box', category: 'food', keywords: ['juice', 'drink'] },
   { char: '🥤', name: 'Cup with Straw', category: 'food', keywords: ['soda', 'smoothie', 'boba'] },

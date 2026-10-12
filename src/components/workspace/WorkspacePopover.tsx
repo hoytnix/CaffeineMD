@@ -18,18 +18,20 @@ import {
 import { CreateWorkspaceModal } from './CreateWorkspaceModal';
 import { useSyncProgress } from '@/src/lib/sync/syncProgress';
 
-export function KiteLogoMark({ size = 22, className = '' }: { size?: number; className?: string }) {
+export function CaffeineLogoMark({ size = 22, className = '' }: { size?: number; className?: string }) {
   return (
     <span
       role="img"
-      aria-label="Kite MD"
+      aria-label="CaffeineMD"
       style={{ fontSize: `${size}px`, lineHeight: 1 }}
       className={`inline-flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-110 select-none ${className}`}
     >
-      🪁
+      ☕
     </span>
   );
 }
+
+export const KiteLogoMark = CaffeineLogoMark;
 
 export function WorkspacePopover() {
   const [isOpen, setIsOpen] = useState(false);
@@ -99,13 +101,13 @@ export function WorkspacePopover() {
     <>
       <div className="flex items-center gap-2">
         <div className="relative inline-block" ref={popoverRef}>
-          {/* Kite Emoji Logo Mark Trigger */}
+          {/* Coffee Emoji Logo Mark Trigger */}
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="group flex items-center justify-center p-1.5 rounded-lg hover:bg-[var(--foreground)]/10 transition-colors cursor-pointer select-none relative"
-            title="Kite MD Workspaces"
+            title="CaffeineMD Workspaces"
           >
-            <KiteLogoMark size={22} />
+            <CaffeineLogoMark size={22} />
             {syncState.status === 'syncing' && (
               <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-indigo-500 animate-ping" />
             )}

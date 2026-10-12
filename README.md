@@ -1,21 +1,18 @@
 ```text
-       /\
-      /  \
-     / /\ \
-    / /  \ \
-   /_/____\_\
-       ||
-       ||      ██╗  ██╗██╗████████╗███████╗    ███╗   ███╗██████╗ 
-       ||      ██║ ██╔╝██║╚══██╔══╝██╔════╝    ████╗ ████║██╔══██╗
-       ||      █████╔╝ ██║   ██║   █████╗      ██╔████╔██║██║  ██║
-      /  \     ██╔═██╗ ██║   ██║   ██╔══╝      ██║╚██╔╝██║██║  ██║
-     ~    ~    ██║  ██╗██║   ██║   ███████╗    ██║ ╚═╝ ██║██████╔╝
-    ~      ~   ╚═╝  ╚═╝╚═╝   ╚═╝   ╚══════╝    ╚═╝     ╚═╝╚═════╝ 
+      ( (
+       ) )
+    .______.
+    |      |]    ██████╗ █████╗ ███████╗███████╗███████╗██╗███╗   ██╗███████╗███╗   ███╗██████╗ 
+    \      /    ██╔════╝██╔══██╗██╔════╝██╔════╝██╔════╝██║████╗  ██║██╔════╝████╗ ████║██╔══██╗
+     `----'     ██║     ███████║█████╗  █████╗  █████╗  ██║██╔██╗ ██║█████╗  ██╔████╔██║██║  ██║
+                ██║     ██╔══██║██╔══╝  ██╔══╝  ██╔══╝  ██║██║╚██╗██║██╔══╝  ██║╚██╔╝██║██║  ██║
+                ╚██████╗██║  ██║██║     ██║     ███████╗██║██║ ╚████║███████╗██║ ╚═╝ ██║██████╔╝
+                 ╚═════╝╚═╝  ╚═╝╚═╝     ╚═╝     ╚══════╝╚═╝╚═╝  ╚═══╝╚══════╝╚═╝     ╚═╝╚═════╝ 
 ```
 
 <div align="center">
 
-### The Local-First, High-Performance Personal Knowledge Engine 🪁
+### The Local-First, High-Performance Personal Knowledge Engine ☕
 
 *Obsidian's filesystem sovereignty meets Notion's fluid databases and block editing.*  
 **Zero Cloud Lock-in. Zero Latency. 100% Privacy.**
@@ -38,9 +35,9 @@
 
 Modern knowledge management forced a false choice: **own raw files on disk (Obsidian)** with limited visual block interactions, or **surrender personal data to proprietary cloud silos (Notion)** for rich databases and flexible layouts.
 
-**Kite MD destroys this compromise.**
+**CaffeineMD destroys this compromise.**
 
-Built on Next.js 15, React 19, and Dexie IndexedDB, Kite MD mounts real folders on local storage via the **Native File System Access API**, parses frontmatter losslessly on the fly, and supercharges personal notes with Notion-caliber Kanban boards, interactive tables, force-directed graph physics, dynamic wrapped line gutters, and integrated diff management.
+Built on Next.js 15, React 19, and Dexie IndexedDB, CaffeineMD mounts real folders on local storage via the **Native File System Access API**, parses frontmatter losslessly on the fly, and supercharges personal notes with Notion-caliber Kanban boards, interactive tables, force-directed graph physics, dynamic wrapped line gutters, and integrated diff management.
 
 ---
 
@@ -109,7 +106,7 @@ Turn markdown frontmatter into structured data views without cloud databases:
                                                          │
                                                          ▼
  ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
- │                                              KITE MD CORE                                               │
+ │                                            CAFFEINEMD CORE                                              │
  ├────────────────────────────┬─────────────────────────────┬──────────────────────────────────────────────┤
  │      Tiptap v2 Editor      │    Frontmatter Databases    │            D3 Knowledge Graph                │
  │  • Slash Command System    │  • Notion-style Tables      │  • Force-directed physics                    │
@@ -150,8 +147,8 @@ Turn markdown frontmatter into structured data views without cloud databases:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-username/kite-md.git
-cd kite-md
+git clone https://github.com/your-username/caffeinemd.git
+cd caffeinemd
 
 # 2. Install dependencies
 pnpm install
@@ -194,7 +191,7 @@ pnpm start
 ## 📁 Repository Structure
 
 ```
-kite-md/
+caffeinemd/
 ├── memory-bank/              # Core persistent architectural memory bank
 │   ├── projectbrief.md       # Foundation, scope, core pillars
 │   ├── productContext.md     # Problem domain & UX goals
@@ -238,5 +235,5 @@ Distributed under the **MIT License**. See `LICENSE` for details.
 ---
 
 <div align="center">
-Made with 🪁 for thinkers, writers, and hackers who value privacy and craftsmanship.
+Made with ☕ for thinkers, writers, and hackers who value privacy and craftsmanship.
 </div>

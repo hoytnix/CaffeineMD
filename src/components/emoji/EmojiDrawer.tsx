@@ -164,7 +164,7 @@ export function EmojiDrawer() {
         <div className="p-3 border-b border-neutral-200/80 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/50 flex flex-col gap-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-base">🪁</span>
+              <span className="text-base">☕</span>
               <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
                 Emoji Drawer
               </span>

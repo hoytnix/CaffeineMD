@@ -157,7 +157,7 @@ export function GoogleDriveSyncSection({
             <div className="space-y-0.5">
               <span className="text-neutral-500 dark:text-neutral-400">Workspace Root Folder:</span>
               <p className="font-mono text-neutral-800 dark:text-neutral-200">
-                {syncStatus.folderName || `Kite-${vaultName}`}
+                {syncStatus.folderName || `CaffeineMD-${vaultName}`}
               </p>
             </div>
 

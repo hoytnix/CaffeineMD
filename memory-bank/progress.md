@@ -1,4 +1,4 @@
-# Progress: Kite MD
+# Progress: CaffeineMD
 
 ## Milestone Status
 - [x] **Core Storage & Ingestion**: Dexie schema, Native File System Access API mounting, recursive WebKit crawler, ephemeral trash can (`/src/lib/storage/`).
@@ -9,9 +9,9 @@
 - [x] **Databases & Views**: Frontmatter-driven Table view (column resizing, cell factory), Kanban Board (drag-and-drop status & Eisenhower grouping), List view, Tag Cloud.
 - [x] **Knowledge Graph**: D3 force-directed physics simulation with decoupled edge/node renderers.
 - [x] **Search & Navigation**: `⌘K` fuzzy search modal, hash routing permalinks (`/w/[id]#[view]`), memoized file tree with ellipsis actions.
-- [x] **Cloud Sync & Themes**: Google Drive 5MB resumable chunk sync; 14 CSS variable themes with AI Theme Studio; universal `Noto Color Emoji` web font embedding; updated brand logo to Kite emoji `🪁`.
+- [x] **Cloud Sync & Themes**: Google Drive 5MB resumable chunk sync; 14 CSS variable themes with AI Theme Studio; universal `Noto Color Emoji` web font embedding; updated brand logo to Coffee emoji `☕`.
 - [x] **7-Stage Architectural Refactoring**: Decomposed all large legacy god modules into modular 100–250 LOC components.
-- [x] **Brand Refresh**: Rebranded all user-facing product references and metadata from "Kite Workspace"/"Kite" to "Kite MD".
+- [x] **Global Brand Refresh to CaffeineMD**: Rebranded all user-facing product references and metadata to "CaffeineMD" / "Caffeine".
 - [x] **File Explorer Resizing**: Draggable right border on sidebar with persistent custom width (180px–720px), double-click reset, and keyboard accessibility.
 - [x] **Editor Properties Layout**: Rearranged properties bar into 3 structured rows (Title & Author; Status & Priority; Tags) and collapsed by default.
 - [x] **Mobile Editor Whitespace Optimization**: Responsive editor wrapper padding (`px-4 pt-2 sm:pt-4 md:pt-6 pb-8`), reduced title bottom margin on mobile (`mb-2 sm:mb-4 md:mb-6`), zero-overhead collapsible note properties (`NotePropertiesCard.tsx`), and ProseMirror/Tiptap first-child margin collapse (`[&>*:first-child]:mt-0`).

@@ -1,4 +1,4 @@
-# Tech Context: Kite MD
+# Tech Context: CaffeineMD
 
 - **Stack**: Next.js 15+ (App Router), React 19, TypeScript, Tailwind CSS v4.
 - **Editor**: `@tiptap/react`, `@tiptap/starter-kit`, `@tiptap/suggestion`, extensions for tables, task lists, code blocks, images.

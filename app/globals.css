@@ -58,6 +58,7 @@ body {
 
 .ProseMirror > *:first-child,
 .tiptap > *:first-child,
+.caffeine-editor-content > *:first-child,
 .kite-editor-content > *:first-child,
 .ProseMirror h1:first-child,
 .ProseMirror h2:first-child,

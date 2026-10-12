@@ -117,7 +117,7 @@ export async function executeDriveSyncSession({
     isConnected: true,
     isSyncing: false,
     folderId,
-    folderName: `Kite-${workspaceName}`,
+    folderName: `CaffeineMD-${workspaceName}`,
     lastSyncedAt: Date.now(),
     lastError: null,
     stats,

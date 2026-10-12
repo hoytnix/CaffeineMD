@@ -1,4 +1,4 @@
-# Project Brief: Kite MD
+# Project Brief: CaffeineMD
 
 Local-first, high-performance personal knowledge management system modeled after Obsidian and Notion, powered by Tiptap v2.
 

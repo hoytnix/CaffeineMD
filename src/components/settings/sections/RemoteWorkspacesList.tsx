@@ -131,7 +131,7 @@ export function RemoteWorkspacesList({
       ) : (
         <div className="py-3 px-3.5 rounded-xl border border-dashed border-neutral-200 dark:border-neutral-800 text-center">
           <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            No existing Kite MD workspaces found in Google Drive yet.
+            No existing CaffeineMD workspaces found in Google Drive yet.
           </p>
           <p className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-0.5">
             Click &ldquo;Sync Now&rdquo; above to upload your current workspace to Google Drive.

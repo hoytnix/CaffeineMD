@@ -2,22 +2,22 @@ import { VaultFile } from './schema';
 
 export const INITIAL_VAULT_NOTES: Array<Omit<VaultFile, 'id'> & { id?: string }> = [
   {
-    path: 'Welcome to Kite MD.md',
-    name: 'Welcome to Kite MD.md',
-    title: 'Welcome to Kite MD',
+    path: 'Welcome to Caffeine.md',
+    name: 'Welcome to Caffeine.md',
+    title: 'Welcome to Caffeine',
     extension: 'md',
     content: `---
-title: Welcome to Kite MD
+title: Welcome to Caffeine
 tags: [getting-started, guide]
 status: Doing
 priority: High
 eisenhower: urgent_not_immediate
-author: Kite MD Team
+author: Caffeine Team
 ---
 
-# Welcome to Kite MD 🪁
+# Welcome to Caffeine ☕
 
-Kite MD is a high-performance, **local-first knowledge management workspace** modeled after **Obsidian** and **Notion**, powered by **Tiptap**, IndexedDB, and the File System Access API.
+Caffeine is a high-performance, **local-first knowledge management workspace** modeled after **Obsidian** and **Notion**, powered by **Tiptap**, IndexedDB, and the File System Access API.
 
 ## Core Capabilities
 
@@ -32,12 +32,12 @@ Kite MD is a high-performance, **local-first knowledge management workspace** mo
 
 Check out our [[Architecture Decisions]] and see the current [[Product Roadmap 2026]].`,
     frontmatter: {
-      title: 'Welcome to Kite MD',
+      title: 'Welcome to Caffeine',
       tags: ['getting-started', 'guide'],
       status: 'Doing',
       priority: 'High',
       eisenhower: 'urgent_not_immediate',
-      author: 'Kite MD Team',
+      author: 'Caffeine Team',
     },
     tags: ['getting-started', 'guide'],
     eisenhower: 'urgent_not_immediate',
@@ -74,7 +74,7 @@ Quarterly objectives and milestones for the Antigravity Knowledge Base runtime.
 
 ### Connected Notes
 - See architectural foundations in [[Architecture Decisions]].
-- Return to the main hub at [[Welcome to Kite MD]].`,
+- Return to the main hub at [[Welcome to Caffeine]].`,
     frontmatter: {
       title: 'Product Roadmap 2026',
       tags: ['project', 'roadmap', 'q1'],
@@ -117,7 +117,7 @@ All note metadata is preserved via YAML frontmatter headers at the top of markdo
 ### ADR-03: Real-Time Backlink Indexing
 When any note is modified or imported, outgoing \`[[WikiLinks]]\` are parsed and indexed in IndexedDB for instant sub-millisecond reverse lookups.
 
-Referenced by [[Welcome to Kite MD]] and [[Product Roadmap 2026]].`,
+Referenced by [[Welcome to Caffeine]] and [[Product Roadmap 2026]].`,
     frontmatter: {
       title: 'Architecture Decisions',
       tags: ['engineering', 'architecture'],

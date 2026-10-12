@@ -1,15 +1,14 @@
-# Active Context: Kite MD
+# Active Context: CaffeineMD
 
 ## Current State
-- **Configurable Editor Toolbox Position (Left, Right, Bottom, Top)**:
-  - Added `toolboxPosition: 'left' | 'right' | 'bottom' | 'top'` in `workspaceStore.ts` with instant `localStorage` persistence (`kite-toolbox-position`) and reactive updates.
-  - Implemented `EditorSettingsSection.tsx` in `SettingsView.tsx` with 4 interactive visual placement cards featuring miniature animated editor wireframes and affirmative toasts.
-  - Enhanced `EditorBottomToolbar.tsx` to dynamically support both horizontal layout (`bottom`, `top`) and vertical layout (`left`, `right`) with 2D drag scrolling and responsive mouse wheel navigation.
-  - Updated `TiptapEditor.tsx` layout to dock the toolbox on the chosen side (left vertical bar, right vertical bar, sticky top bar below note header, or sticky bottom floating pill).
-  - Created reusable `useToolbarPopover.ts` hook providing clamped viewport coordinates, directional animations, and dismiss events across all popovers (`StyleSelectorPopover`, `HeadingSelectorPopover`, `MediaSelectorPopover`, `HistorySelectorPopover`, `ListFormattingGroup`).
-- **Editor Properties Layout**: Rearranged properties at top of editor into 3 clean rows (Row 1: Title & Author; Row 2: Status & Priority; Row 3: Tags on own line) in `EditorHeader.tsx`, hidden/collapsed by default (`isPropertiesExpanded = false`) with chevron toggle.
-- **Resizable File Explorer**: Draggable border resizer (`SidebarResizer.tsx` + `useSidebarResize.ts`) on the right side of `FileTree.tsx`, supporting drag resizing (180px–720px), double-click reset (256px), keyboard accessibility, and localStorage persistence.
-- **Rebranding**: Rebranded from "Kite Workspace"/"Kite" to "Kite MD" across metadata, UI, popovers, default seed notes, and workspace stores.
+- **Global Rebranding to CaffeineMD / Caffeine**:
+  - Rebranded application name across [metadata.json](file:///home/oloty/Dev/Kite/metadata.json), [package.json](file:///home/oloty/Dev/Kite/package.json), [app/layout.tsx](file:///home/oloty/Dev/Kite/app/layout.tsx), and [README.md](file:///home/oloty/Dev/Kite/README.md).
+  - Updated logo marks and emojis from kite (`🪁`) to coffee cup (`☕`).
+  - Updated default seed note to `Welcome to Caffeine.md` with coffee header and links in [seedData.ts](file:///home/oloty/Dev/Kite/src/lib/storage/seedData.ts), [workspaceStore.ts](file:///home/oloty/Dev/Kite/src/stores/workspaceStore.ts), and [workspaceManager.ts](file:///home/oloty/Dev/Kite/src/lib/workspaces/workspaceManager.ts).
+  - Renamed [WorkspacePopover.tsx](file:///home/oloty/Dev/Kite/src/components/workspace/WorkspacePopover.tsx) logo mark to `CaffeineLogoMark` (with backward-compatible `KiteLogoMark` export alias) and updated workspace trigger title to "CaffeineMD Workspaces".
+  - Updated Google Drive sync folder naming to `CaffeineMD-${workspaceName}` with backwards-compatible search querying both `CaffeineMD` and legacy `Kite` folders.
+  - Added `.caffeine-editor-content` styling in [globals.css](file:///home/oloty/Dev/Kite/app/globals.css) and updated [TiptapEditor.tsx](file:///home/oloty/Dev/Kite/src/components/editor/TiptapEditor.tsx).
+  - Maintained strict 100–250 LOC module constraints across all touched files.
 - **Document Metrics**: `NoteMetricsBar.tsx` (207 LOC) above `NOTE PROPERTIES` in `BacklinksPanel.tsx`. Real-time words, chars, LLM tokens, emojis (with ZWJ detection), links, and KB size via `useSyncExternalStore`.
 - **Plaintext Markdown Editor Dynamic Wrapped Line Gutter Sync**: Synchronized vertical scrolling offset (`scrollTop`) between `<textarea>` and line numbers gutter in `PlaintextMarkdownEditor.tsx` with full support for soft line wrapping (`wordWrap = true` by default, with toolbar toggle). Implemented off-screen DOM mirror container with `ResizeObserver` to dynamically measure exact wrapped line heights for every logical markdown line, styling each gutter line item to match pixel-for-pixel. Bound height constraints (`h-[550px] sm:h-[680px] max-h-[calc(100vh-220px)] min-h-[350px] sm:min-h-[480px]`, `h-full`) to enable native overflow clipping and programmatic scrolling on `gutterRef.current`, with bidirectional wheel scrolling via `onWheel`.
 - **Diff Viewer (Unsaved Working Copy vs. Saved Persistent Copy)**:

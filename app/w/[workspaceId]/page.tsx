@@ -88,7 +88,7 @@ export default function WorkspacePage() {
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-[var(--background)] text-[var(--foreground)]">
       {/* 1. Universal Top Bar Contract: Fully Theme-Adaptive */}
       <header className="flex items-center justify-between gap-4 px-4 py-2 border-b border-[var(--border)] bg-[var(--card)] z-30 select-none text-[var(--foreground)]">
-        {/* Zone 1: Sidebar Toggle & Kite MD Logo with Workspace Popover */}
+        {/* Zone 1: Sidebar Toggle & CaffeineMD Logo with Workspace Popover */}
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={toggleSidebar}
@@ -102,7 +102,7 @@ export default function WorkspacePage() {
             )}
           </button>
 
-          {/* Kite MD Logo Mark with Workspace Popover */}
+          {/* CaffeineMD Logo Mark with Workspace Popover */}
           <WorkspacePopover />
         </div>
 
