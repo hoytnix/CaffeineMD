@@ -25,7 +25,7 @@ interface StyleOption {
   icon: React.ComponentType<{ className?: string }>;
   tag: string;
   isActive: (editor: Editor) => boolean;
-  action: (editor: Editor) => void;
+  action: (editor: Editor, sel: { from: number; to: number } | null) => void;
 }
 
 const STYLE_OPTIONS: StyleOption[] = [
@@ -35,7 +35,11 @@ const STYLE_OPTIONS: StyleOption[] = [
     icon: Bold,
     tag: '⌘B',
     isActive: (editor) => editor.isActive('bold'),
-    action: (editor) => editor.chain().focus().toggleBold().run(),
+    action: (editor, sel) => {
+      const chain = editor.chain();
+      if (sel) chain.setTextSelection(sel);
+      chain.toggleBold().run();
+    },
   },
   {
     id: 'italic',
@@ -43,7 +47,11 @@ const STYLE_OPTIONS: StyleOption[] = [
     icon: Italic,
     tag: '⌘I',
     isActive: (editor) => editor.isActive('italic'),
-    action: (editor) => editor.chain().focus().toggleItalic().run(),
+    action: (editor, sel) => {
+      const chain = editor.chain();
+      if (sel) chain.setTextSelection(sel);
+      chain.toggleItalic().run();
+    },
   },
   {
     id: 'underline',
@@ -51,9 +59,11 @@ const STYLE_OPTIONS: StyleOption[] = [
     icon: UnderlineIcon,
     tag: '⌘U',
     isActive: (editor) => editor.isActive('underline'),
-    action: (editor) => {
+    action: (editor, sel) => {
       if ((editor.commands as any).toggleUnderline) {
-        (editor.chain().focus() as any).toggleUnderline().run();
+        const chain = editor.chain();
+        if (sel) chain.setTextSelection(sel);
+        (chain as any).toggleUnderline().run();
       }
     },
   },
@@ -63,7 +73,11 @@ const STYLE_OPTIONS: StyleOption[] = [
     icon: Strikethrough,
     tag: '⌘⇧X',
     isActive: (editor) => editor.isActive('strike'),
-    action: (editor) => editor.chain().focus().toggleStrike().run(),
+    action: (editor, sel) => {
+      const chain = editor.chain();
+      if (sel) chain.setTextSelection(sel);
+      chain.toggleStrike().run();
+    },
   },
 ];
 
@@ -79,7 +93,10 @@ export function StyleSelectorPopover({
     menuRef,
     toggleOpen,
     animationClass,
+    savedSelectionRef,
+    snapshotSelection,
   } = useToolbarPopover({
+    editor,
     checkHasDragged,
     popoverWidth: 192,
   });
@@ -95,7 +112,19 @@ export function StyleSelectorPopover({
       <button
         ref={buttonRef}
         type="button"
-        onMouseDown={(e) => e.stopPropagation()}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          snapshotSelection();
+        }}
+        onTouchStart={(e) => {
+          e.preventDefault();
+          snapshotSelection();
+        }}
+        onTouchEnd={(e) => {
+          e.preventDefault();
+          toggleOpen(e);
+        }}
         onClick={toggleOpen}
         title="Style (Bold, Italic, Underline, Strikethrough)"
         aria-expanded={isOpen}
@@ -113,7 +142,11 @@ export function StyleSelectorPopover({
       {isOpen && popoverStyle && typeof document !== 'undefined' && createPortal(
         <div
           ref={menuRef}
-          onMouseDown={(e) => e.stopPropagation()}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onTouchStart={(e) => e.stopPropagation()}
           style={popoverStyle}
           className={`w-48 rounded-xl bg-[var(--card)] border border-[var(--border)] shadow-2xl p-1.5 flex flex-col gap-0.5 z-[9999] text-[var(--foreground)] ${animationClass}`}
         >
@@ -127,8 +160,15 @@ export function StyleSelectorPopover({
               <button
                 key={id}
                 type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onTouchStart={(e) => e.preventDefault()}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  action(editor, savedSelectionRef.current);
+                  setIsOpen(false);
+                }}
                 onClick={() => {
-                  action(editor);
+                  action(editor, savedSelectionRef.current);
                   setIsOpen(false);
                 }}
                 className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-xs transition-colors cursor-pointer text-left w-full ${

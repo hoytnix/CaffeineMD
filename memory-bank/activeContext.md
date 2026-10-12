@@ -28,7 +28,12 @@
   - Hoisted `<EditorHeader />` to the outer column level of `TiptapEditor.tsx`, guaranteeing 100% full-width span flush against the left sidebar border without any indentation or horizontal displacement.
   - Placed the side toolbar and document viewport in a dedicated body flex-row beneath `EditorHeader`.
   - Added `w-full shrink-0` to the root container of `EditorHeader.tsx` to maintain continuous boundary alignment.
-- **Refactoring Status**: All modules adhere strictly to the 100–250 LOC boundary (StorageSettingsSection at 232 LOC, DiffViewer at 228 LOC, diffUtils at 110 LOC, TiptapEditor at 241 LOC).
+- **Mobile Toolbar Popover Cursor & Selection Preservation**:
+  - Resolved cursor jumping to EOF (`doc.content.size`) when opening the Headings toolbar popover or selecting heading/style/list options on mobile devices.
+  - Implemented `savedSelectionRef` and `snapshotSelection` in `useToolbarPopover.ts`, capturing `{ from, to }` before blur can occur on touch or mousedown interactions.
+  - Added `onMouseDown={(e) => e.preventDefault()}`, `onTouchStart={(e) => e.preventDefault()}`, and `onTouchEnd` handlers to trigger buttons and popover options to prevent contenteditable blur and synthetic click drops.
+  - Restored precise text selection ranges before chaining formatting commands across `HeadingSelectorPopover`, `StyleSelectorPopover`, `ListFormattingGroup`, `MediaSelectorPopover`, and `HistorySelectorPopover`.
+- **Refactoring Status**: All modules adhere strictly to the 100–250 LOC boundary (HeadingSelectorPopover at 179 LOC, StyleSelectorPopover at 201 LOC, ListFormattingGroup at 246 LOC, MediaSelectorPopover at 246 LOC, HistorySelectorPopover at 163 LOC, useToolbarPopover at 164 LOC, TiptapEditor at 241 LOC).
 
 ## Next Steps
 - Maintain clean, decomposed component architecture.

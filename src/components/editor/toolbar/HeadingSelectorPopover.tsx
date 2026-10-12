@@ -33,7 +33,10 @@ export function HeadingSelectorPopover({
     menuRef,
     toggleOpen,
     animationClass,
+    savedSelectionRef,
+    snapshotSelection,
   } = useToolbarPopover({
+    editor,
     checkHasDragged,
     popoverWidth: 192,
   });
@@ -41,12 +44,22 @@ export function HeadingSelectorPopover({
   const isHeadingActive = editor.isActive('heading');
 
   const handleSelectHeading = (level: 1 | 2 | 3 | 4 | 5 | 6) => {
-    editor.chain().focus().toggleHeading({ level }).run();
+    if (!editor || editor.isDestroyed) return;
+    const chain = editor.chain();
+    if (savedSelectionRef.current) {
+      chain.setTextSelection(savedSelectionRef.current);
+    }
+    chain.toggleHeading({ level }).run();
     setIsOpen(false);
   };
 
   const handleSelectParagraph = () => {
-    editor.chain().focus().setParagraph().run();
+    if (!editor || editor.isDestroyed) return;
+    const chain = editor.chain();
+    if (savedSelectionRef.current) {
+      chain.setTextSelection(savedSelectionRef.current);
+    }
+    chain.setParagraph().run();
     setIsOpen(false);
   };
 
@@ -55,7 +68,19 @@ export function HeadingSelectorPopover({
       <button
         ref={buttonRef}
         type="button"
-        onMouseDown={(e) => e.stopPropagation()}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          snapshotSelection();
+        }}
+        onTouchStart={(e) => {
+          e.preventDefault();
+          snapshotSelection();
+        }}
+        onTouchEnd={(e) => {
+          e.preventDefault();
+          toggleOpen(e);
+        }}
         onClick={toggleOpen}
         title="Headings (H1–H6)"
         aria-expanded={isOpen}
@@ -73,7 +98,11 @@ export function HeadingSelectorPopover({
       {isOpen && popoverStyle && typeof document !== 'undefined' && createPortal(
         <div
           ref={menuRef}
-          onMouseDown={(e) => e.stopPropagation()}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onTouchStart={(e) => e.stopPropagation()}
           style={popoverStyle}
           className={`w-48 rounded-xl bg-[var(--card)] border border-[var(--border)] shadow-2xl p-1.5 flex flex-col gap-0.5 z-[9999] text-[var(--foreground)] ${animationClass}`}
         >
@@ -87,6 +116,12 @@ export function HeadingSelectorPopover({
               <button
                 key={level}
                 type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onTouchStart={(e) => e.preventDefault()}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  handleSelectHeading(level);
+                }}
                 onClick={() => handleSelectHeading(level)}
                 className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-xs transition-colors cursor-pointer text-left w-full ${
                   isLevelActive
@@ -112,6 +147,12 @@ export function HeadingSelectorPopover({
 
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onTouchStart={(e) => e.preventDefault()}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              handleSelectParagraph();
+            }}
             onClick={handleSelectParagraph}
             className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-xs transition-colors cursor-pointer text-left w-full ${
               editor.isActive('paragraph')

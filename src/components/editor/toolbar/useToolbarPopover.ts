@@ -1,15 +1,18 @@
 'use client';
 
 import React, { useState, useEffect, useRef, CSSProperties } from 'react';
+import { Editor } from '@tiptap/react';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 
 export interface UseToolbarPopoverOptions {
+  editor?: Editor;
   checkHasDragged?: () => boolean;
   popoverWidth?: number;
   popoverHeight?: number;
 }
 
 export function useToolbarPopover({
+  editor,
   checkHasDragged,
   popoverWidth = 192,
   popoverHeight = 220,
@@ -19,6 +22,14 @@ export function useToolbarPopover({
   const [popoverStyle, setPopoverStyle] = useState<CSSProperties | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const savedSelectionRef = useRef<{ from: number; to: number } | null>(null);
+
+  const snapshotSelection = () => {
+    if (editor && !editor.isDestroyed) {
+      const { from, to } = editor.state.selection;
+      savedSelectionRef.current = { from, to };
+    }
+  };
 
   const updateCoords = () => {
     if (!buttonRef.current || typeof window === 'undefined') return;
@@ -76,11 +87,12 @@ export function useToolbarPopover({
     }
   };
 
-  const toggleOpen = (e?: React.MouseEvent) => {
+  const toggleOpen = (e?: React.SyntheticEvent) => {
     e?.stopPropagation();
     if (checkHasDragged?.()) return;
 
     if (!isOpen) {
+      snapshotSelection();
       updateCoords();
       setIsOpen(true);
     } else {
@@ -91,7 +103,7 @@ export function useToolbarPopover({
   useEffect(() => {
     if (!isOpen) return;
 
-    const handleOutsideClick = (e: MouseEvent) => {
+    const handleOutsideClick = (e: Event) => {
       const target = e.target as Node;
       if (
         menuRef.current &&
@@ -114,12 +126,14 @@ export function useToolbarPopover({
     };
 
     document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('touchstart', handleOutsideClick, { passive: true });
     window.addEventListener('resize', handleDismiss);
     window.addEventListener('scroll', handleDismiss, true);
     document.addEventListener('keydown', handleKeyDown);
 
     return () => {
       document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('touchstart', handleOutsideClick);
       window.removeEventListener('resize', handleDismiss);
       window.removeEventListener('scroll', handleDismiss, true);
       document.removeEventListener('keydown', handleKeyDown);
@@ -144,5 +158,7 @@ export function useToolbarPopover({
     toggleOpen,
     animationClass,
     toolboxPosition,
+    savedSelectionRef,
+    snapshotSelection,
   };
 }

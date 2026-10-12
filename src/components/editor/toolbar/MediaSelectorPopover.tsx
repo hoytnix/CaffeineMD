@@ -22,9 +22,9 @@ export interface MediaSelectorPopoverProps {
 }
 
 const CODE_ITEMS = [
-  { id: 'code', label: 'Inline Code', icon: Code, tag: '`code`', check: (e: Editor) => e.isActive('code'), act: (e: Editor) => e.chain().focus().toggleCode().run() },
-  { id: 'codeBlock', label: 'Code Block', icon: SquareCode, tag: '```', check: (e: Editor) => e.isActive('codeBlock'), act: (e: Editor) => e.chain().focus().toggleCodeBlock().run() },
-  { id: 'quote', label: 'Quote', icon: Quote, tag: '>', check: (e: Editor) => e.isActive('blockquote'), act: (e: Editor) => e.chain().focus().toggleBlockquote().run() },
+  { id: 'code', label: 'Inline Code', icon: Code, tag: '`code`', check: (e: Editor) => e.isActive('code'), act: (e: Editor, sel: any) => { const c = e.chain(); if (sel) c.setTextSelection(sel); c.toggleCode().run(); } },
+  { id: 'codeBlock', label: 'Code Block', icon: SquareCode, tag: '```', check: (e: Editor) => e.isActive('codeBlock'), act: (e: Editor, sel: any) => { const c = e.chain(); if (sel) c.setTextSelection(sel); c.toggleCodeBlock().run(); } },
+  { id: 'quote', label: 'Quote', icon: Quote, tag: '>', check: (e: Editor) => e.isActive('blockquote'), act: (e: Editor, sel: any) => { const c = e.chain(); if (sel) c.setTextSelection(sel); c.toggleBlockquote().run(); } },
 ];
 
 import { useToolbarPopover } from './useToolbarPopover';
@@ -45,7 +45,10 @@ export function MediaSelectorPopover({
     menuRef,
     toggleOpen,
     animationClass,
+    savedSelectionRef,
+    snapshotSelection,
   } = useToolbarPopover({
+    editor,
     checkHasDragged,
     popoverWidth: 208,
   });
@@ -108,7 +111,19 @@ export function MediaSelectorPopover({
       <button
         ref={buttonRef}
         type="button"
-        onMouseDown={(e) => e.stopPropagation()}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          snapshotSelection();
+        }}
+        onTouchStart={(e) => {
+          e.preventDefault();
+          snapshotSelection();
+        }}
+        onTouchEnd={(e) => {
+          e.preventDefault();
+          toggleOpen(e);
+        }}
         onClick={toggleOpen}
         title="Media (Code, Quotes, Links, Images)"
         aria-expanded={isOpen}
@@ -126,7 +141,11 @@ export function MediaSelectorPopover({
       {isOpen && popoverStyle && typeof document !== 'undefined' && createPortal(
         <div
           ref={menuRef}
-          onMouseDown={(e) => e.stopPropagation()}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onTouchStart={(e) => e.stopPropagation()}
           style={popoverStyle}
           className={`w-52 rounded-xl bg-[var(--card)] border border-[var(--border)] shadow-2xl p-1.5 flex flex-col gap-0.5 z-[9999] text-[var(--foreground)] ${animationClass}`}
         >
@@ -140,7 +159,17 @@ export function MediaSelectorPopover({
               <button
                 key={id}
                 type="button"
-                onClick={() => { act(editor); setIsOpen(false); }}
+                onMouseDown={(e) => e.preventDefault()}
+                onTouchStart={(e) => e.preventDefault()}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  act(editor, savedSelectionRef.current);
+                  setIsOpen(false);
+                }}
+                onClick={() => {
+                  act(editor, savedSelectionRef.current);
+                  setIsOpen(false);
+                }}
                 className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-xs transition-colors cursor-pointer text-left w-full ${
                   active ? 'bg-[var(--accent)] text-white font-semibold' : 'hover:bg-[var(--foreground)]/10 text-[var(--foreground)]'
                 }`}

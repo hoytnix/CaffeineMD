@@ -20,6 +20,7 @@
 - [x] **Project Documentation**: Created comprehensive, badass `README.md` with ASCII art header, product manifesto, feature matrix, architecture flow, keyboard shortcuts, quickstart, and engineering principles.
 - [x] **Settings Shortcuts & Controls Synchronization**: Updated the "Shortcuts & Controls" section in `StorageSettingsSection.tsx` with all 8 keyboard shortcuts and scope tags documented in `README.md`, adhering to the strict 100–250 LOC boundary (232 LOC).
 - [x] **Editor Header & Side Toolbar Notch Decoupling**: Decoupled `<EditorHeader />` from the horizontal toolbar wrapper in `TiptapEditor.tsx` so the header spans full width (100%) flush against the file tree divider when toolbar is positioned at left or right, with side toolbar docking cleanly below the header row.
+- [x] **Mobile Toolbar Popover Cursor & Selection Preservation**: Implemented selection snapshotting and restoration in `useToolbarPopover.ts`, added mousedown/touchstart/touchend handlers on trigger and options, and applied `setTextSelection` prior to formatting execution in `HeadingSelectorPopover`, `StyleSelectorPopover`, and `ListFormattingGroup` to prevent EOF cursor jumping on mobile devices.
 
 ## Verification
 - Linting (`pnpm lint`): 0 errors, 0 warnings.
