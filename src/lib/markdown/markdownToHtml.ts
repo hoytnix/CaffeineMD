@@ -1,63 +1,14 @@
-import { createLowlight, all } from 'lowlight';
+import { detectCodeLanguage } from './codeLanguageDetector';
+import {
+  escapeHtml,
+  formatInline,
+  replaceWikiLinksInHtml,
+} from './markdownInline';
+import { parseMarkdownTableToHtml } from './markdownTable';
 
-const lowlightInstance = createLowlight(all);
-
-const COMMON_LANGUAGES = [
-  'typescript',
-  'javascript',
-  'python',
-  'rust',
-  'go',
-  'bash',
-  'json',
-  'yaml',
-  'xml',
-  'css',
-  'sql',
-  'markdown',
-];
-
-export function detectCodeLanguage(code: string): string {
-  if (!code || !code.trim()) return 'plaintext';
-  try {
-    const res = lowlightInstance.highlightAuto(code, { subset: COMMON_LANGUAGES });
-    const lang = res?.data?.language;
-    if (lang && lang !== 'plaintext') {
-      return lang === 'xml' ? 'html' : lang;
-    }
-    const full = lowlightInstance.highlightAuto(code);
-    return full?.data?.language || 'plaintext';
-  } catch {
-    return 'plaintext';
-  }
-}
-
-/**
- * Convert markdown to simplified HTML for initial Tiptap document loading,
- * preserving WikiLinks, single line breaks (<br>), multiple consecutive blank lines,
- * and markdown tables. WikiLinks within code blocks and inline code are NOT prettified.
- */
-export function prettifyWikiLinks(text: string): string {
-  return text.replace(/\[\[(.*?)\]\]/g, (_, inner) => {
-    const parts = inner.split('|').map((s: string) => s.trim());
-    const target = parts[0];
-    const label = parts[1] || target;
-    return `<span data-wikilink="${escapeHtml(target)}" class="wiki-link">[[${escapeHtml(label)}]]</span>`;
-  });
-}
-
-function replaceWikiLinksInHtml(html: string): string {
-  // Tokenize by code blocks and inline code so WikiLinks within them are NOT prettified
-  const tokens = html.split(/(<pre[\s\S]*?<\/pre>|<code[\s\S]*?<\/code>)/gi);
-  return tokens
-    .map((token) => {
-      if (/^<(pre|code)[\s\S]*<\/\1>$/i.test(token)) {
-        return token;
-      }
-      return prettifyWikiLinks(token);
-    })
-    .join('');
-}
+export * from './codeLanguageDetector';
+export * from './markdownInline';
+export * from './markdownTable';
 
 export function markdownToEditorHtml(markdown: string): string {
   if (!markdown || !markdown.trim()) return '<p></p>';
@@ -286,73 +237,4 @@ export function markdownToEditorHtml(markdown: string): string {
   }
 
   return htmlParts.join('') || '<p></p>';
-}
-
-function parseMarkdownTableToHtml(rows: string[]): string {
-  if (rows.length === 0) return '';
-  let html = '<table><tbody>';
-  let isHeader = true;
-
-  for (let r = 0; r < rows.length; r++) {
-    const row = rows[r];
-    // Skip divider row like | --- | --- |
-    if (/^\|(\s*[:-]+[-| :]*)\|$/.test(row)) {
-      continue;
-    }
-    const cells = row
-      .slice(1, -1)
-      .split('|')
-      .map((c) => c.trim());
-
-    html += '<tr>';
-    for (const cell of cells) {
-      const tag = isHeader && r === 0 ? 'th' : 'td';
-      html += `<${tag}><p>${formatInline(cell)}</p></${tag}>`;
-    }
-    html += '</tr>';
-    if (r === 0) isHeader = false;
-  }
-
-  html += '</tbody></table>';
-  return html;
-}
-
-export function formatInline(text: string): string {
-  // Protect inline code spans: `code` so WikiLinks inside inline code are not prettified
-  const codeSpans: string[] = [];
-  let res = text.replace(/`([^`]+)`/g, (_, code) => {
-    codeSpans.push(code);
-    return `__INLINE_CODE_${codeSpans.length - 1}__`;
-  });
-
-  // Prettify WikiLinks outside code
-  res = prettifyWikiLinks(res);
-
-  // Bold **text**
-  res = res.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  // Italic *text*
-  res = res.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
-  // Strikethrough ~~text~~
-  res = res.replace(/~~(.+?)~~/g, '<s>$1</s>');
-  // Markdown links [label](url)
-  res = res.replace(
-    /\[([^\]]+)\]\(([^)]+)\)/g,
-    '<a href="$2" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 underline underline-offset-2 transition-colors">$1</a>'
-  );
-
-  // Restore inline code spans without prettifying wikilinks inside them
-  res = res.replace(/__INLINE_CODE_(\d+)__/g, (_, idx) => {
-    const code = codeSpans[Number(idx)];
-    return `<code>${escapeHtml(code)}</code>`;
-  });
-
-  return res;
-}
-
-export function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }

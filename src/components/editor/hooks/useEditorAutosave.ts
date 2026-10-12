@@ -181,7 +181,7 @@ export function useEditorAutosave({ filePath }: UseEditorAutosaveProps) {
       if (editor && !editor.isDestroyed && editor.schema) {
         try {
           const parsed = parseMarkdownContent(baseline, file.title);
-          editor.commands.setContent(markdownToEditorHtml(parsed.body));
+          editor.commands.setContent(markdownToEditorHtml(parsed.body), { emitUpdate: false });
           autoDetectUnlabeledCodeBlocks(editor);
         } catch (err) {
           console.warn('Error reverting editor:', err);

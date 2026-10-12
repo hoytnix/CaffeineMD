@@ -55,7 +55,7 @@ export function useEditorModeSwitch({
           const parsed = parseMarkdownContent(rawMarkdown, file.title);
           const html = markdownToEditorHtml(parsed.body);
           if (editor && !editor.isDestroyed && editor.schema) {
-            editor.commands.setContent(html);
+            editor.commands.setContent(html, { emitUpdate: false });
             autoDetectUnlabeledCodeBlocks(editor);
           }
         } catch (err) {

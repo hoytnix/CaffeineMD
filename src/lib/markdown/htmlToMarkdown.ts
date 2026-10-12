@@ -27,6 +27,16 @@ export function editorHtmlToMarkdown(html: string): string {
       .replace(/<code[^>]*>(.*?)<\/code>/gi, '`$1`')
       .replace(/<br\s*\/?>/gi, '\n')
       .replace(/<span[^>]*data-wikilink="([^"]+)"[^>]*>.*?<\/span>/gi, '[[$1]]')
+      .replace(/<img\b([^>]*)>/gi, (_match, attrs) => {
+        const srcMatch = attrs.match(/\bsrc=["']([^"']*)["']/i);
+        const altMatch = attrs.match(/\balt=["']([^"']*)["']/i);
+        const titleMatch = attrs.match(/\btitle=["']([^"']*)["']/i);
+        const src = srcMatch ? srcMatch[1].replace(/&amp;/g, '&') : '';
+        const alt = altMatch ? altMatch[1].replace(/&amp;/g, '&') : '';
+        const title = titleMatch ? titleMatch[1].replace(/&amp;/g, '&') : '';
+        if (!src) return '';
+        return title ? `![${alt}](${src} "${title}")` : `![${alt}](${src})`;
+      })
       .replace(/<[^>]+>/g, '')
       .trim();
   }
@@ -130,7 +140,9 @@ export function editorHtmlToMarkdown(html: string): string {
       case 'img': {
         const src = el.getAttribute('src') || '';
         const alt = el.getAttribute('alt') || '';
-        return `![${alt}](${src})`;
+        const title = el.getAttribute('title');
+        if (!src) return '';
+        return title ? `![${alt}](${src} "${title}")` : `![${alt}](${src})`;
       }
       case 'ul': {
         const isTaskList = el.getAttribute('data-type') === 'taskList';

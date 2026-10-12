@@ -55,7 +55,13 @@ export function getEditorExtensions(callbacks: EditorExtensionCallbacks): AnyExt
     TableRow,
     TableHeader,
     TableCell,
-    Image.configure({ inline: true, allowBase64: true }),
+    Image.configure({
+      inline: true,
+      allowBase64: true,
+      HTMLAttributes: {
+        class: 'editor-image rounded-md max-w-full my-2',
+      },
+    }),
     WikiLinkNode.configure({
       suggestion: {
         char: '[[',
