@@ -18,6 +18,7 @@
   - Implemented both Unified and Split (side-by-side) views with real-time stats (`No Unsaved Changes` vs `X line(s) modified`), additions (`bg-emerald-500/15 text-emerald-700 dark:text-emerald-300`), deletions (`bg-rose-500/15 text-rose-700 dark:text-rose-300`), and dual-pane aligned scrollable grids.
   - Added immediate `Save Changes` and `Discard / Revert` action triggers in the diff micro-toolbar.
   - Enhanced `useEditorAutosave.ts` to retain the in-memory working buffer across mode switches without prematurely flushing to IndexedDB, properly updating active diffs and providing safe reverts.
+- **Documentation & Presentation**: Created high-impact, badass `README.md` featuring a custom ASCII art header, product manifesto, feature pillars (local-first filesystem mounting, Tiptap v2, D3 knowledge graph, frontmatter databases, precision plaintext gutter sync, diff viewer), architecture diagram, keyboard shortcuts reference, and quickstart guides.
 - **Refactoring Status**: All modules adhere strictly to the 100–250 LOC boundary (DiffViewer at 228 LOC, diffUtils at 110 LOC, TiptapEditor at 239 LOC).
 
 ## Next Steps
