@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { EditorContent } from '@tiptap/react';
 import { db } from '@/src/lib/storage/db';
 import { parseMarkdownContent, serializeMarkdownWithFrontmatter } from '@/src/lib/markdown/serializer';
@@ -28,29 +28,15 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
   const { openFileTab, activeWorkspaceId, toolboxPosition } = useWorkspaceStore();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const gutterRef = useRef<HTMLDivElement | null>(null);
-  const titleTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const {
-    file, setFile, title, setTitle, isSaving, saveSuccess, loading,
+    file, setFile, setTitle, isSaving, saveSuccess, loading,
     rawMarkdown, setRawMarkdown, editorMode,
-    handleSave, handleSaveRaw, updateProperties, saveTimeoutRef,
+    handleSave, handleSaveRaw, updateProperties, isDirty,
     switchToPlaintext, switchToRichText, switchToDiff, handleRevert, handleManualSave,
   } = useEditorAutosave({ filePath });
 
   const [isDraggingOver, setIsDraggingOver] = useState(false);
-
-  // Auto-resize title textarea to overflow to new lines without scrolling
-  useEffect(() => {
-    const adjustHeight = () => {
-      if (titleTextareaRef.current) {
-        titleTextareaRef.current.style.height = 'auto';
-        titleTextareaRef.current.style.height = `${titleTextareaRef.current.scrollHeight}px`;
-      }
-    };
-    adjustHeight();
-    window.addEventListener('resize', adjustHeight);
-    return () => window.removeEventListener('resize', adjustHeight);
-  }, [title]);
 
   const { handleDrop, handlePaste } = useEditorDropUpload({
     activeWorkspaceId: activeWorkspaceId || 'default-vault',
@@ -121,6 +107,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
         isSaveDisabled={isSaving || (editorMode === 'rich' && (!editor || editor.isDestroyed))}
         onUpdateProperties={updateProperties}
         onTitleChange={setTitle}
+        isDirty={isDirty}
       />
 
       {/* Body container: holds the vertical side toolbar and document workspace */}
@@ -141,30 +128,9 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
             </div>
           )}
 
-          <div className="max-w-4xl w-full mx-auto px-4 pt-2 sm:pt-4 md:pt-6 pb-8 sm:px-6 md:px-10 flex-1">
+          <div className="max-w-4xl w-full mx-auto px-4 pt-4 sm:pt-6 md:pt-8 pb-8 sm:px-6 md:px-10 flex-1">
             {editorMode === 'rich' ? (
               <>
-                <textarea
-                  ref={titleTextareaRef}
-                  rows={1}
-                  value={title}
-                  onChange={(e) => {
-                    setTitle(e.target.value);
-                    if (file) setFile({ ...file, title: e.target.value });
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      editor?.commands.focus('start');
-                    }
-                  }}
-                  onBlur={() => {
-                    const trimmed = title.trim();
-                    if (file && trimmed && trimmed !== file.title) updateProperties({ title: trimmed });
-                  }}
-                  placeholder="Untitled Note"
-                  className="w-full text-2xl sm:text-4xl font-bold tracking-tight bg-transparent border-none focus:outline-none mb-2 sm:mb-4 md:mb-6 placeholder-neutral-400 dark:placeholder-neutral-600 text-[var(--foreground)] resize-none overflow-hidden break-words leading-tight block"
-                />
                 {editor && !editor.isDestroyed && <BlockHandle editor={editor} />}
                 {editor && !editor.isDestroyed ? (
                   <EditorContent
@@ -180,10 +146,11 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
             ) : editorMode === 'plain' ? (
               <PlaintextMarkdownEditor
                 rawMarkdown={rawMarkdown}
-                onMarkdownChange={setRawMarkdown}
+                onMarkdownChange={(val) => {
+                  handleSaveRaw(val, file);
+                }}
                 onSaveTrigger={(val) => {
-                  if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-                  if (file) saveTimeoutRef.current = setTimeout(() => handleSaveRaw(val, file), 1200);
+                  handleSaveRaw(val, file);
                 }}
                 gutterRef={gutterRef}
                 textareaRef={textareaRef}
@@ -192,9 +159,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
               <DiffViewer
                 savedContent={file.content || ''}
                 unsavedContent={rawMarkdown}
-                onSave={() => {
-                  if (file) handleSaveRaw(rawMarkdown, file);
-                }}
+                onSave={() => handleManualSave(editor)}
                 onRevert={() => handleRevert(editor)}
               />
             )}

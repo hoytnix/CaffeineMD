@@ -71,7 +71,7 @@ export function useTiptapInit({
           } catch (err) {
             console.warn('Auto-save skipped:', err);
           }
-        }, 1200);
+        }, 250);
       },
     },
     [filePath, handleDrop, handlePaste, extensions]

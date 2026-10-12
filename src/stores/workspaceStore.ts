@@ -24,6 +24,17 @@ export type ActiveWorkspaceView = 'editor' | 'graph' | 'table' | 'board' | 'list
 export type WorkspaceTabId = ActiveWorkspaceView | 'kanban';
 export type ToolboxPosition = 'left' | 'right' | 'bottom' | 'top';
 
+export const AUTOSAVE_INTERVAL_PRESETS = [
+  { value: 0, label: 'Manual only (Off)' },
+  { value: 30000, label: 'Every 30 seconds' },
+  { value: 60000, label: 'Every 1 minute' },
+  { value: 120000, label: 'Every 2 minutes' },
+  { value: 300000, label: 'Every 5 minutes (Default)' },
+  { value: 600000, label: 'Every 10 minutes' },
+] as const;
+
+export const DEFAULT_AUTOSAVE_INTERVAL = 300000;
+
 export interface WorkspaceState {
   vaultName: string;
   activeWorkspaceId: string;
@@ -65,6 +76,10 @@ export interface WorkspaceState {
   // Editor Toolbox Placement
   toolboxPosition: ToolboxPosition;
   setToolboxPosition: (position: ToolboxPosition) => void;
+
+  // Autosave Frequency
+  autosaveInterval: number;
+  setAutosaveInterval: (interval: number) => void;
 
   // Workspace Creation Modal
   isCreateWorkspaceModalOpen: boolean;
@@ -201,6 +216,24 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('kite-toolbox-position', position);
+      } catch {}
+    }
+  },
+
+  // Autosave Frequency (ms)
+  autosaveInterval:
+    typeof window !== 'undefined'
+      ? (() => {
+          const stored = localStorage.getItem('caffeinemd-autosave-interval') || localStorage.getItem('kite-autosave-interval');
+          const parsed = stored ? parseInt(stored, 10) : NaN;
+          return !isNaN(parsed) ? parsed : DEFAULT_AUTOSAVE_INTERVAL;
+        })()
+      : DEFAULT_AUTOSAVE_INTERVAL,
+  setAutosaveInterval: (interval: number) => {
+    set({ autosaveInterval: interval });
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('caffeinemd-autosave-interval', String(interval));
       } catch {}
     }
   },

@@ -40,7 +40,18 @@
   - Implemented `savedSelectionRef` and `snapshotSelection` in `useToolbarPopover.ts`, capturing `{ from, to }` before blur can occur on touch or mousedown interactions.
   - Added `onMouseDown={(e) => e.preventDefault()}`, `onTouchStart={(e) => e.preventDefault()}`, and `onTouchEnd` handlers to trigger buttons and popover options to prevent contenteditable blur and synthetic click drops.
   - Restored precise text selection ranges before chaining formatting commands across `HeadingSelectorPopover`, `StyleSelectorPopover`, `ListFormattingGroup`, `MediaSelectorPopover`, and `HistorySelectorPopover`.
-- **Refactoring Status**: All modules adhere strictly to the 100–250 LOC boundary (HeadingSelectorPopover at 179 LOC, StyleSelectorPopover at 201 LOC, ListFormattingGroup at 246 LOC, MediaSelectorPopover at 246 LOC, HistorySelectorPopover at 163 LOC, useToolbarPopover at 164 LOC, TiptapEditor at 241 LOC).
+- **Document Title Banner Removal & Canvas Alignment**:
+  - Eliminated the redundant standalone document title `<textarea>` and its auto-resizing `useEffect` hook in [TiptapEditor.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/TiptapEditor.tsx) that previously duplicated above the note's Markdown H1 title.
+  - Adjusted editor viewport container top padding to `pt-4 sm:pt-6 md:pt-8` so the first block of note markdown begins with natural vertical rhythm beneath `EditorHeader`.
+  - Preserved note renaming through `EditorHeader.tsx`'s expandable properties drawer and the sidebar context menu (`RenameModal.tsx`).
+  - Verified no standalone title banners are rendered in `PlaintextMarkdownEditor.tsx` or `DiffViewer.tsx`.
+- **Configurable Autosave Frequency & Editor Hook Integration**:
+  - Added `autosaveInterval: number` to [workspaceStore.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/workspaceStore.ts) with 6 standard presets (Off / Manual `0`, 30s `30000`, 1m `60000`, 2m `120000`, 5m `300000` [Default], 10m `600000`) and persistence under `caffeinemd-autosave-interval`.
+  - Implemented Autosave Frequency configuration row in [EditorSettingsSection.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/settings/sections/EditorSettingsSection.tsx) connected directly to store updates and toast notifications.
+  - Re-architected [useEditorAutosave.ts](file:///home/oloty/Dev/CaffeineMD/src/components/editor/hooks/useEditorAutosave.ts) to manage configurable interval timer scheduling, debounced updates with max-wait flush, reactive `isDirty` tracking, and amber indicator dot in [EditorHeader.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/EditorHeader.tsx).
+  - Guaranteed zero data loss via immediate synchronous flush handlers on note switch (`filePath` change), component unmount, and browser tab closing (`beforeunload`).
+  - Extracted mode switching transitions into [useEditorModeSwitch.ts](file:///home/oloty/Dev/CaffeineMD/src/components/editor/hooks/useEditorModeSwitch.ts) (88 LOC), maintaining 100% adherence to 100–250 LOC boundaries.
+- **Refactoring Status**: All modules adhere strictly to the 100–250 LOC boundary (HeadingSelectorPopover at 179 LOC, StyleSelectorPopover at 201 LOC, ListFormattingGroup at 246 LOC, MediaSelectorPopover at 246 LOC, HistorySelectorPopover at 163 LOC, useToolbarPopover at 164 LOC, TiptapEditor at 207 LOC, useEditorAutosave at 235 LOC, useEditorModeSwitch at 88 LOC, EditorSettingsSection at 229 LOC).
 
 ## Next Steps
 - Maintain clean, decomposed component architecture.

@@ -35,6 +35,7 @@ interface EditorHeaderProps {
   isSaveDisabled: boolean;
   onUpdateProperties?: (props: Partial<NoteProperties>) => Promise<any> | void;
   onTitleChange?: (newTitle: string) => void;
+  isDirty?: boolean;
 }
 
 const STATUS_OPTIONS = ['Draft', 'In Progress', 'Completed', 'Archived'] as const;
@@ -62,6 +63,7 @@ export function EditorHeader({
   isSaveDisabled,
   onUpdateProperties,
   onTitleChange,
+  isDirty,
 }: EditorHeaderProps) {
   const { promptDeleteNote } = useWorkspaceStore();
 
@@ -173,6 +175,14 @@ export function EditorHeader({
               aria-label="Saved"
             >
               <Check className="w-3.5 h-3.5" />
+            </span>
+          ) : isDirty ? (
+            <span
+              className="flex items-center justify-center p-1 text-amber-500/90 transition-colors"
+              title="Unsaved changes (Pending autosave or ⌘S)"
+              aria-label="Unsaved changes"
+            >
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
             </span>
           ) : (
             <span

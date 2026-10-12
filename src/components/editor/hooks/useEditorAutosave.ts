@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Editor } from '@tiptap/react';
 import { useNotePersistence } from '@/src/hooks/useNotePersistence';
 import {
@@ -10,7 +10,8 @@ import {
   editorHtmlToMarkdown,
 } from '@/src/lib/markdown/serializer';
 import { autoDetectUnlabeledCodeBlocks } from '../config/editorDomHandlers';
-import { EditorMode } from '../EditorHeader';
+import { useEditorModeSwitch } from './useEditorModeSwitch';
+import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 
 export interface UseEditorAutosaveProps {
   filePath: string;
@@ -18,117 +19,194 @@ export interface UseEditorAutosaveProps {
 
 /**
  * useEditorAutosave
- * Coordinates debounced note persistence, dirty checking against IndexedDB,
- * seamless mode switching between rich-text (Tiptap), plaintext, and diff viewer,
- * and keyboard save listeners (⌘S).
+ * Coordinates configurable interval autosaving, debounced note persistence,
+ * immediate flushes on note switch / tab close, dirty tracking, and seamless mode switching.
  */
 export function useEditorAutosave({ filePath }: UseEditorAutosaveProps) {
+  const { autosaveInterval = 300000 } = useWorkspaceStore();
+
   const {
-    file,
-    setFile,
-    title,
-    setTitle,
-    isSaving,
-    saveSuccess,
-    loading,
-    rawMarkdown,
-    setRawMarkdown,
-    handleSave,
-    handleSaveRaw,
-    updateProperties,
-    saveTimeoutRef,
+    file, setFile, title, setTitle, isSaving, saveSuccess, loading,
+    rawMarkdown, setRawMarkdown, handleSave: persistRichMarkdown,
+    handleSaveRaw: persistRawMarkdown, updateProperties,
   } = useNotePersistence({ filePath });
 
-  const [editorMode, setEditorMode] = useState<EditorMode>('rich');
+  const {
+    editorMode, setEditorMode, switchToPlaintext, switchToRichText, switchToDiff,
+  } = useEditorModeSwitch({ file, rawMarkdown, setRawMarkdown });
 
-  const switchToPlaintext = useCallback(
-    (editor: Editor | null) => {
-      if (editorMode === 'rich' && editor && !editor.isDestroyed && editor.schema) {
-        try {
-          const markdownBody = editorHtmlToMarkdown(editor.getHTML());
-          const fullRaw = serializeMarkdownWithFrontmatter(markdownBody, file?.frontmatter || {});
-          setRawMarkdown(fullRaw);
-        } catch {
-          if (file) setRawMarkdown(file.content || '');
-        }
-      } else if (file && !rawMarkdown) {
-        setRawMarkdown(file.content || '');
+  const [isDirty, setIsDirty] = useState(false);
+
+  const fileRef = useRef(file);
+  fileRef.current = file;
+
+  const isDirtyRef = useRef(false);
+  const dirtyContentRef = useRef<{ mode: 'rich' | 'plain'; content: string } | null>(null);
+  const dirtyStartTimeRef = useRef<number | null>(null);
+  const autosaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Synchronous flush helper for unmount, note switch, and tab close
+  const flushImmediateDirty = useCallback(() => {
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = null;
+    }
+    if (isDirtyRef.current && dirtyContentRef.current && fileRef.current) {
+      const currentFile = fileRef.current;
+      const pending = dirtyContentRef.current;
+      isDirtyRef.current = false;
+      dirtyContentRef.current = null;
+      dirtyStartTimeRef.current = null;
+      if (pending.mode === 'rich') {
+        persistRichMarkdown(pending.content, currentFile);
+      } else {
+        persistRawMarkdown(pending.content, currentFile);
       }
-      setEditorMode('plain');
+    }
+  }, [persistRichMarkdown, persistRawMarkdown]);
+
+  // Background timer flush helper
+  const flushPendingSave = useCallback(async () => {
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = null;
+    }
+    dirtyStartTimeRef.current = null;
+
+    if (!isDirtyRef.current || !dirtyContentRef.current || !fileRef.current) {
+      setIsDirty(false);
+      return;
+    }
+
+    const currentFile = fileRef.current;
+    const pending = dirtyContentRef.current;
+    isDirtyRef.current = false;
+    dirtyContentRef.current = null;
+    setIsDirty(false);
+
+    try {
+      if (pending.mode === 'rich') {
+        await persistRichMarkdown(pending.content, currentFile);
+      } else {
+        await persistRawMarkdown(pending.content, currentFile);
+      }
+    } catch (err) {
+      console.warn('Flush autosave failed:', err);
+    }
+  }, [persistRichMarkdown, persistRawMarkdown]);
+
+  // Unified scheduler for rich and plain text autosaves
+  const triggerAutosave = useCallback(
+    (mode: 'rich' | 'plain', content: string, currentFile?: typeof file) => {
+      const targetFile = currentFile || file;
+      if (!targetFile) return;
+
+      isDirtyRef.current = true;
+      setIsDirty(true);
+      dirtyContentRef.current = { mode, content };
+
+      const fullRaw =
+        mode === 'rich'
+          ? serializeMarkdownWithFrontmatter(content, targetFile.frontmatter || {})
+          : content;
+      setRawMarkdown(fullRaw);
+
+      if (autosaveInterval === 0) {
+        if (autosaveTimerRef.current) {
+          clearTimeout(autosaveTimerRef.current);
+          autosaveTimerRef.current = null;
+        }
+        dirtyStartTimeRef.current = null;
+        return;
+      }
+
+      if (!dirtyStartTimeRef.current) {
+        dirtyStartTimeRef.current = Date.now();
+      }
+      const elapsed = Date.now() - dirtyStartTimeRef.current;
+      const remaining = Math.max(autosaveInterval - elapsed, 0);
+
+      if (autosaveTimerRef.current) {
+        clearTimeout(autosaveTimerRef.current);
+      }
+      autosaveTimerRef.current = setTimeout(() => {
+        dirtyStartTimeRef.current = null;
+        flushPendingSave();
+      }, Math.min(autosaveInterval, remaining));
     },
-    [editorMode, file, rawMarkdown, setRawMarkdown]
+    [file, autosaveInterval, flushPendingSave, setRawMarkdown]
   );
 
-  const switchToRichText = useCallback(
-    (editor: Editor | null) => {
-      if (file) {
-        try {
-          const parsed = parseMarkdownContent(rawMarkdown, file.title);
-          const html = markdownToEditorHtml(parsed.body);
-          if (editor && !editor.isDestroyed && editor.schema) {
-            editor.commands.setContent(html);
-            autoDetectUnlabeledCodeBlocks(editor);
-          }
-        } catch (err) {
-          console.warn('Error syncing to rich text:', err);
-        }
-      }
-      setEditorMode('rich');
-    },
-    [file, rawMarkdown]
+  const scheduleAutosave = useCallback(
+    (body: string, currentFile?: typeof file) => triggerAutosave('rich', body, currentFile),
+    [triggerAutosave]
   );
 
-  const switchToDiff = useCallback(
-    (editor: Editor | null) => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-      if (editorMode === 'rich' && editor && !editor.isDestroyed && editor.schema) {
-        try {
-          const markdownBody = editorHtmlToMarkdown(editor.getHTML());
-          const fullRaw = serializeMarkdownWithFrontmatter(markdownBody, file?.frontmatter || {});
-          setRawMarkdown(fullRaw);
-        } catch {
-          if (file) setRawMarkdown(file.content || '');
-        }
-      }
-      setEditorMode('diff');
-    },
-    [editorMode, file, setRawMarkdown, saveTimeoutRef]
+  const scheduleAutosaveRaw = useCallback(
+    (raw: string, currentFile?: typeof file) => triggerAutosave('plain', raw, currentFile),
+    [triggerAutosave]
   );
+
+  // Immediate flush on note switch, unmount, or tab close
+  useEffect(() => {
+    window.addEventListener('beforeunload', flushImmediateDirty);
+    return () => {
+      window.removeEventListener('beforeunload', flushImmediateDirty);
+      flushImmediateDirty();
+    };
+  }, [filePath, flushImmediateDirty]);
+
+  // Handle settings changes to autosaveInterval
+  useEffect(() => {
+    if (autosaveInterval === 0 && autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = null;
+      dirtyStartTimeRef.current = null;
+    }
+  }, [autosaveInterval]);
 
   const handleRevert = useCallback(
     (editor: Editor | null) => {
       if (!file) return;
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
+      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = null;
+      dirtyStartTimeRef.current = null;
+      isDirtyRef.current = false;
+      dirtyContentRef.current = null;
+      setIsDirty(false);
+
       const baseline = file.content || '';
       setRawMarkdown(baseline);
       setTitle(file.title);
       if (editor && !editor.isDestroyed && editor.schema) {
         try {
           const parsed = parseMarkdownContent(baseline, file.title);
-          const html = markdownToEditorHtml(parsed.body);
-          editor.commands.setContent(html);
+          editor.commands.setContent(markdownToEditorHtml(parsed.body));
           autoDetectUnlabeledCodeBlocks(editor);
         } catch (err) {
           console.warn('Error reverting editor:', err);
         }
       }
     },
-    [file, setRawMarkdown, setTitle, saveTimeoutRef]
+    [file, setRawMarkdown, setTitle]
   );
 
   const handleManualSave = useCallback(
-    (editor: Editor | null) => {
+    async (editor: Editor | null) => {
+      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = null;
+      dirtyStartTimeRef.current = null;
+      isDirtyRef.current = false;
+      dirtyContentRef.current = null;
+      setIsDirty(false);
+
       if (editorMode === 'plain' || editorMode === 'diff') {
-        if (file) handleSaveRaw(rawMarkdown, file);
+        if (file) await persistRawMarkdown(rawMarkdown, file);
       } else if (editor && !editor.isDestroyed && editor.schema && file) {
-        handleSave(editorHtmlToMarkdown(editor.getHTML()), file);
+        await persistRichMarkdown(editorHtmlToMarkdown(editor.getHTML()), file);
       }
     },
-    [editorMode, file, handleSave, handleSaveRaw, rawMarkdown]
+    [editorMode, file, persistRichMarkdown, persistRawMarkdown, rawMarkdown]
   );
 
   // Setup Cmd+S / Ctrl+S global save shortcut listener
@@ -137,36 +215,20 @@ export function useEditorAutosave({ filePath }: UseEditorAutosaveProps) {
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
         e.preventDefault();
         if (editorMode === 'plain' || editorMode === 'diff') {
-          if (file) handleSaveRaw(rawMarkdown, file);
-        } else if (file) {
-          // Handled via manual save
+          if (file) handleManualSave(null);
         }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [editorMode, file, handleSaveRaw, rawMarkdown]);
+  }, [editorMode, file, handleManualSave]);
 
   return {
-    file,
-    setFile,
-    title,
-    setTitle,
-    isSaving,
-    saveSuccess,
-    loading,
-    rawMarkdown,
-    setRawMarkdown,
-    editorMode,
-    setEditorMode,
-    handleSave,
-    handleSaveRaw,
-    updateProperties,
-    saveTimeoutRef,
-    switchToPlaintext,
-    switchToRichText,
-    switchToDiff,
-    handleRevert,
-    handleManualSave,
+    file, setFile, title, setTitle, isSaving, saveSuccess, loading,
+    rawMarkdown, setRawMarkdown, editorMode, setEditorMode,
+    handleSave: scheduleAutosave, handleSaveRaw: scheduleAutosaveRaw,
+    scheduleAutosave, scheduleAutosaveRaw, flushPendingSave,
+    isDirty, autosaveInterval, updateProperties, saveTimeoutRef: autosaveTimerRef,
+    switchToPlaintext, switchToRichText, switchToDiff, handleRevert, handleManualSave,
   };
 }

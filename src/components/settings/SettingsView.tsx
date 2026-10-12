@@ -21,6 +21,8 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
     updateCustomTheme,
     toolboxPosition,
     setToolboxPosition,
+    autosaveInterval,
+    setAutosaveInterval,
     vaultName,
     trashRetentionDays,
     setTrashRetentionDays,
@@ -100,6 +102,8 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
         <EditorSettingsSection
           toolboxPosition={toolboxPosition}
           setToolboxPosition={setToolboxPosition}
+          autosaveInterval={autosaveInterval}
+          setAutosaveInterval={setAutosaveInterval}
           showToast={showToast}
         />
 
