@@ -1,7 +1,20 @@
 {
   "name": "CaffeineMD",
   "short_name": "CaffeineMD",
-  "description": "CaffeineMD is a high-performance, local-first knowledge management workspace modeled after Obsidian and Notion, powered by Tiptap, IndexedDB, and the File System Access API.",
+  "description": "High-performance, local-first Markdown knowledge base",
+  "start_url": "https://www.caffeinemd.wiki/",
+  "scope": "https://www.caffeinemd.wiki/",
+  "display": "standalone",
+  "background_color": "#090d0b",
+  "theme_color": "#090d0b",
+  "icons": [
+    {
+      "src": "/og-caffeinemd.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

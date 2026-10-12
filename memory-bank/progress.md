@@ -13,6 +13,7 @@
 - [x] **7-Stage Architectural Refactoring**: Decomposed all large legacy god modules into modular 100–250 LOC components.
 - [x] **Global Brand Refresh to CaffeineMD**: Rebranded all user-facing product references and metadata to "CaffeineMD" / "Caffeine".
 - [x] **Strict User-Facing Branding Distinction (`CaffeineMD`)**: Enforced strict `CaffeineMD` for all user-facing text across the repo (seed note `Welcome to CaffeineMD.md`, `Welcome to CaffeineMD Workspace ☕`, `[[Welcome to CaffeineMD]]` backlinks, PWA manifest, HTML title template & OpenGraph metadata, breadcrumb fallbacks, and Google Drive sync/vault naming), while cleanly preserving internal code identifiers and CSS selectors (`.caffeine-editor-content`, `CaffeineLogoMark`). All files verified under strict 100–250 LOC boundaries and passing production build (`pnpm build`).
+- [x] **Canonical Domain & Favicon Asset Suite**: Dynamic `☕` favicon via Next.js App Router `ImageResponse` ([app/icon.tsx](file:///home/oloty/Dev/Kite/app/icon.tsx)) with SVG fallback; canonical `https://www.caffeinemd.wiki` routing across `metadataBase`, alternates, OpenGraph, Twitter, and Schema.org JSON-LD ([app/layout.tsx](file:///home/oloty/Dev/Kite/app/layout.tsx)); Web App Manifest ([public/manifest.json](file:///home/oloty/Dev/Kite/public/manifest.json), [metadata.json](file:///home/oloty/Dev/Kite/metadata.json)); custom 1200x630 Lofi Girl Studying social preview card ([public/og-caffeinemd.png](file:///home/oloty/Dev/Kite/public/og-caffeinemd.png)). Verified via clean production build (`pnpm build`).
 - [x] **File Explorer Resizing**: Draggable right border on sidebar with persistent custom width (180px–720px), double-click reset, and keyboard accessibility.
 - [x] **Editor Properties Layout**: Rearranged properties bar into 3 structured rows (Title & Author; Status & Priority; Tags) and collapsed by default.
 - [x] **Mobile Editor Whitespace Optimization**: Responsive editor wrapper padding (`px-4 pt-2 sm:pt-4 md:pt-6 pb-8`), reduced title bottom margin on mobile (`mb-2 sm:mb-4 md:mb-6`), zero-overhead collapsible note properties (`NotePropertiesCard.tsx`), and ProseMirror/Tiptap first-child margin collapse (`[&>*:first-child]:mt-0`).
@@ -24,5 +25,5 @@
 - [x] **Mobile Toolbar Popover Cursor & Selection Preservation**: Implemented selection snapshotting and restoration in `useToolbarPopover.ts`, added mousedown/touchstart/touchend handlers on trigger and options, and applied `setTextSelection` prior to formatting execution in `HeadingSelectorPopover`, `StyleSelectorPopover`, and `ListFormattingGroup` to prevent EOF cursor jumping on mobile devices.
 
 ## Verification
-- Production build (`pnpm build`): 0 errors, all 6 static/dynamic routes compiled cleanly.
+- Production build (`pnpm build`): 0 errors, all 7 static/dynamic routes compiled cleanly (including `/icon`).
 - LOC Boundaries: 100% compliant (100–250 LOC).

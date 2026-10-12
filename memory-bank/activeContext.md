@@ -1,6 +1,11 @@
 # Active Context: CaffeineMD
 
 ## Current State
+- **Canonical Origin (`https://www.caffeinemd.wiki`), Dynamic Favicon & Lofi Girl Banner**:
+  - Configured canonical `https://www.caffeinemd.wiki` across `metadataBase`, alternates canonical URL, OpenGraph (`og:url`, `og:image`), Twitter cards, and Schema.org `WebApplication` JSON-LD in [app/layout.tsx](file:///home/oloty/Dev/Kite/app/layout.tsx).
+  - Created dynamic App Router favicon at [app/icon.tsx](file:///home/oloty/Dev/Kite/app/icon.tsx) using `ImageResponse` rendering the coffee emoji `☕` crisply at all DPI resolutions, plus SVG fallback link in layout metadata.
+  - Generated and composited high-fidelity 1200x630 social preview card at [public/og-caffeinemd.png](file:///home/oloty/Dev/Kite/public/og-caffeinemd.png) depicting a cozy Lofi Girl Studying workspace with headphones, warm desk lamp, steaming coffee cup, dark-mode markdown knowledge graph on laptop screen, sleeping cat, rainy neon window, and stylized `CaffeineMD` branding badge.
+  - Configured PWA Web App Manifest at [public/manifest.json](file:///home/oloty/Dev/Kite/public/manifest.json) and [metadata.json](file:///home/oloty/Dev/Kite/metadata.json) with `start_url` and `scope` set to `https://www.caffeinemd.wiki/` and icons referencing `/og-caffeinemd.png`.
 - **Strict Branding Distinction Enforced (`CaffeineMD` vs `caffeine` / `Caffeine`)**:
   - User-facing display text strictly enforced as **`CaffeineMD`** across all UI surfaces, headers, breadcrumb fallbacks, settings, dialogs, metadata, and default seed documents.
   - Default seed note renamed to `Welcome to CaffeineMD.md` with Heading 1 `# Welcome to CaffeineMD`, Subheading `## Welcome to CaffeineMD Workspace ☕`, overview text, and updated bidirectional WikiLinks `[[Welcome to CaffeineMD]]` across [seedData.ts](file:///home/oloty/Dev/Kite/src/lib/storage/seedData.ts) and [workspaceStore.ts](file:///home/oloty/Dev/Kite/src/stores/workspaceStore.ts).
