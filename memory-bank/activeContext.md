@@ -23,7 +23,12 @@
   - Fully synchronized the "Shortcuts & Controls" section in `StorageSettingsSection.tsx` with all 8 keyboard shortcuts from `README.md` (Quick Search `⌘K` / `Ctrl+K`, Slash Commands `/`, WikiLinks `[[`, Universal Emoji Drawer `Shift+Space` / `⌘⇧Space`, Force Save `⌘S` / `Ctrl+S`, Bold `⌘B` / `Ctrl+B`, Italic `⌘I` / `Ctrl+I`, and Dismiss/Close `Esc`).
   - Added scope indicator badges (`App-wide`, `Rich Editor`, `Editor`, `Global`) and registered shortcuts counter, fully styled with theme-aware CSS variables.
   - Maintained strict module LOC constraints (232 LOC in `StorageSettingsSection.tsx`, within 100–250 LOC).
-- **Refactoring Status**: All modules adhere strictly to the 100–250 LOC boundary (StorageSettingsSection at 232 LOC, DiffViewer at 228 LOC, diffUtils at 110 LOC, TiptapEditor at 239 LOC).
+- **Editor Header & Side Toolbar Notch Decoupling**:
+  - Resolved the layout notch/gap between the sidebar divider and `EditorHeader` when `toolboxPosition` is set to `'left'` or `'right'`.
+  - Hoisted `<EditorHeader />` to the outer column level of `TiptapEditor.tsx`, guaranteeing 100% full-width span flush against the left sidebar border without any indentation or horizontal displacement.
+  - Placed the side toolbar and document viewport in a dedicated body flex-row beneath `EditorHeader`.
+  - Added `w-full shrink-0` to the root container of `EditorHeader.tsx` to maintain continuous boundary alignment.
+- **Refactoring Status**: All modules adhere strictly to the 100–250 LOC boundary (StorageSettingsSection at 232 LOC, DiffViewer at 228 LOC, diffUtils at 110 LOC, TiptapEditor at 241 LOC).
 
 ## Next Steps
 - Maintain clean, decomposed component architecture.

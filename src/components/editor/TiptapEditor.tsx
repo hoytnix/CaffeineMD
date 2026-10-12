@@ -108,6 +108,22 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
         onDrop={() => setIsDraggingOver(false)}
       />
 
+      {/* Editor Header: Full width across the entire top edge, flush against sidebar */}
+      <EditorHeader
+        file={file}
+        isSaving={isSaving}
+        saveSuccess={saveSuccess}
+        editorMode={editorMode}
+        onSwitchToRichText={() => switchToRichText(editor)}
+        onSwitchToPlaintext={() => switchToPlaintext(editor)}
+        onSwitchToDiff={() => switchToDiff(editor)}
+        onManualSave={() => handleManualSave(editor)}
+        isSaveDisabled={isSaving || (editorMode === 'rich' && (!editor || editor.isDestroyed))}
+        onUpdateProperties={updateProperties}
+        onTitleChange={setTitle}
+      />
+
+      {/* Body container: holds the vertical side toolbar and document workspace */}
       <div className="flex-1 flex flex-row overflow-hidden relative min-h-0">
         {/* Left Toolbar Dock */}
         {editorMode === 'rich' && editor && !editor.isDestroyed && toolboxPosition === 'left' && (
@@ -118,20 +134,6 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
 
         {/* Main Note Scrollable Container */}
         <div className="flex-1 flex flex-col h-full overflow-y-auto overflow-x-hidden min-w-0 relative">
-          <EditorHeader
-            file={file}
-            isSaving={isSaving}
-            saveSuccess={saveSuccess}
-            editorMode={editorMode}
-            onSwitchToRichText={() => switchToRichText(editor)}
-            onSwitchToPlaintext={() => switchToPlaintext(editor)}
-            onSwitchToDiff={() => switchToDiff(editor)}
-            onManualSave={() => handleManualSave(editor)}
-            isSaveDisabled={isSaving || (editorMode === 'rich' && (!editor || editor.isDestroyed))}
-            onUpdateProperties={updateProperties}
-            onTitleChange={setTitle}
-          />
-
           {/* Top Toolbar Dock */}
           {editorMode === 'rich' && editor && !editor.isDestroyed && toolboxPosition === 'top' && (
             <div className="sticky top-3 z-30 w-full flex justify-center px-4 pt-1 pb-2 shrink-0 animate-in fade-in slide-in-from-top-2">

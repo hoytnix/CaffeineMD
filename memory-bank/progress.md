@@ -19,6 +19,7 @@
 - [x] **Diff Viewer (Unsaved vs Saved)**: Added third editor mode with toggle in `EditorHeader.tsx`, side-by-side split & unified line diffing via `diff` in `diffUtils.ts` (110 LOC) and `DiffViewer.tsx` (228 LOC), colored additions/deletions, stat badges, and immediate Save / Discard actions retaining in-memory working copy without premature persistence.
 - [x] **Project Documentation**: Created comprehensive, badass `README.md` with ASCII art header, product manifesto, feature matrix, architecture flow, keyboard shortcuts, quickstart, and engineering principles.
 - [x] **Settings Shortcuts & Controls Synchronization**: Updated the "Shortcuts & Controls" section in `StorageSettingsSection.tsx` with all 8 keyboard shortcuts and scope tags documented in `README.md`, adhering to the strict 100–250 LOC boundary (232 LOC).
+- [x] **Editor Header & Side Toolbar Notch Decoupling**: Decoupled `<EditorHeader />` from the horizontal toolbar wrapper in `TiptapEditor.tsx` so the header spans full width (100%) flush against the file tree divider when toolbar is positioned at left or right, with side toolbar docking cleanly below the header row.
 
 ## Verification
 - Linting (`pnpm lint`): 0 errors, 0 warnings.

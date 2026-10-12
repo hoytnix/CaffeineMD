@@ -131,7 +131,7 @@ export function EditorHeader({
   const eisenhowerConfig = EISENHOWER_CONFIG[currentEisenhower];
 
   return (
-    <div className="sticky top-0 z-20 flex flex-col bg-[var(--background)]/95 backdrop-blur-md border-b border-[var(--border)] shadow-2xs">
+    <div className="sticky top-0 z-20 flex flex-col w-full shrink-0 bg-[var(--background)]/95 backdrop-blur-md border-b border-[var(--border)] shadow-2xs">
       {/* Top Bar: Path breadcrumb and actions */}
       <div className="flex items-center justify-between px-3.5 sm:px-6 py-2 sm:py-2.5">
         <div className="flex items-center gap-2 text-xs text-neutral-500 min-w-0 flex-1 mr-3">
