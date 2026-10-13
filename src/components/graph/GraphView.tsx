@@ -1,15 +1,32 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import * as d3 from 'd3-force';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { useGraphData, GraphNode, GraphLink } from '@/src/hooks/useGraphData';
 import { renderGraphCanvas } from '@/src/lib/graph/graphCanvasRenderer';
+import { getThemeDefinition } from '@/src/lib/themes/themeDefinitions';
 import { GraphControls } from './GraphControls';
 
 export function GraphView() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { openFileTab } = useWorkspaceStore();
+  const { openFileTab, theme, themeId, customTheme, customThemeColors } = useWorkspaceStore();
+
+  const activeThemeId = theme || themeId || 'dark';
+  const activeCustomTheme = customThemeColors || customTheme;
+
+  const themeColors = useMemo(() => {
+    const def = getThemeDefinition(activeThemeId, activeCustomTheme);
+    return {
+      bgPrimary: def.background,
+      bgCard: def.card,
+      border: def.border,
+      textPrimary: def.foreground,
+      textSecondary: def.foreground,
+      textMuted: def.isDark ? '#94a3b8' : '#64748b',
+      accent: def.accent,
+    };
+  }, [activeThemeId, activeCustomTheme]);
 
   const [filterTag, setFilterTag] = useState<string>('all');
   const [showOrphans, setShowOrphans] = useState(true);
@@ -40,8 +57,9 @@ export function GraphView() {
       hoveredNode,
       transform: transformRef.current,
       colorByEisenhower,
+      themeColors,
     });
-  }, [hoveredNode, colorByEisenhower]);
+  }, [hoveredNode, colorByEisenhower, themeColors]);
 
   // Sync simulation when nodes/links change
   useEffect(() => {
@@ -171,8 +189,16 @@ export function GraphView() {
     renderCurrentCanvas();
   };
 
+  // Re-render canvas when theme colors change
+  useEffect(() => {
+    renderCurrentCanvas();
+  }, [themeColors, renderCurrentCanvas]);
+
   return (
-    <div className="relative w-full h-full bg-slate-50 dark:bg-neutral-950 overflow-hidden flex flex-col select-none">
+    <div
+      style={{ backgroundColor: 'var(--theme-bg-primary)', color: 'var(--theme-text-primary)' }}
+      className="relative w-full h-full overflow-hidden flex flex-col select-none"
+    >
       <GraphControls
         filterTag={filterTag}
         onFilterTagChange={setFilterTag}

@@ -1,13 +1,19 @@
 import { GraphNode, GraphLink } from '@/src/hooks/useGraphData';
 
+export interface GraphEdgeColors {
+  border?: string;
+  textMuted?: string;
+}
+
 export function renderEdges(
   ctx: CanvasRenderingContext2D,
   links: GraphLink[],
-  zoomLevel: number
+  zoomLevel: number,
+  themeColors?: GraphEdgeColors
 ) {
   // Zoom-dependent alpha fading
   const alpha = Math.min(0.6, Math.max(0.15, 0.35 * Math.sqrt(zoomLevel)));
-  ctx.strokeStyle = '#94a3b8';
+  ctx.strokeStyle = themeColors?.border || '#94a3b8';
   ctx.lineWidth = Math.max(0.8, 1 / Math.sqrt(zoomLevel));
   ctx.globalAlpha = alpha;
 

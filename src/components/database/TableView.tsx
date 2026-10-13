@@ -120,7 +120,10 @@ export function TableView({ files, columns, onRefresh }: TableViewProps) {
   };
 
   return (
-    <div className="w-full flex flex-col border border-neutral-200 dark:border-neutral-800 rounded-lg bg-white dark:bg-neutral-900 shadow-xs overflow-hidden">
+    <div
+      style={{ backgroundColor: 'var(--theme-bg-sidebar)', borderColor: 'var(--theme-border)' }}
+      className="w-full flex flex-col border rounded-lg shadow-xs overflow-hidden"
+    >
       <div className="w-full overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
           <TableHeader

@@ -15,14 +15,20 @@ export function ListView({ files }: ListViewProps) {
 
   if (files.length === 0) {
     return (
-      <div className="border border-neutral-200 dark:border-neutral-800 rounded-lg bg-white dark:bg-neutral-900 p-8 text-center text-xs text-neutral-400">
+      <div
+        style={{ backgroundColor: 'var(--theme-bg-sidebar)', borderColor: 'var(--theme-border)' }}
+        className="border rounded-lg p-8 text-center text-xs text-neutral-400"
+      >
         No records match the current filters.
       </div>
     );
   }
 
   return (
-    <div className="border border-neutral-200 dark:border-neutral-800 rounded-lg bg-white dark:bg-neutral-900 divide-y divide-neutral-100 dark:divide-neutral-800">
+    <div
+      style={{ backgroundColor: 'var(--theme-bg-sidebar)', borderColor: 'var(--theme-border)' }}
+      className="border rounded-lg divide-y"
+    >
       {files.map((file) => {
         const currentEisenhower = normalizeEisenhower(file.eisenhower || file.frontmatter?.eisenhower);
         const opt = EISENHOWER_CONFIG[currentEisenhower];
@@ -33,7 +39,8 @@ export function ListView({ files }: ListViewProps) {
           <div
             key={file.path}
             onClick={() => openFileTab(file.path, file.title)}
-            className="p-3.5 flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-neutral-800/40 cursor-pointer transition-colors"
+            style={{ borderColor: 'var(--theme-border)' }}
+            className="p-3.5 flex items-center justify-between hover:bg-[var(--theme-bg-card)] cursor-pointer transition-colors"
           >
             <div className="flex items-center gap-2.5 min-w-0">
               {opt ? (

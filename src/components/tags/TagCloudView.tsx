@@ -115,17 +115,29 @@ export function TagCloudView() {
   }, [files, activeTag, searchQuery]);
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[var(--background)] text-[var(--foreground)]">
+    <div
+      style={{ backgroundColor: 'var(--theme-bg-primary)', color: 'var(--theme-text-primary)' }}
+      className="flex-1 flex flex-col h-full overflow-y-auto"
+    >
       {/* Header Bar */}
-      <div className="sticky top-0 z-20 px-8 py-5 bg-[var(--card)]/90 backdrop-blur-md border-b border-[var(--border)] flex flex-col gap-4">
+      <div
+        style={{ backgroundColor: 'var(--theme-bg-sidebar)', borderColor: 'var(--theme-border)' }}
+        className="sticky top-0 z-20 px-8 py-5 backdrop-blur-md border-b flex flex-col gap-4"
+      >
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
+            <div
+              style={{ backgroundColor: 'var(--theme-bg-card)', color: 'var(--theme-accent)' }}
+              className="p-2 rounded-xl"
+            >
               <Tag className="w-5 h-5" />
             </div>
             <div>
               <h1 className="text-lg font-bold tracking-tight">Tag Cloud & Note Registry</h1>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              <p
+                style={{ color: 'var(--theme-text-muted)' }}
+                className="text-xs"
+              >
                 Browse notes grouped by taxonomic hashtags across your entire vault
               </p>
             </div>
@@ -139,7 +151,12 @@ export function TagCloudView() {
               placeholder="Search notes in tags..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 outline-none focus:ring-1 focus:ring-indigo-500"
+              style={{
+                backgroundColor: 'var(--theme-bg-card)',
+                borderColor: 'var(--theme-border)',
+                color: 'var(--theme-text-primary)',
+              }}
+              className="w-full pl-8 pr-3 py-1.5 rounded-lg border text-xs placeholder-neutral-400 outline-none focus:ring-1 focus:ring-indigo-500"
             />
           </div>
         </div>
@@ -148,11 +165,16 @@ export function TagCloudView() {
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
           <button
             onClick={() => setSelectedTagFilter(null)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-colors shrink-0 cursor-pointer ${
+            style={
               activeTag === 'all'
-                ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 shadow-xs'
-                : 'bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-            }`}
+                ? { backgroundColor: 'var(--theme-accent)', color: '#ffffff' }
+                : {
+                    backgroundColor: 'var(--theme-bg-card)',
+                    borderColor: 'var(--theme-border)',
+                    color: 'var(--theme-text-secondary)',
+                  }
+            }
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-colors shrink-0 border cursor-pointer"
           >
             <span>All Tags</span>
             <span className="font-mono text-[11px] opacity-70 tabular-nums">({files.length})</span>
@@ -164,11 +186,16 @@ export function TagCloudView() {
               <button
                 key={t.name}
                 onClick={() => setSelectedTagFilter(t.name)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-colors shrink-0 cursor-pointer ${
+                style={
                   isSelected
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-300 dark:hover:border-indigo-800'
-                }`}
+                    ? { backgroundColor: 'var(--theme-accent)', color: '#ffffff' }
+                    : {
+                        backgroundColor: 'var(--theme-bg-card)',
+                        borderColor: 'var(--theme-border)',
+                        color: 'var(--theme-text-secondary)',
+                      }
+                }
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-colors shrink-0 border cursor-pointer hover:border-[var(--theme-accent)]"
               >
                 <span>#{t.name}</span>
                 <span className="font-mono text-[11px] opacity-75 tabular-nums">({t.count})</span>
@@ -192,7 +219,13 @@ export function TagCloudView() {
         </div>
 
         {filteredNotes.length === 0 ? (
-          <div className="py-16 text-center border border-dashed border-neutral-200 dark:border-neutral-800 rounded-2xl p-12 bg-white/50 dark:bg-neutral-900/40">
+          <div
+            style={{
+              backgroundColor: 'var(--theme-bg-sidebar)',
+              borderColor: 'var(--theme-border)',
+            }}
+            className="py-16 text-center border border-dashed rounded-2xl p-12"
+          >
             <Hash className="w-10 h-10 text-neutral-300 dark:text-neutral-700 mx-auto mb-3" />
             <h3 className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">No notes found</h3>
             <p className="text-xs text-neutral-400 mt-1 max-w-sm mx-auto">
@@ -210,7 +243,11 @@ export function TagCloudView() {
                 <div
                   key={note.path}
                   onClick={() => openFileTab(note.path, note.title)}
-                  className="group flex flex-col justify-between p-5 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800/80 hover:border-indigo-400 dark:hover:border-indigo-700/60 hover:shadow-md transition-all cursor-pointer"
+                  style={{
+                    backgroundColor: 'var(--theme-bg-sidebar)',
+                    borderColor: 'var(--theme-border)',
+                  }}
+                  className="group flex flex-col justify-between p-5 rounded-xl border hover:shadow-md transition-all cursor-pointer"
                 >
                   {/* Top Note Metadata Header */}
                   <div>

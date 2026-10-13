@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { WorkspacePopover } from './WorkspacePopover';
 import {
@@ -13,6 +14,7 @@ import {
   List,
   Tag,
   Smile,
+  Settings,
   ChevronDown,
 } from 'lucide-react';
 
@@ -161,6 +163,14 @@ export function WorkspaceHeader() {
         >
           <Smile className="w-4 h-4 text-amber-500" />
         </button>
+
+        <Link
+          href="/settings"
+          title="Settings"
+          className="p-1.5 rounded-lg text-[var(--foreground)]/60 hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/10 transition-colors cursor-pointer"
+        >
+          <Settings className="w-4 h-4" />
+        </Link>
       </div>
     </header>
   );

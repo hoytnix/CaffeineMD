@@ -35,10 +35,11 @@ export function KanbanCard({
       draggable
       onDragStart={(e) => onDragStart(e, file.path)}
       onDragEnd={onDragEnd}
-      className={`p-3 rounded-lg bg-white dark:bg-neutral-800/90 border shadow-xs transition-all group cursor-grab active:cursor-grabbing ${
+      style={{ backgroundColor: 'var(--theme-bg-sidebar)', borderColor: 'var(--theme-border)' }}
+      className={`p-3 rounded-lg border shadow-xs transition-all group cursor-grab active:cursor-grabbing ${
         isDragging
-          ? 'opacity-40 border-indigo-400 scale-[0.98]'
-          : 'border-neutral-200 dark:border-neutral-700/80 hover:border-neutral-300 dark:hover:border-neutral-600'
+          ? 'opacity-40 scale-[0.98]'
+          : 'hover:border-[var(--theme-accent)]'
       }`}
     >
       <div className="flex items-start justify-between gap-1.5">

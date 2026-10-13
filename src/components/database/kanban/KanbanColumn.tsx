@@ -51,14 +51,18 @@ export function KanbanColumn({
       onDragOver={(e) => onDragOver(e, col)}
       onDragLeave={(e) => onDragLeave(e, col)}
       onDrop={(e) => onDrop(e, col)}
-      className={`w-72 shrink-0 rounded-xl bg-neutral-50/80 dark:bg-neutral-900/60 border transition-all flex flex-col p-3 shadow-xs ${
+      style={{ backgroundColor: 'var(--theme-bg-sidebar)', borderColor: 'var(--theme-border)' }}
+      className={`w-72 shrink-0 rounded-xl border transition-all flex flex-col p-3 shadow-xs ${
         isOver
-          ? 'border-indigo-500 bg-indigo-50/30 dark:bg-indigo-950/20 ring-2 ring-indigo-500/30'
-          : 'border-neutral-200/80 dark:border-neutral-800'
+          ? 'ring-2 ring-indigo-500/30'
+          : ''
       }`}
     >
       {/* Column Header */}
-      <div className="flex items-center justify-between pb-2 mb-2 border-b border-neutral-200/60 dark:border-neutral-800">
+      <div
+        style={{ borderColor: 'var(--theme-border)' }}
+        className="flex items-center justify-between pb-2 mb-2 border-b"
+      >
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
             {col}

@@ -239,23 +239,45 @@ export function DocumentOutlineHud({
   return (
     <aside
       aria-label="Document Outline"
-      className="flex flex-col w-60 border-l border-slate-800/60 bg-slate-950/60 backdrop-blur-md shrink-0 select-none overflow-hidden z-20 animate-in fade-in slide-in-from-right-2 duration-150"
+      style={{
+        backgroundColor: 'var(--theme-bg-sidebar)',
+        borderColor: 'var(--theme-border)',
+        color: 'var(--theme-text-primary)',
+      }}
+      className="flex flex-col w-60 border-l backdrop-blur-md shrink-0 select-none overflow-hidden z-20 animate-in fade-in slide-in-from-right-2 duration-150"
     >
       {/* Header Bar */}
-      <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-slate-800/60 bg-slate-900/40 shrink-0">
+      <div
+        style={{ borderColor: 'var(--theme-border)' }}
+        className="flex items-center justify-between px-3.5 py-2.5 border-b shrink-0"
+      >
         <div className="flex items-center gap-2 min-w-0">
-          <ListTree className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" />
-          <span className="text-xs font-semibold text-[var(--foreground)] truncate">
+          <ListTree
+            style={{ color: 'var(--theme-accent)' }}
+            className="w-3.5 h-3.5 shrink-0"
+          />
+          <span
+            style={{ color: 'var(--theme-text-secondary)' }}
+            className="text-xs font-semibold truncate"
+          >
             Document Outline
           </span>
-          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-[var(--accent)]/15 text-[var(--accent)] shrink-0">
+          <span
+            style={{
+              backgroundColor: 'var(--theme-bg-card)',
+              color: 'var(--theme-accent)',
+              borderColor: 'var(--theme-border)',
+            }}
+            className="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-medium border shrink-0"
+          >
             {headings.length}
           </span>
         </div>
         <button
           type="button"
           onClick={handleClose}
-          className="p-1 rounded-md text-neutral-400 hover:text-[var(--foreground)] hover:bg-white/5 transition-colors cursor-pointer shrink-0"
+          style={{ color: 'var(--theme-text-muted)' }}
+          className="p-1 rounded-md hover:opacity-80 transition-opacity cursor-pointer shrink-0"
           title="Close Document Outline"
           aria-label="Close Document Outline"
         >
@@ -267,35 +289,87 @@ export function DocumentOutlineHud({
       <div className="flex-1 overflow-y-auto p-2 space-y-0.5 text-xs">
         {headings.length === 0 ? (
           <div className="h-full min-h-[160px] flex flex-col items-center justify-center p-4 text-center">
-            <ListTree className="w-8 h-8 mb-2 text-neutral-500 opacity-40 stroke-[1.5]" />
-            <p className="text-xs font-medium text-neutral-300 mb-1">
+            <ListTree
+              style={{ color: 'var(--theme-text-muted)' }}
+              className="w-8 h-8 mb-2 opacity-40 stroke-[1.5]"
+            />
+            <p
+              style={{ color: 'var(--theme-text-secondary)' }}
+              className="text-xs font-medium mb-1"
+            >
               No headings in this note yet
             </p>
-            <p className="text-[11px] leading-relaxed text-neutral-400">
-              Add <code className="px-1 py-0.5 rounded bg-slate-800 text-[10px] text-neutral-300"># H1</code>,{' '}
-              <code className="px-1 py-0.5 rounded bg-slate-800 text-[10px] text-neutral-300">## H2</code>, or{' '}
-              <code className="px-1 py-0.5 rounded bg-slate-800 text-[10px] text-neutral-300">### H3</code> to build an outline.
+            <p
+              style={{ color: 'var(--theme-text-muted)' }}
+              className="text-[11px] leading-relaxed"
+            >
+              Add{' '}
+              <code
+                style={{
+                  backgroundColor: 'var(--theme-bg-card)',
+                  color: 'var(--theme-text-secondary)',
+                }}
+                className="px-1 py-0.5 rounded text-[10px]"
+              >
+                # H1
+              </code>
+              ,{' '}
+              <code
+                style={{
+                  backgroundColor: 'var(--theme-bg-card)',
+                  color: 'var(--theme-text-secondary)',
+                }}
+                className="px-1 py-0.5 rounded text-[10px]"
+              >
+                ## H2
+              </code>
+              , or{' '}
+              <code
+                style={{
+                  backgroundColor: 'var(--theme-bg-card)',
+                  color: 'var(--theme-text-secondary)',
+                }}
+                className="px-1 py-0.5 rounded text-[10px]"
+              >
+                ### H3
+              </code>{' '}
+              to build an outline.
             </p>
           </div>
         ) : (
           headings.map((h, i) => {
             const isActive = activeHeadingIndex === i;
             const indent = Math.min((h.level - 1) * 10, 40);
+            const itemColor =
+              h.level === 1
+                ? 'var(--theme-text-primary)'
+                : h.level === 2
+                ? 'var(--theme-text-secondary)'
+                : 'var(--theme-text-muted)';
 
             return (
               <button
                 key={h.id}
                 type="button"
                 onClick={() => handleHeadingClick(h)}
-                style={{ paddingLeft: `${indent + 8}px` }}
-                className={`w-full text-left py-1.5 pr-2 rounded-lg truncate transition-colors cursor-pointer flex items-center gap-1.5 ${
-                  isActive
-                    ? 'bg-[var(--accent)]/15 text-[var(--accent)] font-semibold'
-                    : 'text-neutral-400 hover:text-[var(--foreground)] hover:bg-white/5'
+                style={{
+                  paddingLeft: `${indent + 8}px`,
+                  color: isActive ? 'var(--theme-accent)' : itemColor,
+                  backgroundColor: isActive ? 'var(--theme-bg-card)' : undefined,
+                }}
+                className={`w-full text-left py-1.5 pr-2 rounded-lg truncate transition-colors cursor-pointer flex items-center gap-1.5 hover:bg-[var(--theme-bg-card)] ${
+                  isActive ? 'font-semibold' : ''
                 }`}
                 title={`H${h.level}: ${h.text}`}
               >
-                <span className="text-[10px] font-mono shrink-0 opacity-60">
+                <span
+                  style={{
+                    backgroundColor: 'var(--theme-bg-card)',
+                    color: 'var(--theme-accent)',
+                    borderColor: 'var(--theme-border)',
+                  }}
+                  className="text-[10px] font-mono px-1 py-0.5 rounded border shrink-0 opacity-80"
+                >
                   H{h.level}
                 </span>
                 <span className="truncate">{h.text}</span>

@@ -35,14 +35,28 @@ export function GraphControls({
   return (
     <>
       {/* Top Floating Controls Bar */}
-      <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md p-1.5 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-md text-xs">
+      <div
+        style={{
+          backgroundColor: 'var(--theme-bg-sidebar)',
+          borderColor: 'var(--theme-border)',
+          color: 'var(--theme-text-primary)',
+        }}
+        className="absolute top-4 left-4 z-10 flex items-center gap-2 backdrop-blur-md p-1.5 rounded-xl border shadow-md text-xs"
+      >
         {/* Tag Filter */}
-        <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800">
-          <Filter className="w-3.5 h-3.5 text-neutral-500" />
+        <div
+          style={{
+            backgroundColor: 'var(--theme-bg-card)',
+            borderColor: 'var(--theme-border)',
+          }}
+          className="flex items-center gap-1 px-2 py-1 rounded-lg border"
+        >
+          <Filter className="w-3.5 h-3.5 text-neutral-400" />
           <select
             value={filterTag}
             onChange={(e) => onFilterTagChange(e.target.value)}
-            className="bg-transparent text-neutral-800 dark:text-neutral-200 focus:outline-none cursor-pointer pr-1"
+            style={{ color: 'var(--theme-text-primary)' }}
+            className="bg-transparent focus:outline-none cursor-pointer pr-1"
           >
             <option value="all">All Tags</option>
             {availableTags.map((t) => (
@@ -56,11 +70,12 @@ export function GraphControls({
         {/* Toggle Orphans */}
         <button
           onClick={onToggleOrphans}
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
-            showOrphans
-              ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200'
-              : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400'
-          }`}
+          style={{
+            backgroundColor: showOrphans ? 'var(--theme-bg-card)' : 'transparent',
+            borderColor: 'var(--theme-border)',
+            color: 'var(--theme-text-primary)',
+          }}
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-colors cursor-pointer"
           title="Toggle orphan nodes without connections"
         >
           <Eye className="w-3.5 h-3.5" />
@@ -70,37 +85,52 @@ export function GraphControls({
         {/* Toggle Eisenhower Matrix Colors */}
         <button
           onClick={onToggleColorByEisenhower}
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
+          style={
             colorByEisenhower
-              ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-medium'
-              : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200'
-          }`}
+              ? {
+                  backgroundColor: 'color-mix(in srgb, var(--theme-accent) 15%, transparent)',
+                  borderColor: 'color-mix(in srgb, var(--theme-accent) 30%, transparent)',
+                  color: 'var(--theme-accent)',
+                }
+              : {
+                  backgroundColor: 'transparent',
+                  borderColor: 'var(--theme-border)',
+                  color: 'var(--theme-text-muted)',
+                }
+          }
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-colors cursor-pointer font-medium"
           title="Color note node rings by Eisenhower priority quadrant"
         >
           <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
           <span>Eisenhower Colors</span>
         </button>
 
-        <div className="h-4 w-px bg-neutral-200 dark:border-neutral-800 mx-0.5" />
+        <div
+          style={{ backgroundColor: 'var(--theme-border)' }}
+          className="h-4 w-px mx-0.5"
+        />
 
         {/* Zoom Controls */}
         <button
           onClick={onZoomIn}
-          className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 transition-colors cursor-pointer"
+          style={{ color: 'var(--theme-text-secondary)' }}
+          className="p-1.5 rounded-lg hover:bg-[var(--theme-bg-card)] transition-colors cursor-pointer"
           title="Zoom In"
         >
           <ZoomIn className="w-4 h-4" />
         </button>
         <button
           onClick={onZoomOut}
-          className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 transition-colors cursor-pointer"
+          style={{ color: 'var(--theme-text-secondary)' }}
+          className="p-1.5 rounded-lg hover:bg-[var(--theme-bg-card)] transition-colors cursor-pointer"
           title="Zoom Out"
         >
           <ZoomOut className="w-4 h-4" />
         </button>
         <button
           onClick={onResetZoom}
-          className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 transition-colors cursor-pointer"
+          style={{ color: 'var(--theme-text-secondary)' }}
+          className="p-1.5 rounded-lg hover:bg-[var(--theme-bg-card)] transition-colors cursor-pointer"
           title="Reset View"
         >
           <RotateCcw className="w-3.5 h-3.5" />
@@ -108,14 +138,24 @@ export function GraphControls({
       </div>
 
       {/* Stats Badge */}
-      <div className="absolute bottom-4 left-4 z-10 flex items-center gap-3 px-3 py-1.5 rounded-lg bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border border-neutral-200/80 dark:border-neutral-800/80 text-[11px] font-mono text-neutral-500 shadow-sm">
+      <div
+        style={{
+          backgroundColor: 'var(--theme-bg-sidebar)',
+          borderColor: 'var(--theme-border)',
+          color: 'var(--theme-text-muted)',
+        }}
+        className="absolute bottom-4 left-4 z-10 flex items-center gap-3 px-3 py-1.5 rounded-lg backdrop-blur-md border text-[11px] font-mono shadow-sm"
+      >
         <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-indigo-500" />
+          <span
+            style={{ backgroundColor: 'var(--theme-accent)' }}
+            className="w-2 h-2 rounded-full"
+          />
           <span>{nodeCount} Notes</span>
         </div>
         <span>·</span>
         <div className="flex items-center gap-1">
-          <Hash className="w-3 h-3 text-neutral-400" />
+          <Hash className="w-3 h-3 opacity-60" />
           <span>{edgeCount} Links</span>
         </div>
       </div>

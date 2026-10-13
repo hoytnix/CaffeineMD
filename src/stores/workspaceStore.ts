@@ -114,7 +114,9 @@ export interface WorkspaceState {
 
   // Theme Management
   themeId: string;
+  theme: string;
   customTheme: ThemeDefinition;
+  customThemeColors: Partial<ThemeDefinition>;
   setTheme: (themeId: string) => void;
   updateCustomTheme: (tokens: Partial<ThemeDefinition>) => void;
 
@@ -320,9 +322,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
   // Theme
   themeId: 'dark',
+  theme: 'dark',
   customTheme: DEFAULT_CUSTOM_THEME,
+  customThemeColors: DEFAULT_CUSTOM_THEME,
   setTheme: (themeId) => {
-    set({ themeId });
+    set({ themeId, theme: themeId });
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('kite-theme-id', themeId);
@@ -341,7 +345,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       ...tokens,
       id: 'custom',
     };
-    set({ customTheme: updated, themeId: 'custom' });
+    set({ customTheme: updated, customThemeColors: updated, themeId: 'custom', theme: 'custom' });
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('kite-custom-theme', JSON.stringify(updated));

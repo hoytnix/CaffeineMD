@@ -64,7 +64,8 @@ export function DatabaseToolbar({
           <ViewSwitcher databaseViewMode={databaseViewMode} onSetViewMode={onSetViewMode} />
           <button
             onClick={onCreateNewRow}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-white bg-[var(--primary)] hover:opacity-90 rounded-lg transition-opacity shadow-xs cursor-pointer"
+            style={{ backgroundColor: 'var(--theme-accent)' }}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-white hover:opacity-90 rounded-lg transition-opacity shadow-xs cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>New Row</span>
@@ -72,7 +73,10 @@ export function DatabaseToolbar({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2.5 mb-6 p-3 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs">
+      <div
+        style={{ backgroundColor: 'var(--theme-bg-sidebar)', borderColor: 'var(--theme-border)' }}
+        className="flex flex-wrap items-center gap-2.5 mb-6 p-3 rounded-lg border text-xs"
+      >
         <ToolbarSearchInput searchFilter={searchFilter} onSearchChange={onSearchChange} />
         <FilterPopover
           filterFolder={filterFolder}

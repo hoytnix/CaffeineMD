@@ -98,7 +98,10 @@ Start writing here...
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-y-auto bg-[var(--background)] p-8 text-[var(--foreground)]">
+    <div
+      style={{ backgroundColor: 'var(--theme-bg-primary)', color: 'var(--theme-text-primary)' }}
+      className="flex-1 flex flex-col h-full overflow-y-auto p-8"
+    >
       <DatabaseToolbar
         databaseViewMode={currentMode}
         onSetViewMode={(m) => {

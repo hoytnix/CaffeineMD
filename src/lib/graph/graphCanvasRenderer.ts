@@ -6,6 +6,16 @@ export * from './physicsSimulation';
 export * from './renderers/edgeRenderer';
 export * from './renderers/nodeRenderer';
 
+export interface GraphThemeColors {
+  bgPrimary: string;
+  bgCard: string;
+  border: string;
+  textPrimary: string;
+  textSecondary: string;
+  textMuted: string;
+  accent: string;
+}
+
 export interface RenderOptions {
   canvas: HTMLCanvasElement;
   nodes: GraphNode[];
@@ -13,6 +23,19 @@ export interface RenderOptions {
   hoveredNode: GraphNode | null;
   transform: { x: number; y: number; k: number };
   colorByEisenhower?: boolean;
+  themeColors?: GraphThemeColors;
+}
+
+export function renderGraphFrame(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  themeColors?: GraphThemeColors
+) {
+  if (themeColors?.bgPrimary) {
+    ctx.fillStyle = themeColors.bgPrimary;
+    ctx.fillRect(0, 0, width, height);
+  }
 }
 
 export function renderGraphCanvas({
@@ -22,6 +45,7 @@ export function renderGraphCanvas({
   hoveredNode,
   transform,
   colorByEisenhower = true,
+  themeColors,
 }: RenderOptions) {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
@@ -40,16 +64,19 @@ export function renderGraphCanvas({
   ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, width, height);
 
+  // Render canvas frame background
+  renderGraphFrame(ctx, width, height, themeColors);
+
   // Apply zoom and pan transformation
   const { x, y, k } = transform;
   ctx.translate(x, y);
   ctx.scale(k, k);
 
   // Render edges pass
-  renderEdges(ctx, links, k);
+  renderEdges(ctx, links, k, themeColors);
 
   // Render nodes pass
-  renderNodes(ctx, nodes, hoveredNode, k, colorByEisenhower);
+  renderNodes(ctx, nodes, hoveredNode, k, colorByEisenhower, themeColors);
 
   ctx.restore();
 }

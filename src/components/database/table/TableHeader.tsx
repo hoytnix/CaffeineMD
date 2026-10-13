@@ -41,9 +41,14 @@ export function TableHeader({
     return (
       <th
         key={key}
-        style={{ width: `${width}px`, minWidth: `${width}px` }}
+        style={{
+          width: `${width}px`,
+          minWidth: `${width}px`,
+          borderColor: 'var(--theme-border)',
+          color: 'var(--theme-text-secondary)',
+        }}
         onClick={() => onSort(key)}
-        className="py-2.5 px-3 border-r border-neutral-200 dark:border-neutral-800 cursor-pointer group/th hover:bg-neutral-100/60 dark:hover:bg-neutral-800/40 relative select-none"
+        className="py-2.5 px-3 border-r cursor-pointer group/th hover:bg-[var(--theme-bg-card)] relative select-none"
       >
         <div className="flex items-center justify-between">
           <span className="capitalize">{label}</span>
@@ -63,7 +68,10 @@ export function TableHeader({
 
   return (
     <thead>
-      <tr className="border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50/75 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 font-medium select-none text-xs">
+      <tr
+        style={{ backgroundColor: 'var(--theme-bg-sidebar)', borderColor: 'var(--theme-border)' }}
+        className="border-b font-medium select-none text-xs"
+      >
         {renderTh('title', 'Title', 240)}
         {renderTh('tags', 'Tags', 160)}
         {renderTh('status', 'Status', 144)}

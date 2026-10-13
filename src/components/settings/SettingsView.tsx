@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 import { CreateWorkspaceModal } from '@/src/components/workspace/CreateWorkspaceModal';
 import { db } from '@/src/lib/storage/db';
@@ -14,7 +14,11 @@ import { StorageSettingsSection } from './sections/StorageSettingsSection';
 import { EditorSettingsSection } from './sections/EditorSettingsSection';
 
 export function SettingsView({ onBack }: { onBack?: () => void }) {
+  const router = useRouter();
   const {
+    activeWorkspaceId,
+    activeView,
+    setActiveView,
     themeId,
     setTheme,
     customTheme,
@@ -33,6 +37,18 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
     setCreateWorkspaceModalOpen,
   } = useWorkspaceStore();
 
+  const handleBackToWorkspace = () => {
+    if (activeView === 'settings') {
+      setActiveView('editor');
+    }
+    if (onBack) {
+      onBack();
+      return;
+    }
+    const targetWorkspace = activeWorkspaceId || 'default-workspace';
+    router.push(`/w/${targetWorkspace}`);
+  };
+
   const rawFiles = useLiveQuery(() => db.files.toArray());
   const trashCount = rawFiles?.filter((f) => f.isTrash).length || 0;
   const [showCustomWizard, setShowCustomWizard] = useState(false);
@@ -42,23 +58,13 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
       {/* iOS Top Navigation Bar */}
       <header className="sticky top-0 z-40 bg-[var(--card)]/80 backdrop-blur-xl border-b border-[var(--border)] px-4 py-3 select-none">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          {onBack ? (
-            <button
-              onClick={onBack}
-              className="flex items-center gap-1 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors group cursor-pointer"
-            >
-              <ChevronLeft className="w-5 h-5 -ml-1 transition-transform group-hover:-translate-x-0.5" />
-              <span>Workspace</span>
-            </button>
-          ) : (
-            <Link
-              href="/"
-              className="flex items-center gap-1 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors group cursor-pointer"
-            >
-              <ChevronLeft className="w-5 h-5 -ml-1 transition-transform group-hover:-translate-x-0.5" />
-              <span>Workspace</span>
-            </Link>
-          )}
+          <button
+            onClick={handleBackToWorkspace}
+            className="flex items-center gap-1 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors group cursor-pointer"
+          >
+            <ChevronLeft className="w-5 h-5 -ml-1 transition-transform group-hover:-translate-x-0.5" />
+            <span>Workspace</span>
+          </button>
 
           <h1 className="text-sm font-semibold tracking-tight text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5">
             <span>☕</span>

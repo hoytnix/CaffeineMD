@@ -138,12 +138,26 @@ export function applyThemeToDocument(theme: ThemeDefinition): void {
     root.classList.remove('dark');
   }
 
+  // Set data-theme attribute for theme-scoped selectors
+  root.setAttribute('data-theme', theme.id);
+
   // Set CSS custom properties
   root.style.setProperty('--background', theme.background);
   root.style.setProperty('--foreground', theme.foreground);
   root.style.setProperty('--card', theme.card);
   root.style.setProperty('--border', theme.border);
   root.style.setProperty('--accent', theme.accent);
+  root.style.setProperty('--primary', theme.primary);
+
+  // Set theme semantic custom properties for views
+  root.style.setProperty('--theme-bg-primary', theme.background);
+  root.style.setProperty('--theme-bg-sidebar', theme.card);
+  root.style.setProperty('--theme-bg-card', theme.card);
+  root.style.setProperty('--theme-border', theme.border);
+  root.style.setProperty('--theme-text-primary', theme.foreground);
+  root.style.setProperty('--theme-text-secondary', theme.foreground);
+  root.style.setProperty('--theme-text-muted', theme.isDark ? '#94a3b8' : '#64748b');
+  root.style.setProperty('--theme-accent', theme.accent);
   // Guarantee universal color emoji font fallback across all themes
   const withEmojiFallback = (font: string): string => {
     if (!font) return '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';

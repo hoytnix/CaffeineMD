@@ -42,6 +42,21 @@ export const THEME_PRESETS: ThemeDefinition[] = [
 
 export const themeDefinitions = THEME_PRESETS;
 
+export function getThemeDefinition(
+  themeId: string = 'dark',
+  customThemeColors?: Partial<ThemeDefinition>
+): ThemeDefinition {
+  if (themeId === 'custom') {
+    return {
+      ...DEFAULT_CUSTOM_THEME,
+      ...(customThemeColors || {}),
+      id: 'custom',
+    };
+  }
+  const found = THEME_PRESETS.find((t) => t.id === themeId);
+  return found || THEME_PRESETS[0];
+}
+
 export { DEFAULT_CUSTOM_THEME };
 export { baseThemes } from './presets/baseThemes';
 export { seasonalThemes } from './presets/seasonalThemes';
