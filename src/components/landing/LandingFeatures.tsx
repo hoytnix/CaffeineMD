@@ -6,6 +6,7 @@ import {
   Cpu,
   History,
   MousePointerClick,
+  Sparkles,
 } from 'lucide-react';
 import { InstallButton } from './InstallButton';
 import { PwaInstallState } from './hooks/usePwaInstall';
@@ -31,28 +32,28 @@ export const LandingFeatures: React.FC<LandingFeaturesProps> = ({ installState }
 
       {/* 4-Pillar Asymmetric Bento Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-        {/* Card 1: 1-Click PWA & Edge Deploy (Span 2 Columns) */}
+        {/* Card 1: Vibe-Coded PWA Generator & 1-Click Edge Publishing (Span 2 Columns) */}
         <div className="md:col-span-2 bg-zinc-900/60 backdrop-blur-xl border border-white/10 hover:border-white/20 transition-all rounded-2xl p-8 flex flex-col justify-between group">
           <div>
             <div className="flex items-center justify-between mb-6">
               <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-105 transition-transform">
-                <Rocket className="w-6 h-6" />
+                <Sparkles className="w-6 h-6" />
               </div>
               <span className="px-3 py-1 rounded-full bg-emerald-950/50 border border-emerald-500/30 text-emerald-300 text-xs font-mono uppercase tracking-wide">
-                Instant Distribution
+                AI Vibe Studio • Zero Build
               </span>
             </div>
             <h4 className="text-xl sm:text-2xl font-bold text-white mb-3">
-              Publish Living PWAs &amp; Standalone Apps in Under 3 Seconds
+              Vibe-Coded PWA Generator &amp; 1-Click Edge Publishing
             </h4>
             <p className="text-sm sm:text-base text-[#94a39b] leading-relaxed mb-6">
-              Package individual notes or entire vault directories into offline-first, standalone web applications.
-              Deploy directly to Netlify edge CDNs or GitHub Pages with one click, or package for iOS and Android
-              app stores with built-in Capacitor and PWABuilder configurations. Zero static site generators, zero build pipelines.
+              Package individual notes or entire vaults into offline-first standalone web apps styled with AI.
+              Prompt Gemini via BYOK to vibe-code bespoke Jinja2 templates stored natively as editable <code className="text-emerald-300 font-mono text-xs">_template.html</code> files in your vault.
+              Ship directly to Netlify edge CDNs or GitHub Pages with zero build steps, or export Capacitor and PWABuilder packages.
             </p>
           </div>
           <div className="flex flex-wrap gap-2 pt-2 border-t border-white/5">
-            {['Netlify REST API Stream', 'GitHub Pages Git Data API', 'Capacitor-Ready', 'Offline Service Worker'].map((tag) => (
+            {['Gemini 2.5 BYOK', 'Client-Side Jinja Engine', 'Vault _template.html', 'Netlify Edge Stream', 'Capacitor-Ready'].map((tag) => (
               <span
                 key={tag}
                 className="px-2.5 py-1 rounded-md bg-white/[0.04] border border-white/10 text-xs font-mono text-emerald-400/90"
