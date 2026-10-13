@@ -36,8 +36,15 @@ Ensure that:
 - all colors must be valid 6-character hex codes (e.g. #1e1e24).
 - fontFamily should be a clean, modern web font (e.g. Inter, 'JetBrains Mono', 'Fira Code', 'Outfit', 'Plus Jakarta Sans', 'Cinzel', 'Playfair Display').`;
 
-    // Attempt preferred Gemini 3.5 Flash-Lite with fallback to gemini-3.1-flash-lite or gemini-2.5-flash
-    const candidateModels = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-3.8-flash'];
+    // Cascade: Gemini 3.8 Flash -> 3.7 Flash -> 3.6 Flash -> 3.5 Flash -> 3.5 Flash-Lite -> 3.1 Pro
+    const candidateModels = [
+      'gemini-3.8-flash',
+      'gemini-3.7-flash',
+      'gemini-3.6-flash',
+      'gemini-3.5-flash',
+      'gemini-3.5-flash-lite',
+      'gemini-3.1-pro',
+    ];
     let lastError: any = null;
     let generatedData = null;
 

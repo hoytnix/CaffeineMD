@@ -5,7 +5,14 @@ export interface GenerateThemeOptions {
   isMultiPage?: boolean;
 }
 
-const CANDIDATE_MODELS = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash'];
+export const GEMINI_CANDIDATE_MODELS = [
+  'gemini-3.8-flash',
+  'gemini-3.7-flash',
+  'gemini-3.6-flash',
+  'gemini-3.5-flash',
+  'gemini-3.5-flash-lite',
+  'gemini-3.1-pro',
+];
 
 export async function generateJinjaThemeWithGemini(
   options: GenerateThemeOptions
@@ -30,7 +37,7 @@ ${isMultiPage ? '   - Include an offline navigation drawer/sidebar: {% for page 
 
   let lastError: Error | null = null;
 
-  for (const model of CANDIDATE_MODELS) {
+  for (const model of GEMINI_CANDIDATE_MODELS) {
     try {
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(
         apiKey.trim()
@@ -55,7 +62,7 @@ ${isMultiPage ? '   - Include an offline navigation drawer/sidebar: {% for page 
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        const message = errorData.error?.message || `Gemini API error: ${response.status}`;
+        const message = errorData.error?.message || `Gemini API error: ${response.status} (${model})`;
         throw new Error(message);
       }
 
@@ -87,12 +94,12 @@ ${isMultiPage ? '   - Include an offline navigation drawer/sidebar: {% for page 
       return generatedHtml;
     } catch (err: any) {
       lastError = err instanceof Error ? err : new Error(String(err));
-      // If error is 404/not found, loop to next candidate model
-      if (err.message && (err.message.includes('not found') || err.message.includes('404'))) {
-        continue;
+      // If unauthorized / invalid key, fail fast without cascade
+      if (err.message && (err.message.includes('API_KEY_INVALID') || err.message.includes('API key not valid'))) {
+        throw lastError;
       }
-      // For auth or quota errors, throw immediately
-      throw lastError;
+      // Cascade down to next model if this attempt fails
+      continue;
     }
   }
 

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Sparkles, KeyRound, Check, AlertCircle, Loader2, ExternalLink } from 'lucide-react';
 import { db } from '@/src/lib/storage/db';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
+import { GEMINI_CANDIDATE_MODELS } from '@/src/lib/export/geminiTemplateGenerator';
 
 export function GeminiSettingsCard() {
   const activeWorkspaceId = useWorkspaceStore((s) => s.activeWorkspaceId);
@@ -30,30 +31,43 @@ export function GeminiSettingsCard() {
     setIsTesting(true);
     setStatus(null);
 
-    try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(
-        apiKey
-      )}`;
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: 'Respond with OK' }] }],
-          generationConfig: { maxOutputTokens: 5 },
-        }),
-      });
+    let verified = false;
+    let lastErrorMessage = '';
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error?.message || `API Error: ${res.status}`);
+    for (const model of GEMINI_CANDIDATE_MODELS) {
+      try {
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(
+          apiKey.trim()
+        )}`;
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: 'Respond with OK' }] }],
+            generationConfig: { maxOutputTokens: 5 },
+          }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error?.message || `API Error: ${res.status} (${model})`);
+        }
+
+        verified = true;
+        setStatus({ ok: true, message: `Gemini API key is verified & operational (${model})` });
+        break;
+      } catch (err: any) {
+        lastErrorMessage = err?.message || 'Verification failed';
+        if (lastErrorMessage.includes('API_KEY_INVALID') || lastErrorMessage.includes('API key not valid')) {
+          break;
+        }
       }
-
-      setStatus({ ok: true, message: 'Gemini API key is verified & operational' });
-    } catch (err: any) {
-      setStatus({ ok: false, message: err?.message || 'Verification failed' });
-    } finally {
-      setIsTesting(false);
     }
+
+    if (!verified) {
+      setStatus({ ok: false, message: lastErrorMessage || 'Verification failed' });
+    }
+    setIsTesting(false);
   };
 
   return (

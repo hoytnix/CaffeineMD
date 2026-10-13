@@ -53,7 +53,7 @@ export const LandingFeatures: React.FC<LandingFeaturesProps> = ({ installState }
             </p>
           </div>
           <div className="flex flex-wrap gap-2 pt-2 border-t border-white/5">
-            {['Gemini 2.5 BYOK', 'Client-Side Jinja Engine', 'Vault _template.html', 'Netlify Edge Stream', 'Capacitor-Ready'].map((tag) => (
+            {['Gemini 3.8 BYOK', 'Client-Side Jinja Engine', 'Vault _template.html', 'Netlify Edge Stream', 'Capacitor-Ready'].map((tag) => (
               <span
                 key={tag}
                 className="px-2.5 py-1 rounded-md bg-white/[0.04] border border-white/10 text-xs font-mono text-emerald-400/90"

@@ -23,7 +23,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38bdf8?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![Dexie](https://img.shields.io/badge/IndexedDB-Dexie_4-green?style=for-the-badge)](https://dexie.org/)
 [![Tiptap](https://img.shields.io/badge/Editor-Tiptap_v2-blueviolet?style=for-the-badge)](https://tiptap.dev/)
-[![Gemini BYOK](https://img.shields.io/badge/AI_BYOK-Gemini_2.5_Flash-8e75ff?style=for-the-badge&logo=google&logoColor=white)](https://aistudio.google.com/)
+[![Gemini BYOK](https://img.shields.io/badge/AI_BYOK-Gemini_3.8_Flash-8e75ff?style=for-the-badge&logo=google&logoColor=white)](https://aistudio.google.com/)
 [![Jinja](https://img.shields.io/badge/Template-Client_Side_Jinja2-e11d48?style=for-the-badge)](https://jinja.palletsprojects.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
 
@@ -50,7 +50,7 @@ Built on Next.js 15, React 19, and Dexie IndexedDB, CaffeineMD mounts real folde
 ## 🚀 Key Features
 
 ### 🎨 Vibe-Coded PWA Generator & Vault Jinja Template Engine
-- **Prompt-to-PWA with Gemini BYOK**: Turn any aesthetic vibe into a production-grade HTML5/CSS template in seconds using your own Google Gemini API key (`gemini-2.5-flash`). Choose from built-in presets (*Cyberpunk Glass*, *Japanese Minimalist*, *Nordic Clean Light*, *Obsidian High-Contrast*) or supply custom prompts.
+- **Prompt-to-PWA with Gemini BYOK**: Turn any aesthetic vibe into a production-grade HTML5/CSS template in seconds using your own Google Gemini API key (`gemini-3.8-flash` cascading to `gemini-3.7-flash`, `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-3.5-flash-lite`, and `gemini-3.1-pro`). Choose from built-in presets (*Cyberpunk Glass*, *Japanese Minimalist*, *Nordic Clean Light*, *Obsidian High-Contrast*) or supply custom prompts.
 - **Zero-Dependency Client-Side Jinja Compiler**: High-performance browser-native template engine supporting variables (`{{ title }}`, `{{ content }}`), built-in filters (`escape`, `lower`, `upper`, `trim`), booleans and equality conditionals (`{% if is_pwa %}`), and collection loops (`{% for page in pages %}`) for offline navigation drawers.
 - **Editable Vault `_template.html` Files**: AI-generated templates live directly in IndexedDB alongside your markdown notes. Modify CSS or layout markup directly in CaffeineMD's editor—changes immediately compile on re-export.
 - **1-Click Edge Distribution & Native Packaging**: Export standalone HTML documents or production PWA bundles equipped with Cache-First Service Workers (`sw.js`), PWABuilder manifests (`manifest.webmanifest`), and Capacitor mobile configurations. Deploy to Netlify Edge CDN or GitHub Pages in 1 click with zero build servers.
