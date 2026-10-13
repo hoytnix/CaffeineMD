@@ -105,7 +105,12 @@
   - Phase 2: Debounced preview HTML compilation service in [exportPreviewCompiler.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/exportPreviewCompiler.ts).
   - Phase 3: Client-side inverted search index and `⌘K` spotlight modal snippet injection in [vaultSearchIndex.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/vaultSearchIndex.ts).
   - Phase 3: Standalone 2D HTML5 Canvas knowledge graph simulator with spring physics and note pane switching in [canvasGraphHud.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/canvasGraphHud.ts) and [canvasGraphStyles.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/canvasGraphStyles.ts).
-  - Decomposed export modal controls into [ExportOptionsForm.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportOptionsForm.tsx) and updated [ExportPwaModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportPwaModal.tsx).
+- [x] **Direct Monolithic HTML Generation Mode (Zero-Truncation AI App Synthesis)**:
+  - Created [directHtmlExporter.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/directHtmlExporter.ts) formatting note Markdown bodies into `=== DOCUMENT [index]: [title] ===` blocks.
+  - Bound generation to cascading fallback model sequence (`GEMINI_CANDIDATE_MODELS`: `gemini-3.8-flash`, `gemini-3.7-flash`, `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-3.5-flash-lite`).
+  - Enforced strict rules against content truncation, embedded CSS in `<style>`, and navigation/interaction scripts in `<script>`.
+  - Added "Direct AI App Synthesis (One-Shot HTML)" toggle in [ExportOptionsForm.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportOptionsForm.tsx) and [AiThemePromptDrawer.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/AiThemePromptDrawer.tsx).
+  - Wired direct preview streaming and immediate raw HTML file download in [ExportPwaModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportPwaModal.tsx), bypassing the template pipeline.
 
 ## Verification Status
 - Lint verification: Passing cleanly with 0 errors and 0 warnings (`pnpm run lint`).

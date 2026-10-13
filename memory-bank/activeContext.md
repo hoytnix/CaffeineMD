@@ -70,10 +70,16 @@
   24. **Sandboxed Live Preview Drawer**:
       - Built ephemeral live preview drawer in [ExportPreviewDrawer.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportPreviewDrawer.tsx) using sandboxed `<iframe>` (`sandbox="allow-scripts"`), automatic Blob URL cleanup via `useMemo` & `useEffect`, and responsive viewport switchers (Desktop, Tablet 768px, Mobile 375px).
       - Integrated preview drawer into split-pane dialog in [ExportPwaModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportPwaModal.tsx) backed by debounced compilation in [exportPreviewCompiler.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/exportPreviewCompiler.ts).
-  25. **Vault Exploration & Distribution Architecture**:
+   25. **Vault Exploration & Distribution Architecture**:
       - Built client-side inverted search index and Cmd+K / Ctrl+K spotlight modal in [vaultSearchIndex.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/vaultSearchIndex.ts).
       - Built interactive 2D HTML5 canvas knowledge graph simulator with spring physics and click-to-navigate pane switching in [canvasGraphHud.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/canvasGraphHud.ts) and [canvasGraphStyles.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/canvasGraphStyles.ts).
       - Decomposed options controls into [ExportOptionsForm.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportOptionsForm.tsx) ensuring all modules strictly honor tiered LOC boundaries (<400 LOC).
+   26. **Direct Monolithic HTML Generation Mode (Zero-Truncation AI App Synthesis)**:
+      - Implemented [directHtmlExporter.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/directHtmlExporter.ts) bypassing intermediate Jinja compiling, token schemas, and template placeholders.
+      - Formats raw markdown document blocks into structured `=== DOCUMENT [index]: [title] ===` blocks.
+      - Leverages cascading fallback models (`GEMINI_CANDIDATE_MODELS`: `gemini-3.8-flash`, `gemini-3.7-flash`, `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-3.5-flash-lite`) with strict zero-truncation instructions and automated code fence stripping.
+      - Integrated "Direct AI App Synthesis (One-Shot HTML)" toggle into [ExportOptionsForm.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportOptionsForm.tsx) and [AiThemePromptDrawer.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/AiThemePromptDrawer.tsx).
+      - Wired immediate live preview streaming and 1-click raw HTML download into [ExportPwaModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportPwaModal.tsx), bypassing the template pipeline.
 
 - **Architecture & Tiered LOC Compliance**: All modules decomposed strictly within tiered LOC boundaries (<100 LOC sweet spot, <250 LOC soft limit, strictly <400 LOC).
 - **Verification Rule**: ESLint passing with 0 errors and 0 warnings (`pnpm run lint`). TypeScript check passing with 0 errors (`tsc --noEmit`).

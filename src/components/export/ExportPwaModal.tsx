@@ -9,7 +9,10 @@ import {
   normalizeFolderPath,
   createFallbackNote,
   executeExportDownload,
+  triggerBrowserDownload,
 } from '@/src/lib/export/exportBundleService';
+import { getNotesByWorkspace } from '@/src/lib/storage/repositories/noteRepository';
+import { DirectHtmlNote } from '@/src/lib/export/directHtmlExporter';
 import {
   Download,
   X,
@@ -54,11 +57,63 @@ function ExportPwaDialog() {
   const [appId, setAppId] = useState(() => `com.caffeinemd.${slugify(defaultTitle)}`);
   const [isExporting, setIsExporting] = useState(false);
 
+  // Direct AI Synthesis states
+  const [directHtmlMode, setDirectHtmlMode] = useState(false);
+  const [directGeneratedHtml, setDirectGeneratedHtml] = useState<string | null>(null);
+
   // Live preview compilation state
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
 
+  const handleSetDirectHtmlMode = React.useCallback((enabled: boolean) => {
+    setDirectHtmlMode(enabled);
+    if (!enabled && directGeneratedHtml) {
+      setDirectGeneratedHtml(null);
+    }
+  }, [directGeneratedHtml]);
+
+  const collectScopedNotes = React.useCallback(async (): Promise<DirectHtmlNote[]> => {
+    if (scopeMode === 'directory') {
+      const allNotes = await getNotesByWorkspace(activeWorkspaceId);
+      const normalizedFolder = normalizeFolderPath(exportModalTarget?.folderPath);
+      const folderNotes = allNotes.filter((note) => {
+        if (!note.path || note.isTrash || note.isBinary) return false;
+        if (!normalizedFolder) return true;
+        const normalizedNotePath = note.path.replace(/^\/+/, '');
+        return (
+          normalizedNotePath.startsWith(normalizedFolder + '/') ||
+          normalizedNotePath === normalizedFolder
+        );
+      });
+
+      if (folderNotes.length === 0) {
+        const fallback = activeNote || createFallbackNote(appName, activeWorkspaceId || 'default-vault');
+        return [{
+          title: fallback.title || fallback.name.replace(/\.[^/.]+$/, ''),
+          content: fallback.content || '',
+          path: fallback.path,
+        }];
+      }
+
+      return folderNotes.map((n) => ({
+        title: n.title || n.name.replace(/\.[^/.]+$/, ''),
+        content: n.content || '',
+        path: n.path,
+      }));
+    } else {
+      const targetNote = activeNote || createFallbackNote(appName, activeWorkspaceId || 'default-vault');
+      return [{
+        title: targetNote.title || targetNote.name.replace(/\.[^/.]+$/, ''),
+        content: targetNote.content || '',
+        path: targetNote.path,
+      }];
+    }
+  }, [scopeMode, activeWorkspaceId, exportModalTarget?.folderPath, activeNote, appName]);
+
   useEffect(() => {
+    if (directGeneratedHtml) {
+      return;
+    }
     let cancelled = false;
     const timer = setTimeout(() => {
       if (!cancelled) setIsPreviewLoading(true);
@@ -88,6 +143,7 @@ function ExportPwaDialog() {
       clearTimeout(timer);
     };
   }, [
+    directGeneratedHtml,
     scopeMode,
     exportModalTarget?.folderPath,
     activeNote,
@@ -118,6 +174,14 @@ function ExportPwaDialog() {
   const handleDownload = async () => {
     setIsExporting(true);
     try {
+      if (outputType === 'html' && directGeneratedHtml) {
+        const blob = new Blob([directGeneratedHtml], { type: 'text/html;charset=utf-8' });
+        triggerBrowserDownload(blob, `${slugify(appName)}.html`);
+        showToast('Direct Monolithic HTML exported successfully');
+        closeExportModal();
+        return;
+      }
+
       const success = await executeExportDownload({
         scopeMode,
         outputType,
@@ -192,6 +256,8 @@ function ExportPwaDialog() {
               setAppId={setAppId}
               activeNote={activeNote}
               folderPath={exportModalTarget?.folderPath}
+              directHtmlMode={directHtmlMode}
+              setDirectHtmlMode={handleSetDirectHtmlMode}
             />
 
             {/* AI Theme Studio (Gemini BYOK) Accordion */}
@@ -199,6 +265,15 @@ function ExportPwaDialog() {
               workspaceId={activeWorkspaceId || 'default-vault'}
               folderPath={exportModalTarget?.folderPath}
               isMultiPage={scopeMode === 'directory'}
+              outputType={outputType}
+              directHtmlMode={directHtmlMode}
+              setDirectHtmlMode={handleSetDirectHtmlMode}
+              collectNotes={collectScopedNotes}
+              folderName={appName}
+              onDirectHtmlGenerated={(html) => {
+                setDirectGeneratedHtml(html);
+                setPreviewHtml(html);
+              }}
               onTemplateGenerated={(templateContent) => {
                 setCustomTemplateString(templateContent);
               }}

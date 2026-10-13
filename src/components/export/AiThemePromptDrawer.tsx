@@ -14,6 +14,10 @@ import {
 } from 'lucide-react';
 import { generateJinjaThemeWithGemini } from '@/src/lib/export/geminiTemplateGenerator';
 import {
+  generateMonolithicHtmlExport,
+  DirectHtmlNote,
+} from '@/src/lib/export/directHtmlExporter';
+import {
   findVaultTemplate,
   saveVaultTemplate,
 } from '@/src/lib/storage/repositories/noteRepository';
@@ -23,9 +27,15 @@ export interface AiThemePromptDrawerProps {
   workspaceId: string;
   folderPath?: string;
   isMultiPage?: boolean;
+  outputType?: 'html' | 'pwa';
+  directHtmlMode?: boolean;
+  setDirectHtmlMode?: (v: boolean) => void;
+  onDirectHtmlGenerated?: (html: string, templatePath?: string) => void;
   onTemplateGenerated?: (templateContent: string, templatePath: string) => void;
   onOpenTemplateInWorkspace?: (templatePath: string) => void;
   showToast?: (message: string) => void;
+  collectNotes?: () => Promise<DirectHtmlNote[]>;
+  folderName?: string;
 }
 
 const PRESETS = [
@@ -55,9 +65,15 @@ export function AiThemePromptDrawer({
   workspaceId,
   folderPath,
   isMultiPage,
+  outputType = 'html',
+  directHtmlMode = false,
+  setDirectHtmlMode,
+  onDirectHtmlGenerated,
   onTemplateGenerated,
   onOpenTemplateInWorkspace,
   showToast,
+  collectNotes,
+  folderName,
 }: AiThemePromptDrawerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [apiKey, setApiKey] = useState(() =>
@@ -83,7 +99,7 @@ export function AiThemePromptDrawer({
 
   const handleGenerate = async () => {
     if (!apiKey.trim()) {
-      setError('Please provide your Gemini API key to generate a theme.');
+      setError('Please provide your Gemini API key to proceed.');
       return;
     }
     if (!prompt.trim()) {
@@ -102,31 +118,62 @@ export function AiThemePromptDrawer({
         }
       }
 
-      const generatedTemplate = await generateJinjaThemeWithGemini({
-        apiKey: apiKey.trim(),
-        prompt: prompt.trim(),
-        isMultiPage,
-      });
+      if (outputType === 'html' && directHtmlMode) {
+        const notes = collectNotes ? await collectNotes() : [];
+        if (!notes || notes.length === 0) {
+          throw new Error('No documents found in the current export scope.');
+        }
 
-      let targetPath = '';
-      if (saveAsTemplateFile) {
-        const savedNote = await saveVaultTemplate(
-          workspaceId || 'default-vault',
-          folderPath || '',
-          generatedTemplate
-        );
-        targetPath = savedNote.path;
-        setGeneratedPath(savedNote.path);
-        setExistingTemplatePath(savedNote.path);
-      }
+        const generatedHtml = await generateMonolithicHtmlExport({
+          folderName: folderName || 'CaffeineMD Export',
+          notes,
+          userPrompt: prompt.trim(),
+          apiKey: apiKey.trim(),
+        });
 
-      if (onTemplateGenerated) {
-        onTemplateGenerated(generatedTemplate, targetPath);
+        let targetPath = '';
+        if (saveAsTemplateFile) {
+          const savedNote = await saveVaultTemplate(
+            workspaceId || 'default-vault',
+            folderPath || '',
+            generatedHtml
+          );
+          targetPath = savedNote.path;
+          setGeneratedPath(savedNote.path);
+          setExistingTemplatePath(savedNote.path);
+        }
+
+        if (onDirectHtmlGenerated) {
+          onDirectHtmlGenerated(generatedHtml, targetPath);
+        }
+        showToast?.('Direct Monolithic HTML generated & synthesized successfully!');
+      } else {
+        const generatedTemplate = await generateJinjaThemeWithGemini({
+          apiKey: apiKey.trim(),
+          prompt: prompt.trim(),
+          isMultiPage,
+        });
+
+        let targetPath = '';
+        if (saveAsTemplateFile) {
+          const savedNote = await saveVaultTemplate(
+            workspaceId || 'default-vault',
+            folderPath || '',
+            generatedTemplate
+          );
+          targetPath = savedNote.path;
+          setGeneratedPath(savedNote.path);
+          setExistingTemplatePath(savedNote.path);
+        }
+
+        if (onTemplateGenerated) {
+          onTemplateGenerated(generatedTemplate, targetPath);
+        }
+        showToast?.('AI Jinja theme generated & compiled successfully!');
       }
-      showToast?.('AI Jinja theme generated & compiled successfully!');
     } catch (err: any) {
       console.error('Theme generation failed:', err);
-      setError(err?.message || 'Failed to generate theme with Gemini.');
+      setError(err?.message || 'Failed to generate with Gemini.');
     } finally {
       setIsGenerating(false);
     }
@@ -254,17 +301,34 @@ export function AiThemePromptDrawer({
           </div>
 
           {/* Save to Vault Checkbox */}
-          <label className="flex items-center gap-2 text-[11px] text-neutral-300 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={saveAsTemplateFile}
-              onChange={(e) => setSaveAsTemplateFile(e.target.checked)}
-              className="rounded accent-[var(--accent)] cursor-pointer"
-            />
-            <span>
-              Save as <code className="text-purple-400 font-mono">_template.html</code> in directory for future editing
-            </span>
-          </label>
+          <div className="space-y-2">
+            {outputType === 'html' && setDirectHtmlMode && (
+              <div className="flex items-center justify-between p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                <label className="flex items-center gap-2 text-[11px] text-purple-300 font-medium cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={directHtmlMode}
+                    onChange={(e) => setDirectHtmlMode(e.target.checked)}
+                    className="rounded accent-purple-500 cursor-pointer"
+                  />
+                  <span>Direct AI App Synthesis (One-Shot HTML)</span>
+                </label>
+                <span className="text-[10px] text-purple-400 font-medium">Gemini BYOK</span>
+              </div>
+            )}
+
+            <label className="flex items-center gap-2 text-[11px] text-neutral-300 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={saveAsTemplateFile}
+                onChange={(e) => setSaveAsTemplateFile(e.target.checked)}
+                className="rounded accent-[var(--accent)] cursor-pointer"
+              />
+              <span>
+                Save as <code className="text-purple-400 font-mono">_template.html</code> in directory for future editing
+              </span>
+            </label>
+          </div>
 
           {/* Error Message */}
           {error && (
@@ -296,12 +360,20 @@ export function AiThemePromptDrawer({
               {isGenerating ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Generating Theme...</span>
+                  <span>
+                    {outputType === 'html' && directHtmlMode
+                      ? 'Synthesizing App...'
+                      : 'Generating Theme...'}
+                  </span>
                 </>
               ) : (
                 <>
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Generate Gorgeous Theme</span>
+                  <span>
+                    {outputType === 'html' && directHtmlMode
+                      ? 'Synthesize Direct AI App'
+                      : 'Generate Gorgeous Theme'}
+                  </span>
                 </>
               )}
             </button>

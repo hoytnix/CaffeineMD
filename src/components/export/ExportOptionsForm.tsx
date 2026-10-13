@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layers, Package, Palette, FileCode, Smartphone } from 'lucide-react';
+import { Layers, Package, Palette, FileCode, Smartphone, Sparkles } from 'lucide-react';
 import { THEME_PRESETS } from '@/src/lib/themes/themeDefinitions';
 import { VaultFile } from '@/src/lib/storage/db';
 import { normalizeFolderPath } from '@/src/lib/export/exportBundleService';
@@ -19,6 +19,8 @@ export interface ExportOptionsFormProps {
   setAppId: (id: string) => void;
   activeNote: VaultFile | null;
   folderPath?: string;
+  directHtmlMode?: boolean;
+  setDirectHtmlMode?: (v: boolean) => void;
 }
 
 export function ExportOptionsForm({
@@ -36,6 +38,8 @@ export function ExportOptionsForm({
   setAppId,
   activeNote,
   folderPath,
+  directHtmlMode = false,
+  setDirectHtmlMode,
 }: ExportOptionsFormProps) {
   return (
     <div className="space-y-4">
@@ -112,6 +116,29 @@ export function ExportOptionsForm({
           </button>
         </div>
       </div>
+
+      {/* Direct AI App Synthesis (One-Shot HTML) Toggle */}
+      {outputType === 'html' && setDirectHtmlMode && (
+        <div className="p-3 rounded-xl border border-purple-500/20 bg-purple-500/5 space-y-1 text-xs">
+          <label className="flex items-center justify-between cursor-pointer select-none">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+              <span className="font-semibold text-[var(--foreground)]">
+                Direct AI App Synthesis (One-Shot HTML)
+              </span>
+            </div>
+            <input
+              type="checkbox"
+              checked={directHtmlMode}
+              onChange={(e) => setDirectHtmlMode(e.target.checked)}
+              className="rounded accent-purple-500 cursor-pointer"
+            />
+          </label>
+          <p className="text-[11px] text-neutral-400 leading-relaxed">
+            Bypasses intermediate Jinja templating — prompts Gemini to synthesize a complete, interactive monolithic HTML application with zero content truncation.
+          </p>
+        </div>
+      )}
 
       {/* Theme Selector */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
