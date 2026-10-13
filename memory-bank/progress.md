@@ -105,8 +105,10 @@
   - Phase 2: Debounced preview HTML compilation service in [exportPreviewCompiler.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/exportPreviewCompiler.ts).
   - Phase 3: Client-side inverted search index and `⌘K` spotlight modal snippet injection in [vaultSearchIndex.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/vaultSearchIndex.ts).
   - Phase 3: Standalone 2D HTML5 Canvas knowledge graph simulator with spring physics and note pane switching in [canvasGraphHud.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/canvasGraphHud.ts) and [canvasGraphStyles.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/canvasGraphStyles.ts).
-- [x] **Direct Monolithic HTML Generation Mode (Zero-Truncation AI App Synthesis)**:
+- [x] **Direct Monolithic HTML Generation Mode (Zero-Truncation AI App Synthesis & Static DOM Markup)**:
   - Created [directHtmlExporter.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/directHtmlExporter.ts) formatting note Markdown bodies into `=== DOCUMENT [index]: [title] ===` blocks.
+  - Implemented robust Markdown pre-compilation via `parseFrontmatter()` and `markdownToHtml()` (+ `cleanWikiLinks()`) to supply clean HTML fragments into `<div class="note-body">` and strip raw YAML dividers.
+  - Enforced Static DOM First architecture over JS data serialization (forbidding `const docs = [...]` string arrays that break JS parsing with unescaped backticks/quotes; mandating DOM `<div class="documents-container">` / `<article class="vault-doc-card">` / `<div class="note-body">`).
   - Bound generation to cascading fallback model sequence (`GEMINI_CANDIDATE_MODELS`: `gemini-3.8-flash`, `gemini-3.7-flash`, `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-3.5-flash-lite`).
   - Enforced strict rules against content truncation, embedded CSS in `<style>`, and navigation/interaction scripts in `<script>`.
   - Added "Direct AI App Synthesis (One-Shot HTML)" toggle in [ExportOptionsForm.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportOptionsForm.tsx) and [AiThemePromptDrawer.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/AiThemePromptDrawer.tsx).

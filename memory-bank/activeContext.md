@@ -74,9 +74,10 @@
       - Built client-side inverted search index and Cmd+K / Ctrl+K spotlight modal in [vaultSearchIndex.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/vaultSearchIndex.ts).
       - Built interactive 2D HTML5 canvas knowledge graph simulator with spring physics and click-to-navigate pane switching in [canvasGraphHud.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/canvasGraphHud.ts) and [canvasGraphStyles.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/canvasGraphStyles.ts).
       - Decomposed options controls into [ExportOptionsForm.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportOptionsForm.tsx) ensuring all modules strictly honor tiered LOC boundaries (<400 LOC).
-   26. **Direct Monolithic HTML Generation Mode (Zero-Truncation AI App Synthesis)**:
+   26. **Direct Monolithic HTML Generation Mode (Zero-Truncation AI App Synthesis & Static DOM Markup)**:
       - Implemented [directHtmlExporter.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/directHtmlExporter.ts) bypassing intermediate Jinja compiling, token schemas, and template placeholders.
-      - Formats raw markdown document blocks into structured `=== DOCUMENT [index]: [title] ===` blocks.
+      - Pre-compiles notes with `parseFrontmatter()` to strip YAML dividers and `markdownToHtml()` / `cleanWikiLinks()` to supply clean HTML fragments into delimited `=== DOCUMENT [index]: [title] ===` blocks.
+      - Enforces Static DOM First architecture over JS data serialization (forbidding `const docs = [...]` string arrays that cause JS syntax errors/template string crashes; requiring direct semantic DOM `<div class="documents-container">` / `<article class="vault-doc-card">` / `<div class="note-body">`).
       - Leverages cascading fallback models (`GEMINI_CANDIDATE_MODELS`: `gemini-3.8-flash`, `gemini-3.7-flash`, `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-3.5-flash-lite`) with strict zero-truncation instructions and automated code fence stripping.
       - Integrated "Direct AI App Synthesis (One-Shot HTML)" toggle into [ExportOptionsForm.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportOptionsForm.tsx) and [AiThemePromptDrawer.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/AiThemePromptDrawer.tsx).
       - Wired immediate live preview streaming and 1-click raw HTML download into [ExportPwaModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportPwaModal.tsx), bypassing the template pipeline.

@@ -6,6 +6,9 @@
  */
 
 import { GEMINI_CANDIDATE_MODELS } from './geminiTemplateGenerator';
+import { markdownToHtml } from '@/src/lib/markdown/markdownToHtml';
+import { parseFrontmatter } from '@/src/lib/markdown/frontmatter';
+import { cleanWikiLinks } from './standaloneHtmlBuilder';
 
 export interface DirectHtmlNote {
   title: string;
@@ -21,6 +24,27 @@ export interface DirectHtmlExportParams {
 }
 
 export const DIRECT_HTML_MODELS = GEMINI_CANDIDATE_MODELS;
+
+/**
+ * Pre-compiles note bodies into clean HTML fragments with YAML frontmatter stripped.
+ */
+export function precompileNotesForDirectHtml(notes: DirectHtmlNote[]): DirectHtmlNote[] {
+  return notes.map((note, index) => {
+    const rawContent = note.content || '';
+    const { data: frontmatter, content: cleanMarkdown } = parseFrontmatter(rawContent);
+    const htmlBody = cleanWikiLinks(markdownToHtml(cleanMarkdown));
+    const title =
+      frontmatter.title ||
+      note.title ||
+      `Document ${index + 1}`;
+
+    return {
+      ...note,
+      title,
+      content: htmlBody,
+    };
+  });
+}
 
 /**
  * Formats note Markdown bodies into standard delimited document blocks.
@@ -94,28 +118,39 @@ export async function generateMonolithicHtmlExport(
     throw new Error('No documents provided for direct HTML export.');
   }
 
-  const systemInstruction = `You are a world-class principal frontend architect and creative UI engineer.
-Given a collection of markdown documents and a design prompt, you synthesize a single, gorgeous, production-grade, monolithic HTML application with zero external framework dependencies.
+  const systemInstruction = `
+You are an expert full-stack web developer.
+Generate a SINGLE, PRODUCTION-GRADE, MONOLITHIC HTML FILE containing all embedded CSS (<style>) and client navigation (<script>).
 
-STRICT MONOLITHIC SPECIFICATION:
-1. OUTPUT FORMAT:
-   - Output ONLY raw HTML starting with <!DOCTYPE html> and closing with </html>.
-   - Do NOT wrap your output in markdown code blocks (\`\`\`html).
-   - Do NOT provide preambles, explanations, summaries, or postscripts.
-2. EMBEDDED ARCHITECTURE:
-   - All styling must be embedded inside a <style> block in <head>.
-   - All client-side interactivity (navigation tabs, sidebar switching, search filter, theme toggle, copy buttons) must be embedded inside a <script> block before </body>.
-   - Design with modern glassmorphism, responsive flex/grid layouts, clean typographic hierarchy, and polished micro-interactions.
-3. STRICT ZERO TRUNCATION RULE (CRITICAL):
-   - Every single document's full body, headings, paragraphs, lists, tables, code blocks, lyrics, and metadata must be fully and completely rendered in the DOM.
-   - NEVER truncate, summarize, omit, or use placeholder tokens like "..." or "<!-- more content -->".
-   - If there are multiple documents, provide an intuitive navigation structure (e.g., sidebar nav, tabs, or cards) allowing the user to view each complete document cleanly.
-4. USER THEME & STYLE:
-   - Strictly honor the user's styling, aesthetic, layout, and feature instructions.`;
+CRITICAL ARCHITECTURE RULES:
+1. STATIC DOM FIRST (NO RAW JS DATA ARRAYS):
+   - DO NOT store note contents inside JavaScript string variables or arrays (e.g., do NOT do 'const docs = [{ content: \`...\` }]'). Raw text with quotes, backticks, or unescaped characters breaks JS parsing.
+   - Render every single note DIRECTLY into semantic HTML markup inside the DOM:
+     <div class="documents-container">
+       <article id="doc-1" class="vault-doc-card" data-title="..." data-category="...">
+         <header><h2>Note Title</h2></header>
+         <div class="note-body">...Full Note HTML / Lyrics...</div>
+       </article>
+       ...
+     </div>
+   - Use JavaScript ONLY for UI behavior (filtering, searching, tab switching, or modal reading), targeting elements already present in the DOM.
 
-  const formattedDocs = formatDocumentsPromptBlock(notes);
+2. COMPLETE CONTENT PRESERVATION:
+   - Include 100% of the content from ALL provided files. Never truncate, summarize, or use ellipses.
+
+3. RESILIENT INTERACTIVITY:
+   - Ensure scripts execute immediately or on window 'load'.
+   - Include global search that toggles display of existing DOM elements based on data attributes.
+   - Provide clean dark-mode typography (Inter, JetBrains Mono) with 'text-align: left' and standard line-heights.
+
+4. OUTPUT FORMAT:
+   - Return ONLY raw <!DOCTYPE html> markup. Do NOT wrap in markdown triple backticks.
+`;
+
+  const precompiledNotes = precompileNotesForDirectHtml(notes);
+  const formattedDocs = formatDocumentsPromptBlock(precompiledNotes);
   const userContent = `Application / Vault Name: ${folderName || 'CaffeineMD Export'}
-Total Documents: ${notes.length}
+Total Documents: ${precompiledNotes.length}
 
 USER DESIGN & FEATURE PREFERENCES:
 ${userPrompt || 'Create a modern, elegant, dark glassmorphic single-page web app with sidebar navigation, search filter, and full document reading views.'}
