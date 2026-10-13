@@ -91,6 +91,12 @@ export interface WorkspaceState {
   isTemplateModalOpen: boolean;
   setTemplateModalOpen: (open: boolean) => void;
 
+  // PWA / Standalone HTML Export Modal
+  isExportModalOpen: boolean;
+  exportModalTarget: { folderPath?: string; targetNotePath?: string } | null;
+  openExportModal: (target?: { folderPath?: string; targetNotePath?: string }) => void;
+  closeExportModal: () => void;
+
   // Active Editor instance reference
   activeEditor: any | null;
   setActiveEditor: (editor: any | null) => void;
@@ -246,6 +252,12 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   // Template / Scratchpad Modal (Cmd+Shift+N)
   isTemplateModalOpen: false,
   setTemplateModalOpen: (open) => set({ isTemplateModalOpen: open }),
+
+  // PWA / Standalone HTML Export Modal
+  isExportModalOpen: false,
+  exportModalTarget: null,
+  openExportModal: (target) => set({ isExportModalOpen: true, exportModalTarget: target || null }),
+  closeExportModal: () => set({ isExportModalOpen: false, exportModalTarget: null }),
 
   // Active Editor
   activeEditor: null,

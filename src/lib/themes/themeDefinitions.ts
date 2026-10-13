@@ -40,6 +40,8 @@ export const THEME_PRESETS: ThemeDefinition[] = [
   customThemes.find((t) => t.id === 'custom')!,
 ];
 
+export const themeDefinitions = THEME_PRESETS;
+
 export { DEFAULT_CUSTOM_THEME };
 export { baseThemes } from './presets/baseThemes';
 export { seasonalThemes } from './presets/seasonalThemes';

@@ -238,3 +238,5 @@ export function markdownToEditorHtml(markdown: string): string {
 
   return htmlParts.join('') || '<p></p>';
 }
+
+export const markdownToHtml = markdownToEditorHtml;

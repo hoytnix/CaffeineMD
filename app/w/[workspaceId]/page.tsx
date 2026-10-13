@@ -21,6 +21,8 @@ import { WorkspaceHeader } from '@/src/components/workspace/WorkspaceHeader';
 import { THEME_PRESETS, applyThemeToDocument } from '@/src/lib/themes/themeDefinitions';
 import { DeleteConfirmModal } from '@/src/components/common/DeleteConfirmModal';
 import { NewNoteModal } from '@/src/components/sidebar/NewNoteModal';
+import { ExportPwaModal } from '@/src/components/export/ExportPwaModal';
+import { VaultFindReplaceModal } from '@/src/components/search/VaultFindReplaceModal';
 import { X, Plus, FileText, Check, Maximize2 } from 'lucide-react';
 
 export default function WorkspacePage() {
@@ -211,6 +213,8 @@ export default function WorkspacePage() {
       <TemplateSelectorModal />
       <EmojiDrawer />
       <DeleteConfirmModal />
+      <ExportPwaModal />
+      <VaultFindReplaceModal />
 
       {/* Floating Global Affirmative Toast */}
       {toastMessage && (

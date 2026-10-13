@@ -191,12 +191,18 @@ export interface WorkspaceRecord {
   updatedAt: number;
 }
 
+export type Note = VaultFile;
+
 export class KiteVaultDatabase extends Dexie {
   files!: Table<VaultFile, string>;
   backlinks!: Table<BacklinkRecord, string>;
   tags!: Table<TagRecord, string>;
   settings!: Table<VaultMetadata, string>;
   workspaces!: Table<WorkspaceRecord, string>;
+
+  get notes(): Table<VaultFile, string> {
+    return this.files;
+  }
 
   constructor() {
     super('KiteVaultDatabase');

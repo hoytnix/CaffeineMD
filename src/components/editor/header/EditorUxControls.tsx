@@ -2,12 +2,15 @@
 
 import React from 'react';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
+import { useFindReplaceStore } from '@/src/stores/findReplaceStore';
 import {
   Columns as SplitIcon,
   Maximize2,
   Minimize2,
   ChevronsUpDown,
   Map as MapIcon,
+  Download,
+  Replace,
   Save,
   Trash2,
 } from 'lucide-react';
@@ -94,6 +97,28 @@ export function EditorUxControls({
         aria-label="Toggle focus mode"
       >
         {isFocusMode ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+      </button>
+
+      {/* Vault RegEx Find & Replace (⌘⇧H) */}
+      <button
+        type="button"
+        onClick={() => useFindReplaceStore.getState().setOpen(true)}
+        className="p-1.5 rounded-md border border-[var(--border)] bg-[var(--card)] text-neutral-400 hover:text-[var(--foreground)] transition-colors cursor-pointer"
+        title="Vault Find & Replace (⌘⇧H)"
+        aria-label="Vault Find & Replace"
+      >
+        <Replace className="w-3.5 h-3.5" />
+      </button>
+
+      {/* Export Document / PWA */}
+      <button
+        type="button"
+        onClick={() => useWorkspaceStore.getState().openExportModal()}
+        className="p-1.5 rounded-md border border-[var(--border)] bg-[var(--card)] text-neutral-400 hover:text-[var(--foreground)] transition-colors cursor-pointer"
+        title="Export Document / PWA"
+        aria-label="Export Document / PWA"
+      >
+        <Download className="w-3.5 h-3.5" />
       </button>
 
       {/* Save Button */}

@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import { Edit3, Copy, FolderInput, Trash2 } from 'lucide-react';
+import { Edit3, Copy, FolderInput, Trash2, Download } from 'lucide-react';
+import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 
 export interface FileActionMenuProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export function FileActionMenu({
   isOpen,
   onClose,
   anchorRect,
+  filePath,
   fileName,
   isFolder,
   onRename,
@@ -111,6 +113,22 @@ export function FileActionMenu({
       >
         <FolderInput className="w-3.5 h-3.5 text-neutral-400" />
         <span>Move to...</span>
+      </button>
+
+      <button
+        type="button"
+        role="menuitem"
+        onClick={() => {
+          onClose();
+          useWorkspaceStore.getState().openExportModal({
+            folderPath: isFolder ? filePath : undefined,
+            targetNotePath: !isFolder ? filePath : undefined,
+          });
+        }}
+        className="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-left cursor-pointer transition-colors"
+      >
+        <Download className="w-3.5 h-3.5 text-neutral-400" />
+        <span>Export {isFolder ? 'Folder PWA' : 'as PWA / HTML'}</span>
       </button>
 
       <div className="my-1 border-t border-[var(--border)]" />
