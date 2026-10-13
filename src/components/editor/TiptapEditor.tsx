@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { EditorContent } from '@tiptap/react';
 import { db } from '@/src/lib/storage/db';
 import { parseMarkdownContent, serializeMarkdownWithFrontmatter } from '@/src/lib/markdown/serializer';
@@ -18,6 +18,8 @@ import { PlaintextMarkdownEditor } from './modes/PlaintextMarkdownEditor';
 import { DiffViewer } from './modes/DiffViewer';
 import { FloatingToolbarHost } from './FloatingToolbarHost';
 import { EditorBottomToolbar } from './EditorBottomToolbar';
+import { DocumentOutlineHud } from './components/DocumentOutlineHud';
+import { EditorMinimap } from './components/EditorMinimap';
 import { FileQuestion } from 'lucide-react';
 
 export interface TiptapEditorProps {
@@ -25,9 +27,11 @@ export interface TiptapEditorProps {
 }
 
 export function TiptapEditor({ filePath }: TiptapEditorProps) {
-  const { openFileTab, activeWorkspaceId, toolboxPosition } = useWorkspaceStore();
+  const { openFileTab, activeWorkspaceId, toolboxPosition, isTypewriterScrolling } =
+    useWorkspaceStore();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const gutterRef = useRef<HTMLDivElement | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
   const {
     file, setFile, setTitle, isSaving, saveSuccess, loading,
@@ -56,6 +60,36 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
     handlePaste,
     onAutoSave: handleSave,
   });
+
+  // Typewriter Scrolling: Keep current cursor vertically centered
+  useEffect(() => {
+    if (!isTypewriterScrolling || !editor || editor.isDestroyed) return;
+
+    const handleSelectionUpdate = () => {
+      const container = scrollContainerRef.current;
+      if (!container) return;
+
+      try {
+        const { from } = editor.state.selection;
+        const coords = editor.view.coordsAtPos(from);
+        const containerRect = container.getBoundingClientRect();
+        const relativeTop = coords.top - containerRect.top;
+        const targetScroll = container.scrollTop + relativeTop - containerRect.height / 2;
+
+        container.scrollTo({
+          top: targetScroll,
+          behavior: 'smooth',
+        });
+      } catch {
+        // Selection coords might not be computed yet during unmount
+      }
+    };
+
+    editor.on('selectionUpdate', handleSelectionUpdate);
+    return () => {
+      editor.off('selectionUpdate', handleSelectionUpdate);
+    };
+  }, [editor, isTypewriterScrolling]);
 
   if (loading) {
     return (
@@ -120,7 +154,10 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
         )}
 
         {/* Main Note Scrollable Container */}
-        <div className="flex-1 flex flex-col h-full overflow-y-auto overflow-x-hidden min-w-0 relative">
+        <div
+          ref={scrollContainerRef}
+          className="flex-1 flex flex-col h-full overflow-y-auto overflow-x-hidden min-w-0 relative"
+        >
           {/* Top Toolbar Dock */}
           {editorMode === 'rich' && editor && !editor.isDestroyed && toolboxPosition === 'top' && (
             <div className="sticky top-3 z-30 w-full flex justify-center px-4 pt-1 pb-2 shrink-0 animate-in fade-in slide-in-from-top-2">
@@ -186,6 +223,12 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
           )}
         </div>
 
+        {/* Editor Minimap */}
+        <EditorMinimap
+          containerRef={scrollContainerRef}
+          content={rawMarkdown || file?.content || ''}
+        />
+
         {/* Right Toolbar Dock */}
         {editorMode === 'rich' && editor && !editor.isDestroyed && toolboxPosition === 'right' && (
           <div className="flex flex-col justify-center pr-3 py-4 shrink-0 z-30 animate-in fade-in slide-in-from-right-2">
@@ -193,6 +236,13 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
           </div>
         )}
       </div>
+
+      {/* Floating Outline HUD */}
+      <DocumentOutlineHud
+        editor={editor}
+        rawMarkdown={rawMarkdown}
+        editorMode={editorMode}
+      />
 
       <FloatingToolbarHost
         slashMenu={slashMenu}

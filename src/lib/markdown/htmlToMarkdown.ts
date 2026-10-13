@@ -142,7 +142,8 @@ export function editorHtmlToMarkdown(html: string): string {
         const alt = el.getAttribute('alt') || '';
         const title = el.getAttribute('title');
         if (!src) return '';
-        return title ? `![${alt}](${src} "${title}")` : `![${alt}](${src})`;
+        const finalSrc = (title && title.startsWith('assets/')) ? title : src;
+        return title && !title.startsWith('assets/') ? `![${alt}](${finalSrc} "${title}")` : `![${alt}](${finalSrc})`;
       }
       case 'ul': {
         const isTaskList = el.getAttribute('data-type') === 'taskList';

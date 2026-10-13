@@ -15,27 +15,30 @@ export function useEditorDropUpload({ activeWorkspaceId = 'default-vault' }: Use
       const droppedFile = files[0];
       if (droppedFile.type.startsWith('image/')) {
         event.preventDefault();
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-          const src = e.target?.result as string;
-          const { schema } = view.state;
-          const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY });
+        const safeName = droppedFile.name
+          ? droppedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+          : `image-${Date.now()}.png`;
+        const safePath = `assets/${Date.now()}-${safeName}`;
+        const objectUrl = URL.createObjectURL(droppedFile);
 
-          if (coordinates) {
-            // Also asynchronously persist to local asset repository
-            try {
-              const safePath = `assets/${Date.now()}-${droppedFile.name}`;
-              await storeAsset(activeWorkspaceId, safePath, droppedFile, droppedFile.type);
-            } catch (err) {
-              console.warn('Asset store warning:', err);
-            }
+        const { schema } = view.state;
+        const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY });
 
-            const node = schema.nodes.image.create({ src, alt: droppedFile.name });
-            const transaction = view.state.tr.insert(coordinates.pos, node);
-            view.dispatch(transaction);
-          }
-        };
-        reader.readAsDataURL(droppedFile);
+        if (coordinates) {
+          const node = schema.nodes.image.create({
+            src: objectUrl,
+            alt: droppedFile.name || 'Dropped image',
+            title: safePath,
+          });
+          const transaction = view.state.tr.insert(coordinates.pos, node);
+          view.dispatch(transaction);
+        }
+
+        // Asynchronously persist to local IndexedDB asset repository
+        storeAsset(activeWorkspaceId, safePath, droppedFile, droppedFile.type).catch((err) => {
+          console.warn('Asset store warning:', err);
+        });
+
         return true;
       }
 
@@ -55,24 +58,28 @@ export function useEditorDropUpload({ activeWorkspaceId = 'default-vault' }: Use
           const file = item.getAsFile();
           if (file) {
             event.preventDefault();
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-              const src = e.target?.result as string;
-              const { schema } = view.state;
-              const { from } = view.state.selection;
+            const safeName = file.name
+              ? file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+              : `pasted-${Date.now()}.png`;
+            const safePath = `assets/${Date.now()}-${safeName}`;
+            const objectUrl = URL.createObjectURL(file);
 
-              try {
-                const safePath = `assets/${Date.now()}-${file.name || 'pasted-image.png'}`;
-                await storeAsset(activeWorkspaceId, safePath, file, file.type);
-              } catch (err) {
-                console.warn('Asset store warning:', err);
-              }
+            const { schema } = view.state;
+            const { from } = view.state.selection;
 
-              const node = schema.nodes.image.create({ src, alt: file.name || 'image' });
-              const transaction = view.state.tr.insert(from, node);
-              view.dispatch(transaction);
-            };
-            reader.readAsDataURL(file);
+            const node = schema.nodes.image.create({
+              src: objectUrl,
+              alt: file.name || 'Pasted image',
+              title: safePath,
+            });
+            const transaction = view.state.tr.insert(from, node);
+            view.dispatch(transaction);
+
+            // Asynchronously persist to local IndexedDB asset repository
+            storeAsset(activeWorkspaceId, safePath, file, file.type).catch((err) => {
+              console.warn('Asset store warning:', err);
+            });
+
             return true;
           }
         }

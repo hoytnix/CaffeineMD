@@ -88,8 +88,7 @@ export function useTiptapInit({
       try {
         const parsed = parseMarkdownContent(file.content || '', file.title);
         const editorHtml = markdownToEditorHtml(parsed.body);
-        editor.commands.setContent(editorHtml);
-        autoDetectUnlabeledCodeBlocks(editor);
+        editor.commands.setContent(editorHtml, { emitUpdate: false });
         loadedPathRef.current = file.path;
       } catch (err) {
         console.warn('Failed to parse note markdown for editor:', err);
@@ -108,8 +107,7 @@ export function useTiptapInit({
       const editorHtml = markdownToEditorHtml(parsed.body);
       const currentHtml = editor.getHTML();
       if (currentHtml === '<p></p>' || Math.abs(currentHtml.length - editorHtml.length) > 10) {
-        editor.commands.setContent(editorHtml);
-        autoDetectUnlabeledCodeBlocks(editor);
+        editor.commands.setContent(editorHtml, { emitUpdate: false });
       }
     } catch (err) {
       console.warn('Failed to parse note markdown for editor:', err);

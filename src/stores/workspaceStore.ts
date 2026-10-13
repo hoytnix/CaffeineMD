@@ -63,6 +63,34 @@ export interface WorkspaceState {
   setEmojiDrawerOpen: (open: boolean) => void;
   toggleEmojiDrawer: () => void;
 
+  // Document Quick Switcher (Cmd+P)
+  isQuickSwitcherOpen: boolean;
+  setQuickSwitcherOpen: (open: boolean) => void;
+
+  // Multi-Pane Split View
+  splitPaneMode: 'none' | 'vertical' | 'horizontal';
+  splitFilePath: string | null;
+  setSplitPaneMode: (mode: 'none' | 'vertical' | 'horizontal') => void;
+  toggleSplitPane: () => void;
+  setSplitFilePath: (path: string | null) => void;
+
+  // Focus Mode & Typewriter Scrolling
+  isFocusMode: boolean;
+  setFocusMode: (open: boolean) => void;
+  toggleFocusMode: () => void;
+  isTypewriterScrolling: boolean;
+  setTypewriterScrolling: (val: boolean) => void;
+  toggleTypewriterScrolling: () => void;
+
+  // Editor Minimap
+  showMinimap: boolean;
+  setShowMinimap: (val: boolean) => void;
+  toggleMinimap: () => void;
+
+  // Template / Scratchpad Modal (Cmd+Shift+N)
+  isTemplateModalOpen: boolean;
+  setTemplateModalOpen: (open: boolean) => void;
+
   // Active Editor instance reference
   activeEditor: any | null;
   setActiveEditor: (editor: any | null) => void;
@@ -167,6 +195,57 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   isEmojiDrawerOpen: false,
   setEmojiDrawerOpen: (open) => set({ isEmojiDrawerOpen: open }),
   toggleEmojiDrawer: () => set((state) => ({ isEmojiDrawerOpen: !state.isEmojiDrawerOpen })),
+
+  // Document Quick Switcher (Cmd+P)
+  isQuickSwitcherOpen: false,
+  setQuickSwitcherOpen: (open) => set({ isQuickSwitcherOpen: open }),
+
+  // Multi-Pane Split View
+  splitPaneMode: 'none',
+  splitFilePath: null,
+  setSplitPaneMode: (mode) => set({ splitPaneMode: mode }),
+  toggleSplitPane: () => {
+    const current = get().splitPaneMode;
+    const nextMode = current === 'none' ? 'vertical' : 'none';
+    const active = get().activeFilePath;
+    const tabs = get().openTabs;
+    const alternate = tabs.find((t) => t.path !== active)?.path || active;
+    set({
+      splitPaneMode: nextMode,
+      splitFilePath: nextMode !== 'none' ? (get().splitFilePath || alternate) : null,
+    });
+  },
+  setSplitFilePath: (path) => set({ splitFilePath: path }),
+
+  // Focus Mode & Typewriter Scrolling
+  isFocusMode: false,
+  setFocusMode: (open) => set({ isFocusMode: open }),
+  toggleFocusMode: () => set((state) => ({ isFocusMode: !state.isFocusMode })),
+  isTypewriterScrolling: false,
+  setTypewriterScrolling: (val) => set({ isTypewriterScrolling: val }),
+  toggleTypewriterScrolling: () => set((state) => ({ isTypewriterScrolling: !state.isTypewriterScrolling })),
+
+  // Editor Minimap
+  showMinimap:
+    typeof window !== 'undefined'
+      ? localStorage.getItem('caffeinemd-show-minimap') !== 'false'
+      : true,
+  setShowMinimap: (val) => {
+    set({ showMinimap: val });
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('caffeinemd-show-minimap', String(val));
+      } catch {}
+    }
+  },
+  toggleMinimap: () => {
+    const nextVal = !get().showMinimap;
+    get().setShowMinimap(nextVal);
+  },
+
+  // Template / Scratchpad Modal (Cmd+Shift+N)
+  isTemplateModalOpen: false,
+  setTemplateModalOpen: (open) => set({ isTemplateModalOpen: open }),
 
   // Active Editor
   activeEditor: null,

@@ -9,7 +9,6 @@ import {
   markdownToEditorHtml,
   editorHtmlToMarkdown,
 } from '@/src/lib/markdown/serializer';
-import { autoDetectUnlabeledCodeBlocks } from '../config/editorDomHandlers';
 import { EditorMode } from '../EditorHeader';
 
 export interface UseEditorModeSwitchProps {
@@ -56,7 +55,6 @@ export function useEditorModeSwitch({
           const html = markdownToEditorHtml(parsed.body);
           if (editor && !editor.isDestroyed && editor.schema) {
             editor.commands.setContent(html, { emitUpdate: false });
-            autoDetectUnlabeledCodeBlocks(editor);
           }
         } catch (err) {
           console.warn('Error syncing to rich text:', err);

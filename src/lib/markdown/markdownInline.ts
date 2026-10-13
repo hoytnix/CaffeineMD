@@ -4,6 +4,8 @@
  * markdown links, and markdown image syntax (![alt](url "title")).
  */
 
+import { getCachedAssetUrl } from '../storage/repositories/assetRepository';
+
 export function escapeHtml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
@@ -74,9 +76,14 @@ export function formatInline(text: string): string {
   // Must run BEFORE links so ! isn't left as an orphan before an anchor tag
   res = res.replace(IMAGE_MARKDOWN_REGEX, (_match, alt, urlAngle, urlBare, title) => {
     const url = urlAngle || urlBare || '';
-    const escapedSrc = escapeHtml(url);
+    const resolvedUrl =
+      typeof window !== 'undefined' && url.startsWith('assets/')
+        ? getCachedAssetUrl(url) || url
+        : url;
+    const escapedSrc = escapeHtml(resolvedUrl);
     const escapedAlt = escapeHtml(alt || '');
-    const titleAttr = title ? ` title="${escapeHtml(title)}"` : '';
+    const finalTitle = title || (url.startsWith('assets/') ? url : '');
+    const titleAttr = finalTitle ? ` title="${escapeHtml(finalTitle)}"` : '';
     return `<img src="${escapedSrc}" alt="${escapedAlt}"${titleAttr} class="editor-image rounded-md max-w-full my-2">`;
   });
 

@@ -9,12 +9,16 @@ import {
   markdownToEditorHtml,
   editorHtmlToMarkdown,
 } from '@/src/lib/markdown/serializer';
-import { autoDetectUnlabeledCodeBlocks } from '../config/editorDomHandlers';
 import { useEditorModeSwitch } from './useEditorModeSwitch';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 
 export interface UseEditorAutosaveProps {
   filePath: string;
+}
+
+function isContentEqual(a: string, b: string): boolean {
+  if (a === b) return true;
+  return a.replace(/\r\n/g, '\n').trim() === b.replace(/\r\n/g, '\n').trim();
 }
 
 /**
@@ -42,6 +46,7 @@ export function useEditorAutosave({ filePath }: UseEditorAutosaveProps) {
     fileRef.current = file;
   }, [file]);
 
+  const lastSavedContentRef = useRef<string>('');
   const isDirtyRef = useRef(false);
   const dirtyContentRef = useRef<{ mode: 'rich' | 'plain'; content: string } | null>(null);
   const dirtyStartTimeRef = useRef<number | null>(null);
@@ -87,10 +92,14 @@ export function useEditorAutosave({ filePath }: UseEditorAutosaveProps) {
     setIsDirty(false);
 
     try {
+      let updated: any;
       if (pending.mode === 'rich') {
-        await persistRichMarkdown(pending.content, currentFile);
+        updated = await persistRichMarkdown(pending.content, currentFile);
       } else {
-        await persistRawMarkdown(pending.content, currentFile);
+        updated = await persistRawMarkdown(pending.content, currentFile);
+      }
+      if (updated?.content) {
+        lastSavedContentRef.current = updated.content;
       }
     } catch (err) {
       console.warn('Flush autosave failed:', err);
@@ -103,14 +112,31 @@ export function useEditorAutosave({ filePath }: UseEditorAutosaveProps) {
       const targetFile = currentFile || file;
       if (!targetFile) return;
 
-      isDirtyRef.current = true;
-      setIsDirty(true);
-      dirtyContentRef.current = { mode, content };
-
       const fullRaw =
         mode === 'rich'
           ? serializeMarkdownWithFrontmatter(content, targetFile.frontmatter || {})
           : content;
+
+      const baseline = lastSavedContentRef.current || targetFile.content || '';
+
+      // If content matches saved baseline, reset dirty status and clear pending timer
+      if (isContentEqual(fullRaw, baseline)) {
+        isDirtyRef.current = false;
+        dirtyContentRef.current = null;
+        dirtyStartTimeRef.current = null;
+        if (autosaveTimerRef.current) {
+          clearTimeout(autosaveTimerRef.current);
+          autosaveTimerRef.current = null;
+        }
+        setIsDirty(false);
+        setRawMarkdown(baseline);
+        return;
+      }
+
+      // Legitimate unsaved changes detected
+      isDirtyRef.current = true;
+      setIsDirty(true);
+      dirtyContentRef.current = { mode, content };
       setRawMarkdown(fullRaw);
 
       if (autosaveInterval === 0) {
@@ -178,13 +204,13 @@ export function useEditorAutosave({ filePath }: UseEditorAutosaveProps) {
       setIsDirty(false);
 
       const baseline = file.content || '';
+      lastSavedContentRef.current = baseline;
       setRawMarkdown(baseline);
       setTitle(file.title);
       if (editor && !editor.isDestroyed && editor.schema) {
         try {
           const parsed = parseMarkdownContent(baseline, file.title);
           editor.commands.setContent(markdownToEditorHtml(parsed.body), { emitUpdate: false });
-          autoDetectUnlabeledCodeBlocks(editor);
         } catch (err) {
           console.warn('Error reverting editor:', err);
         }
@@ -203,9 +229,13 @@ export function useEditorAutosave({ filePath }: UseEditorAutosaveProps) {
       setIsDirty(false);
 
       if (editorMode === 'plain' || editorMode === 'diff') {
-        if (file) await persistRawMarkdown(rawMarkdown, file);
+        if (file) {
+          const updated = await persistRawMarkdown(rawMarkdown, file);
+          if (updated?.content) lastSavedContentRef.current = updated.content;
+        }
       } else if (editor && !editor.isDestroyed && editor.schema && file) {
-        await persistRichMarkdown(editorHtmlToMarkdown(editor.getHTML()), file);
+        const updated = await persistRichMarkdown(editorHtmlToMarkdown(editor.getHTML()), file);
+        if (updated?.content) lastSavedContentRef.current = updated.content;
       }
     },
     [editorMode, file, persistRichMarkdown, persistRawMarkdown, rawMarkdown]

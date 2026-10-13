@@ -20,6 +20,7 @@ import {
   ChevronUp,
   GitCompare,
 } from 'lucide-react';
+import { EditorUxControls } from './header/EditorUxControls';
 
 export type EditorMode = 'rich' | 'plain' | 'diff';
 
@@ -237,25 +238,11 @@ export function EditorHeader({
             </button>
           </div>
 
-          {/* Save Button (Icon-Only) */}
-          <button
-            onClick={onManualSave}
-            disabled={isSaveDisabled}
-            className="p-1.5 rounded-md bg-[var(--card)] hover:bg-[var(--border)]/60 text-[var(--foreground)] border border-[var(--border)] disabled:opacity-50 transition-colors cursor-pointer disabled:cursor-not-allowed"
-            title="Save note (⌘S)"
-            aria-label="Save note (⌘S)"
-          >
-            <Save className="w-3.5 h-3.5 text-neutral-400" />
-          </button>
-
-          {/* Trash Can / Delete Note Button */}
-          <button
-            onClick={handleDelete}
-            className="p-1.5 rounded-md text-neutral-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
-            title="Delete note"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          <EditorUxControls
+            onManualSave={onManualSave}
+            isSaveDisabled={isSaveDisabled}
+            onDelete={handleDelete}
+          />
         </div>
       </div>
 

@@ -1,5 +1,30 @@
 import { db, VaultFile } from '../schema';
 
+const assetObjectUrlMap = new Map<string, string>();
+
+/**
+ * Synchronously get cached Object URL for an asset path if available
+ */
+export function getCachedAssetUrl(path: string): string | null {
+  return assetObjectUrlMap.get(path) || null;
+}
+
+/**
+ * Asynchronously retrieve or create an Object URL for an asset path from IndexedDB
+ */
+export async function getOrLoadAssetUrl(path: string): Promise<string | null> {
+  if (assetObjectUrlMap.has(path)) {
+    return assetObjectUrlMap.get(path)!;
+  }
+  const asset = await getAsset(path);
+  if (asset?.blob) {
+    const url = URL.createObjectURL(asset.blob);
+    assetObjectUrlMap.set(path, url);
+    return url;
+  }
+  return null;
+}
+
 /**
  * Store a binary media asset (image, PDF, attachment) in IndexedDB
  */
@@ -13,6 +38,12 @@ export async function storeAsset(
   const extension = fileName.split('.').pop()?.toLowerCase() || 'bin';
   const effectiveMime = mimeType || blob.type || 'application/octet-stream';
   const now = Date.now();
+
+  // Create immediate Object URL for instant zero-freeze UI rendering
+  if (typeof window !== 'undefined') {
+    const url = URL.createObjectURL(blob);
+    assetObjectUrlMap.set(path, url);
+  }
 
   const record: VaultFile = {
     id: path,
