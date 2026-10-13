@@ -76,6 +76,7 @@ export interface WorkspaceState {
 
   // Focus Mode & Typewriter Scrolling
   isFocusMode: boolean;
+  focusMode: boolean;
   setFocusMode: (open: boolean) => void;
   toggleFocusMode: () => void;
   isTypewriterScrolling: boolean;
@@ -86,8 +87,11 @@ export interface WorkspaceState {
 
   // Editor Outline HUD
   isOutlineOpen: boolean;
+  outlineHudOpen: boolean;
   setIsOutlineOpen: (open: boolean) => void;
+  setOutlineHudOpen: (open: boolean) => void;
   toggleOutline: () => void;
+  toggleOutlineHud: () => void;
 
   // Editor Minimap
   showMinimap: boolean;
@@ -246,8 +250,9 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
   // Focus Mode & Typewriter Scrolling
   isFocusMode: false,
-  setFocusMode: (open) => set({ isFocusMode: open }),
-  toggleFocusMode: () => set((state) => ({ isFocusMode: !state.isFocusMode })),
+  focusMode: false,
+  setFocusMode: (open) => set({ isFocusMode: open, focusMode: open }),
+  toggleFocusMode: () => set((state) => ({ isFocusMode: !state.isFocusMode, focusMode: !state.isFocusMode })),
   isTypewriterScrolling:
     typeof window !== 'undefined'
       ? localStorage.getItem('caffeinemd-typewriter-mode') === 'true'
@@ -275,8 +280,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
   // Editor Outline HUD
   isOutlineOpen: false,
-  setIsOutlineOpen: (open) => set({ isOutlineOpen: open }),
-  toggleOutline: () => set((state) => ({ isOutlineOpen: !state.isOutlineOpen })),
+  outlineHudOpen: false,
+  setIsOutlineOpen: (open) => set({ isOutlineOpen: open, outlineHudOpen: open }),
+  setOutlineHudOpen: (open) => set({ isOutlineOpen: open, outlineHudOpen: open }),
+  toggleOutline: () => set((state) => ({ isOutlineOpen: !state.isOutlineOpen, outlineHudOpen: !state.isOutlineOpen })),
+  toggleOutlineHud: () => set((state) => ({ isOutlineOpen: !state.isOutlineOpen, outlineHudOpen: !state.isOutlineOpen })),
 
   // Editor Minimap
   showMinimap:

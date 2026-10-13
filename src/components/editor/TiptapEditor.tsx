@@ -236,6 +236,13 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
           )}
         </div>
 
+        {/* Document Outline HUD */}
+        <DocumentOutlineHud
+          editor={editor}
+          rawMarkdown={rawMarkdown}
+          editorMode={editorMode}
+        />
+
         {/* Editor Minimap */}
         <EditorMinimap
           containerRef={scrollContainerRef}
@@ -249,13 +256,6 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
           </div>
         )}
       </div>
-
-      {/* Floating Outline HUD */}
-      <DocumentOutlineHud
-        editor={editor}
-        rawMarkdown={rawMarkdown}
-        editorMode={editorMode}
-      />
 
       <FloatingToolbarHost
         slashMenu={slashMenu}

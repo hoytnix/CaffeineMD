@@ -71,6 +71,39 @@ export function PlaintextMarkdownEditor({
     return () => observer.disconnect();
   }, [rawMarkdown, wordWrap, textareaRef]);
 
+  // Jump to specific line/offset on custom event (e.g., from Document Outline HUD)
+  useEffect(() => {
+    const handleScrollToLine = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      const textarea = textareaRef.current;
+      if (!textarea || !detail) return;
+
+      textarea.focus();
+
+      if (typeof detail.offset === 'number') {
+        textarea.selectionStart = detail.offset;
+        textarea.selectionEnd = detail.offset + (detail.text?.length || 0);
+      }
+
+      if (typeof detail.line === 'number') {
+        const lineIdx = detail.line - 1;
+        let targetTop = 0;
+        if (lineHeights.length > lineIdx && lineHeights[lineIdx]) {
+          targetTop = lineHeights.slice(0, lineIdx).reduce((acc, h) => acc + h, 0);
+        } else {
+          targetTop = lineIdx * 28;
+        }
+        textarea.scrollTo({ top: Math.max(0, targetTop - 30), behavior: 'smooth' });
+        if (gutterRef.current) {
+          gutterRef.current.scrollTo({ top: Math.max(0, targetTop - 30), behavior: 'smooth' });
+        }
+      }
+    };
+
+    window.addEventListener('caffeinemd:scroll-to-line', handleScrollToLine);
+    return () => window.removeEventListener('caffeinemd:scroll-to-line', handleScrollToLine);
+  }, [lineHeights, textareaRef, gutterRef]);
+
   const handleScroll = () => {
     if (textareaRef.current && gutterRef.current) {
       gutterRef.current.scrollTop = textareaRef.current.scrollTop;

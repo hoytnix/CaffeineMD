@@ -82,6 +82,14 @@
       - Integrated "Direct AI App Synthesis (One-Shot HTML)" toggle into [ExportOptionsForm.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportOptionsForm.tsx) and [AiThemePromptDrawer.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/AiThemePromptDrawer.tsx).
       - Wired immediate live preview streaming and 1-click raw HTML download into [ExportPwaModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportPwaModal.tsx), bypassing the template pipeline.
 
+    27. **Document Outline Mode (`outlineHudOpen`) Overhaul & Dual-Mode Extraction (Live & Verified)**:
+       - Always renders when enabled; provides clean empty state (`"No headings in this note yet..."`) instead of silently unmounting when headings are absent.
+       - Removed `hidden xl:flex` viewport limitation; renders as a responsive docked side panel across tablet and desktop viewports (`w-60 border-l border-slate-800/60 bg-slate-950/60 backdrop-blur-md`).
+       - Header bar with `ListTree` icon, document outline title, dynamic heading count badge, and dismiss `X` button wired to store `setOutlineHudOpen(false)`.
+       - Dual-mode heading extraction: Tiptap AST node traversal with reactive `update` and `selectionUpdate` subscriptions in Rich Text, code-fence-aware `/^(#{1,6})\s+(.+)$/` parsing in Plaintext.
+       - Cross-mode jump navigation: focuses editor and smoothly scrolls heading element into view in Rich Text; dispatches `caffeinemd:scroll-to-line` and scrolls/focuses textarea to character offset in Plaintext.
+       - Relocated `<DocumentOutlineHud />` inside the main horizontal flex row in [TiptapEditor.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/TiptapEditor.tsx) across all editor modes.
+
 - **Architecture & Tiered LOC Compliance**: All modules decomposed strictly within tiered LOC boundaries (<100 LOC sweet spot, <250 LOC soft limit, strictly <400 LOC).
 - **Verification Rule**: ESLint passing with 0 errors and 0 warnings (`pnpm run lint`). TypeScript check passing with 0 errors (`tsc --noEmit`).
 
