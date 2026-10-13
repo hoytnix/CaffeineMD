@@ -50,6 +50,7 @@ export function FileTree() {
     purgeExpiredTrashNotes,
     isNewNoteModalOpen,
     setNewNoteModalOpen,
+    customFolders,
   } = useWorkspaceStore();
 
   const {
@@ -84,7 +85,7 @@ export function FileTree() {
     });
   }, [files, activeWorkspaceId]);
 
-  const treeData = useTreeStructure(activeFiles, '');
+  const treeData = useTreeStructure(activeFiles, '', customFolders);
 
   const folderSuggestions = useMemo(() => {
     const set = new Set<string>();

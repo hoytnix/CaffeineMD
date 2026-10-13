@@ -131,11 +131,22 @@
   - Removed duplicate inline document tab bar from [page.tsx](file:///home/oloty/Dev/CaffeineMD/app/w/[workspaceId]/page.tsx); retained single scoped [DocumentTabBar.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/DocumentTabBar.tsx) within [TiptapEditor.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/TiptapEditor.tsx).
   - Themed [DocumentTabBar.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/DocumentTabBar.tsx) using semantic `--theme-bg-sidebar`, `--theme-bg-card`, `--theme-border`, `--theme-text-primary`, and `--theme-accent` CSS variables.
   - Added `setActiveNoteId` helper to [workspaceStore.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/workspaceStore.ts) and wrapped tab selection in `React.startTransition` to unblock user input immediately.
-  - Deferred Markdown parsing and Tiptap document re-injection into `requestAnimationFrame` with `cancelAnimationFrame` cleanup in [useTiptapInit.ts](file:///home/oloty/Dev/CaffeineMD/src/components/editor/hooks/useTiptapInit.ts), eliminating the 254ms INP freeze on tab switching.
+- [x] **ChromeOS/Linux Digit & Emoji Typography Precedence Resolution**:
+  - Bound `Inter` (`--font-inter`) and `JetBrains_Mono` (`--font-jetbrains-mono`) from `next/font/google` to `<html className="...">` and `<body>` in [app/layout.tsx](file:///home/oloty/Dev/CaffeineMD/app/layout.tsx).
+  - Defined clean, non-circular `--font-sans` and `--font-mono` tokens in `@theme` in [app/globals.css](file:///home/oloty/Dev/CaffeineMD/app/globals.css), prioritizing text fonts and system UI fallbacks before emoji fonts.
+  - Set explicit typography inheritance across `body`, `.ProseMirror`, `input`, `textarea`, `select`, `button`, `pre`, `code`, and `kbd` to guarantee digits `0-9`, `#`, and `*` render as standard typographic numerals across ChromeOS, Linux, macOS, and Windows.
+
+- [x] **Folder Deletion & Recursive Trash Operations**:
+  - Implemented `softDeleteFolder` and recursive path/folder resolution in [fileOperations.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/repositories/fileOperations.ts), eliminating the `"Failed to move note to Trash"` error when deleting folders with `folder:` prefixed IDs.
+  - Added recursive soft-deletion within an atomic Dexie transaction updating `isTrash`, `isDeleted`, `deletedAt`, and `updatedAt` for all nested files.
+  - Integrated `customFolders` state management (`addCustomFolder`, `removeCustomFolder`, `renameCustomFolder`) in [workspaceStore.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/workspaceStore.ts) and tree mapping in [useTreeStructure.ts](file:///home/oloty/Dev/CaffeineMD/src/hooks/useTreeStructure.ts).
+  - Updated [useFileTreeActions.ts](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/useFileTreeActions.ts) with `handleDelete`, `renameNode`, and `moveNode` handling both files and folders, closing open tabs, and synchronizing active editor paths.
+  - Implemented `renameFolder` and `moveFolder` supporting batch path and backlink migrations.
 
 ## Verification Status
 - Lint verification: Passing cleanly with 0 errors and 0 warnings (`pnpm run lint`).
 - TypeScript verification: Passing cleanly with 0 errors (`tsc --noEmit`).
 - Tiered LOC Limits: 100% compliant (<100 LOC sweet spot, <250 LOC soft limit, strictly <400 LOC across all modules).
+
 
 

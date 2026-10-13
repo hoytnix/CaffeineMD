@@ -1,12 +1,23 @@
 import { useCallback } from 'react';
-import { VaultFile, renameVaultFile, duplicateVaultFile, moveVaultFile } from '@/src/lib/storage/db';
+import {
+  VaultFile,
+  renameVaultFile,
+  duplicateVaultFile,
+  moveVaultFile,
+  softDeleteNote,
+  softDeleteFolder,
+  renameFolder,
+  moveFolder,
+} from '@/src/lib/storage/db';
 import { TreeNode } from '@/src/hooks/useTreeStructure';
+import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 
 interface FileTreeActionsProps {
   activeFiles: VaultFile[];
   showToast: (msg: string) => void;
   openFileTab: (path: string, title?: string) => void;
   renameFileTab: (oldPath: string, newPath: string, newTitle?: string) => void;
+  setNotes?: (notes: VaultFile[]) => void;
 }
 
 export function useFileTreeActions({
@@ -15,6 +26,15 @@ export function useFileTreeActions({
   openFileTab,
   renameFileTab,
 }: FileTreeActionsProps) {
+  const {
+    activeWorkspaceId,
+    activeFilePath,
+    setActiveFilePath,
+    closeFileTab,
+    removeCustomFolder,
+    renameCustomFolder,
+  } = useWorkspaceStore();
+
   const duplicateNode = useCallback(async (node: TreeNode) => {
     if (node.isFolder) return;
     const res = await duplicateVaultFile(node.path);
@@ -28,15 +48,17 @@ export function useFileTreeActions({
 
   const renameNode = useCallback(async (node: TreeNode, newName: string) => {
     const oldPath = node.path;
-    if (node.isFolder) {
+    if (node.isFolder || node.id?.startsWith('folder:')) {
       const parentDir = oldPath.includes('/') ? oldPath.substring(0, oldPath.lastIndexOf('/')) : '';
       const newPath = parentDir ? `${parentDir}/${newName}` : newName;
+      await renameFolder(oldPath, newName, activeWorkspaceId);
+      renameCustomFolder(oldPath, newPath);
+
       const prefix = `${oldPath}/`;
       const filesToRename = activeFiles.filter((f) => f.path.startsWith(prefix));
       for (const f of filesToRename) {
         const rest = f.path.substring(prefix.length);
         const renamedSubPath = `${newPath}/${rest}`;
-        await renameVaultFile(f.path, renamedSubPath);
         renameFileTab(f.path, renamedSubPath);
       }
       showToast(`Renamed folder to ${newName}`);
@@ -53,17 +75,50 @@ export function useFileTreeActions({
         showToast(res.error || 'Failed to rename note');
       }
     }
-  }, [activeFiles, renameFileTab, showToast]);
+  }, [activeFiles, activeWorkspaceId, renameCustomFolder, renameFileTab, showToast]);
 
   const moveNode = useCallback(async (node: TreeNode, targetFolder: string) => {
-    const res = await moveVaultFile(node.path, targetFolder);
-    if (res.success && res.newPath) {
-      renameFileTab(node.path, res.newPath);
-      showToast(`Moved note to ${targetFolder || 'root'}`);
+    if (node.isFolder || node.id?.startsWith('folder:')) {
+      await moveFolder(node.path, targetFolder, activeWorkspaceId);
+      showToast(`Moved folder to ${targetFolder || 'root'}`);
     } else {
-      showToast(res.error || 'Failed to move note');
+      const res = await moveVaultFile(node.path, targetFolder);
+      if (res.success && res.newPath) {
+        renameFileTab(node.path, res.newPath);
+        showToast(`Moved note to ${targetFolder || 'root'}`);
+      } else {
+        showToast(res.error || 'Failed to move note');
+      }
     }
-  }, [renameFileTab, showToast]);
+  }, [activeWorkspaceId, renameFileTab, showToast]);
 
-  return { duplicateNode, renameNode, moveNode };
+  const handleDelete = useCallback(async (id: string) => {
+    try {
+      if (id.startsWith('folder:')) {
+        const folderPath = id.slice('folder:'.length);
+        const deletedIds = await softDeleteFolder(folderPath, activeWorkspaceId);
+        removeCustomFolder(folderPath);
+
+        const prefix = `${folderPath}/`;
+        deletedIds.forEach((deletedId) => closeFileTab(deletedId));
+        if (activeFilePath && (activeFilePath === folderPath || activeFilePath.startsWith(prefix))) {
+          setActiveFilePath(null);
+        }
+        showToast('Folder moved to Trash');
+      } else {
+        await softDeleteNote(id, activeWorkspaceId);
+        closeFileTab(id);
+        if (activeFilePath === id) {
+          setActiveFilePath(null);
+        }
+        showToast('Note moved to Trash');
+      }
+    } catch (err) {
+      console.error('Failed to move item to trash:', err);
+      showToast('Failed to move note to Trash');
+    }
+  }, [activeWorkspaceId, activeFilePath, closeFileTab, removeCustomFolder, setActiveFilePath, showToast]);
+
+  return { duplicateNode, renameNode, moveNode, handleDelete };
 }
+

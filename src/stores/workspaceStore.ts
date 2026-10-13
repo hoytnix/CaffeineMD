@@ -12,6 +12,7 @@ import {
   restoreFromTrash as dbRestoreFromTrash,
   emptyTrash as dbEmptyTrash,
   purgeExpiredTrash as dbPurgeExpiredTrash,
+  softDeleteFolder,
 } from '../lib/storage/db';
 import { NativeFileSystemAdapter } from '../lib/storage/fileSystem';
 
@@ -177,6 +178,14 @@ export interface WorkspaceState {
   setMountedMode: (mode: 'indexeddb' | 'filesystem', folderName?: string) => void;
   setActiveWorkspaceId: (id: string, name?: string) => void;
   setDatabaseViewMode: (mode: 'table' | 'board' | 'list') => void;
+
+  // Custom & Expanded Folders
+  customFolders: string[];
+  expandedFolders: string[];
+  addCustomFolder: (folderPath: string) => void;
+  removeCustomFolder: (folderPath: string) => void;
+  renameCustomFolder: (oldPrefix: string, newPrefix: string) => void;
+  closeTab: (path: string) => void;
 }
 
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
@@ -528,8 +537,51 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
   moveToTrash: async (path: string) => {
     try {
+      const isFolder = path.startsWith('folder:');
+      const cleanPath = isFolder ? path.slice('folder:'.length) : path;
+
+      if (isFolder) {
+        await softDeleteFolder(cleanPath, get().activeWorkspaceId);
+        get().removeCustomFolder(cleanPath);
+
+        const state = get();
+        const prefix = `${cleanPath}/`;
+        const newTabs = state.openTabs.filter((t) => t.path !== cleanPath && !t.path.startsWith(prefix));
+        let nextActive = state.activeFilePath;
+        if (state.activeFilePath && (state.activeFilePath === cleanPath || state.activeFilePath.startsWith(prefix))) {
+          nextActive = newTabs.length > 0 ? newTabs[newTabs.length - 1].path : null;
+        }
+
+        set({
+          openTabs: newTabs,
+          activeFilePath: nextActive,
+        });
+
+        state.showToast('Folder moved to Trash');
+        return true;
+      }
+
       const ok = await dbMoveToTrash(path);
       if (!ok) {
+        // Fallback: check if path corresponds to a folder directory
+        const folderDeleted = await softDeleteFolder(path, get().activeWorkspaceId);
+        if (folderDeleted.length > 0) {
+          get().removeCustomFolder(path);
+          const state = get();
+          const prefix = `${path}/`;
+          const newTabs = state.openTabs.filter((t) => t.path !== path && !t.path.startsWith(prefix));
+          let nextActive = state.activeFilePath;
+          if (state.activeFilePath && (state.activeFilePath === path || state.activeFilePath.startsWith(prefix))) {
+            nextActive = newTabs.length > 0 ? newTabs[newTabs.length - 1].path : null;
+          }
+          set({
+            openTabs: newTabs,
+            activeFilePath: nextActive,
+          });
+          state.showToast('Folder moved to Trash');
+          return true;
+        }
+
         get().showToast('Failed to move note to Trash');
         return false;
       }
@@ -689,4 +741,42 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     }
   },
   setDatabaseViewMode: (mode) => set({ databaseViewMode: mode }),
+
+  // Custom & Expanded Folders
+  customFolders: [],
+  expandedFolders: [],
+  addCustomFolder: (folderPath) => {
+    const clean = folderPath.replace(/^folder:/, '').trim().replace(/^\/+|\/+$/g, '');
+    if (!clean) return;
+    set((state) => {
+      if (state.customFolders.includes(clean)) return state;
+      return { customFolders: [...state.customFolders, clean] };
+    });
+  },
+  removeCustomFolder: (folderPath) => {
+    const clean = folderPath.replace(/^folder:/, '').trim().replace(/^\/+|\/+$/g, '');
+    set((state) => ({
+      customFolders: state.customFolders.filter((f) => f !== clean && !f.startsWith(clean + '/')),
+      expandedFolders: state.expandedFolders.filter((f) => f !== clean && !f.startsWith(clean + '/')),
+    }));
+  },
+  renameCustomFolder: (oldPrefix, newPrefix) => {
+    const cleanOld = oldPrefix.replace(/^folder:/, '').trim().replace(/^\/+|\/+$/g, '');
+    const cleanNew = newPrefix.replace(/^folder:/, '').trim().replace(/^\/+|\/+$/g, '');
+    set((state) => ({
+      customFolders: state.customFolders.map((f) => {
+        if (f === cleanOld) return cleanNew;
+        if (f.startsWith(cleanOld + '/')) return `${cleanNew}${f.slice(cleanOld.length)}`;
+        return f;
+      }),
+      expandedFolders: state.expandedFolders.map((f) => {
+        if (f === cleanOld) return cleanNew;
+        if (f.startsWith(cleanOld + '/')) return `${cleanNew}${f.slice(cleanOld.length)}`;
+        return f;
+      }),
+    }));
+  },
+  closeTab: (path) => {
+    get().closeFileTab(path);
+  },
 }));

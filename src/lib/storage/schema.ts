@@ -155,7 +155,9 @@ export interface VaultFile {
   createdAt: number;
   updatedAt: number;
   vaultId: string;
+  folder?: string;
   isTrash?: boolean;
+  isDeleted?: boolean;
   deletedAt?: number;
   originalPath?: string;
   deployMeta?: {

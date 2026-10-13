@@ -2,6 +2,11 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
 /* Universal Color Emoji & Typography Fallbacks */
 :root {
   --background: #090a0f;
@@ -18,7 +23,7 @@
   --theme-text-secondary: color-mix(in srgb, var(--foreground) 75%, transparent);
   --theme-text-muted: color-mix(in srgb, var(--foreground) 50%, transparent);
   --theme-accent: var(--accent);
-  --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  --font-family: var(--font-sans);
   --syntax-bg: #12131a;
   --syntax-keyword: #c084fc;
   --syntax-string: #a7f3d0;
@@ -30,7 +35,7 @@
 }
 
 body {
-  font-family: var(--font-family);
+  font-family: var(--font-sans);
   background-color: var(--background);
   color: var(--foreground);
   background-image: var(--bg-image);
@@ -38,6 +43,13 @@ body {
   background-position: center;
   background-repeat: no-repeat;
   background-attachment: fixed;
+}
+
+input,
+textarea,
+select,
+button {
+  font-family: var(--font-sans);
 }
 
 /* Universal color emoji rendering guarantee across macOS, Windows, Linux, iOS, Android */
@@ -48,6 +60,7 @@ body {
 
 /* Tiptap / ProseMirror Editor Enhancements & Typography */
 .ProseMirror {
+  font-family: var(--font-sans);
   outline: none;
   font-size: 15px;
   line-height: 1.8;
@@ -278,7 +291,7 @@ pre {
   padding: 0.875rem 1.125rem;
   margin: 1rem 0;
   overflow-x: auto;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.875rem;
   line-height: 1.6;
 }
@@ -290,7 +303,7 @@ pre code {
   padding: 0 !important;
   border: none !important;
   border-radius: 0 !important;
-  font-family: inherit !important;
+  font-family: var(--font-mono) !important;
   font-size: inherit !important;
 }
 
@@ -363,15 +376,17 @@ pre code {
   font-weight: 700;
 }
 
-/* Inline Code */
-.ProseMirror :not(pre) > code {
+/* Inline Code & Monospace Elements */
+.ProseMirror :not(pre) > code,
+code:not(pre code),
+kbd {
   background-color: var(--card);
   color: var(--accent);
   border: 1px solid var(--border);
   border-radius: 0.25rem;
   padding: 0.15rem 0.35rem;
   font-size: 0.875em;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
 }
 
 /* Standard Links */

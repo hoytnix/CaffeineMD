@@ -102,9 +102,22 @@
        - **Zero INP Lag Tab Switching**: Wrapped tab switching in `React.startTransition` within [DocumentTabBar.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/DocumentTabBar.tsx) and added store helper `setActiveNoteId` in [workspaceStore.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/workspaceStore.ts).
        - **Async Content Hydration**: In [useTiptapInit.ts](file:///home/oloty/Dev/CaffeineMD/src/components/editor/hooks/useTiptapInit.ts), deferred synchronous markdown parsing and Tiptap document hydration into `requestAnimationFrame` with `cancelAnimationFrame` cleanup, eliminating the 254ms UI freeze on tab clicks and preventing race conditions during fast tab switching.
 
+    30. **ChromeOS/Linux Digit & Emoji Typography Precedence Resolution (Live & Verified)**:
+       - **Font Variable Binding in Root Layout**: Configured `Inter` (`--font-inter`) and `JetBrains_Mono` (`--font-jetbrains-mono`) loaders via `next/font/google` in [app/layout.tsx](file:///home/oloty/Dev/CaffeineMD/app/layout.tsx); bound variables to `<html className="dark ${inter.variable} ${jetbrainsMono.variable}">` while preserving `inter.className` on `<body>`.
+       - **Non-Circular @theme Font Stacks**: Defined `--font-sans` and `--font-mono` in `@theme` within [app/globals.css](file:///home/oloty/Dev/CaffeineMD/app/globals.css) ensuring `var(--font-inter)` / `var(--font-jetbrains-mono)` and standard system fallbacks strictly precede `"Apple Color Emoji"`, `"Segoe UI Emoji"`, and `"Noto Color Emoji"`.
+       - **Explicit Numeral Rendering Guarantees**: Applied `var(--font-sans)` to `body`, `.ProseMirror`, `input`, `textarea`, `select`, and `button`, and `var(--font-mono)` to `pre`, `code`, and `kbd`, preventing ChromeOS/Linux font engines from falling back to wide `Noto Color Emoji` glyphs for ASCII numbers (`0-9`), `#`, and `*`.
+
+     31. **Folder Deletion & Recursive Trash Operations (Live & Verified)**:
+        - **Synthetic ID & Directory Handling**: Resolved `"Failed to move note to Trash"` by supporting `folder:` ID prefixes and directory paths in [fileOperations.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/repositories/fileOperations.ts), [useFileTreeActions.ts](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/useFileTreeActions.ts), and [workspaceStore.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/workspaceStore.ts).
+        - **Recursive Soft Delete**: Implemented `softDeleteFolder(folderPath, workspaceId)` matching all notes where `path` or `folder` matches or starts with `folderPath + '/'`, batch updating `isTrash: true`, `isDeleted: true`, `deletedAt`, and `updatedAt` in a single Dexie transaction.
+        - **Custom Folder State Synchronization**: Added `customFolders`, `addCustomFolder`, `removeCustomFolder`, and `renameCustomFolder` actions to `workspaceStore.ts` and tree builder [useTreeStructure.ts](file:///home/oloty/Dev/CaffeineMD/src/hooks/useTreeStructure.ts); deleting or renaming empty or filled folders cleanly purges or updates custom folder state.
+        - **Open Tab & Active File Cleanup**: Automatically closes open tabs for deleted nested notes and safely resets `activeFilePath` if it belonged to the deleted directory.
+        - **Folder Renaming & Moving**: Added `renameFolder` and `moveFolder` in [fileOperations.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/repositories/fileOperations.ts) to recursively update note paths, folders, backlinks, and disk files inside atomic transactions.
+
 - **Architecture & Tiered LOC Compliance**: All modules decomposed strictly within tiered LOC boundaries (<100 LOC sweet spot, <250 LOC soft limit, strictly <400 LOC).
 - **Verification Rule**: ESLint passing with 0 errors and 0 warnings (`pnpm run lint`). TypeScript check passing with 0 errors (`tsc --noEmit`).
 
 ## Next Steps
 - Maintain modular <100-250 LOC boundaries across all components.
 - Run `pnpm run lint` verification on every turn without building.
+
