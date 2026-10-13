@@ -12,10 +12,17 @@ async function getPyodide() {
       }
     }
     if (!loadFn) {
-      // Load ES Module pyodide
-      // @ts-ignore
-      const mod = await import('https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.mjs');
-      loadFn = mod.loadPyodide;
+      // Load ES Module pyodide via runtime dynamic import to bypass Webpack bundling
+      try {
+        const importDynamic = new Function('specifier', 'return import(specifier)');
+        const mod = await importDynamic('https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.mjs');
+        loadFn = mod.loadPyodide;
+      } catch (importErr) {
+        console.warn('Failed dynamic import for pyodide:', importErr);
+      }
+    }
+    if (!loadFn) {
+      throw new Error('Pyodide runtime failed to load from CDN');
     }
     pyodideInstance = await loadFn({
       indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.2/full/',
