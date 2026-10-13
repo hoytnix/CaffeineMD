@@ -1,34 +1,42 @@
 let pyodideInstance: any = null;
+let pyodideInitPromise: Promise<any> | null = null;
 
-async function getPyodide() {
-  if (!pyodideInstance) {
-    let loadFn: any = (self as any).loadPyodide;
-    if (!loadFn && typeof (self as any).importScripts === 'function') {
-      try {
-        (self as any).importScripts('https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js');
-        loadFn = (self as any).loadPyodide;
-      } catch {
-        // Fallback to dynamic module import
-      }
-    }
-    if (!loadFn) {
-      // Load ES Module pyodide via runtime dynamic import to bypass Webpack bundling
-      try {
-        const importDynamic = new Function('specifier', 'return import(specifier)');
-        const mod = await importDynamic('https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.mjs');
-        loadFn = mod.loadPyodide;
-      } catch (importErr) {
-        console.warn('Failed dynamic import for pyodide:', importErr);
-      }
-    }
-    if (!loadFn) {
-      throw new Error('Pyodide runtime failed to load from CDN');
-    }
-    pyodideInstance = await loadFn({
+async function getPyodide(id: string) {
+  if (pyodideInstance) return pyodideInstance;
+
+  if (pyodideInitPromise) {
+    return await pyodideInitPromise;
+  }
+
+  self.postMessage({
+    type: 'status',
+    id,
+    payload: { status: 'loading_runtime', text: 'Downloading Pyodide WASM runtime (~20MB)...' },
+  });
+
+  pyodideInitPromise = (async () => {
+    // Dynamic import for ES Module workers
+    // @ts-ignore
+    const pyodideModule = await import(/* webpackIgnore: true */ 'https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.mjs');
+    const instance = await pyodideModule.loadPyodide({
       indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.2/full/',
     });
+    pyodideInstance = instance;
+    return instance;
+  })();
+
+  try {
+    const instance = await pyodideInitPromise;
+    self.postMessage({
+      type: 'status',
+      id,
+      payload: { status: 'ready', text: 'Pyodide runtime initialized' },
+    });
+    return instance;
+  } catch (err) {
+    pyodideInitPromise = null;
+    throw err;
   }
-  return pyodideInstance;
 }
 
 self.onmessage = async (e: MessageEvent) => {
@@ -43,8 +51,24 @@ self.onmessage = async (e: MessageEvent) => {
   };
 
   try {
-    if (language === 'javascript' || language === 'typescript') {
-      // Sandboxed JS Execution with captured console
+    if (language === 'python') {
+      const pyodide = await getPyodide(id);
+
+      // Signal manager that runtime is ready and code execution is starting
+      self.postMessage({ type: 'execution_started', id });
+
+      pyodide.setStdout({ batched: (msg: string) => emitOutput('stdout', msg) });
+      pyodide.setStderr({ batched: (msg: string) => emitOutput('stderr', msg) });
+
+      const pyResult = await pyodide.runPythonAsync(code);
+      if (pyResult !== undefined && pyResult !== null) {
+        emitOutput('result', String(pyResult));
+      }
+      self.postMessage({ type: 'complete', id, payload: { success: true } });
+
+    } else if (language === 'javascript' || language === 'typescript') {
+      self.postMessage({ type: 'execution_started', id });
+
       const customConsole = {
         log: (...args: any[]) =>
           emitOutput('stdout', args.map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ')),
@@ -65,13 +89,11 @@ self.onmessage = async (e: MessageEvent) => {
           .replace(/type\s+[A-Za-z0-9_]+\s*=[^;]+;/g, '');
       }
 
-      // Check if code has return statement or is an expression
       let result: any;
       try {
         const fn = new Function('console', `"use strict";\n${executableCode}`);
         result = fn(customConsole);
       } catch (innerErr: any) {
-        // If "illegal return statement" or simple expression, try returning expression directly
         if (/return/i.test(innerErr?.message || '')) {
           const fn = new Function('console', `"use strict";\nreturn (${executableCode});`);
           result = fn(customConsole);
@@ -85,19 +107,8 @@ self.onmessage = async (e: MessageEvent) => {
       }
       self.postMessage({ type: 'complete', id, payload: { success: true } });
 
-    } else if (language === 'python') {
-      const pyodide = await getPyodide();
-      pyodide.setStdout({ batched: (msg: string) => emitOutput('stdout', msg) });
-      pyodide.setStderr({ batched: (msg: string) => emitOutput('stderr', msg) });
-
-      const pyResult = await pyodide.runPythonAsync(code);
-      if (pyResult !== undefined) {
-        emitOutput('result', String(pyResult));
-      }
-      self.postMessage({ type: 'complete', id, payload: { success: true } });
-
     } else if (language === 'math') {
-      // Evaluate mathematical expression safely
+      self.postMessage({ type: 'execution_started', id });
       const cleanMath = code
         .replace(/Math\./g, '__MATH__')
         .replace(/[^0-9+\-*/().^% eE,sqrtabcsincolgtanpi\s]/gi, '')

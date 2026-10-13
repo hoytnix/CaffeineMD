@@ -24,10 +24,7 @@ export function CodeBlockView({ node, editor, getPos }: NodeViewProps) {
 
   const rawLanguage = node.attrs?.language || '';
   const detectedLang = resolveSandboxLanguage(rawLanguage);
-  const [selectedLang, setSelectedLang] = useState<SupportedSandboxLang>(
-    detectedLang || 'javascript'
-  );
-
+  const activeLang: SupportedSandboxLang = detectedLang || 'javascript';
   const isExecutable = Boolean(detectedLang);
 
   const handleCopy = (e: React.MouseEvent) => {
@@ -52,7 +49,13 @@ export function CodeBlockView({ node, editor, getPos }: NodeViewProps) {
 
     try {
       const code = node.textContent || '';
-      const response = await wasmSandbox.runCode(detectedLang || selectedLang, code);
+      const response = await wasmSandbox.runCode(
+        activeLang,
+        code,
+        (streamedItem) => {
+          setOutputs((prev) => [...prev, streamedItem]);
+        }
+      );
       setOutputs(response.outputs);
       setExecutionTimeMs(response.executionTimeMs);
     } catch (err: any) {
@@ -73,8 +76,12 @@ export function CodeBlockView({ node, editor, getPos }: NodeViewProps) {
     const pos = getPos();
     if (typeof pos !== 'number') return;
 
+    // Filter out raw status events from note insertion
+    const filteredOutputs = outputs.filter((o) => o.type !== 'status');
+    if (filteredOutputs.length === 0) return;
+
     const endPos = pos + node.nodeSize;
-    const outputLines = outputs.map((o) => o.text).join('\n');
+    const outputLines = filteredOutputs.map((o) => o.text).join('\n');
     const header = `Output (${executionTimeMs !== null ? `${executionTimeMs}ms` : 'sandbox'}):`;
 
     editor

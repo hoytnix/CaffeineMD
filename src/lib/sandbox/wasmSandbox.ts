@@ -1,4 +1,4 @@
-import { ExecutionRequest, ExecutionResponse } from './types';
+import { ExecutionOutputItem, ExecutionRequest, ExecutionResponse } from './types';
 
 class WasmSandboxManager {
   private worker: Worker | null = null;
@@ -7,9 +7,11 @@ class WasmSandboxManager {
     {
       resolve: (res: ExecutionResponse) => void;
       reject: (err: any) => void;
-      timer: ReturnType<typeof setTimeout>;
+      initTimer: ReturnType<typeof setTimeout> | null;
+      execTimer: ReturnType<typeof setTimeout> | null;
       startTime: number;
       outputs: ExecutionResponse['outputs'];
+      onOutput?: (output: ExecutionOutputItem) => void;
     }
   >();
 
@@ -29,10 +31,49 @@ class WasmSandboxManager {
         const req = this.pendingRequests.get(id);
         if (!req) return;
 
-        if (type === 'output') {
+        if (type === 'status') {
+          const item: ExecutionOutputItem = {
+            type: 'status',
+            text: payload.text,
+            timestamp: Date.now(),
+          };
+          req.outputs.push(item);
+          req.onOutput?.(item);
+        } else if (type === 'execution_started') {
+          // Disarm runtime init timer
+          if (req.initTimer) clearTimeout(req.initTimer);
+          req.startTime = performance.now();
+
+          // Arm strict 5000ms code-execution watchdog only when code begins running
+          req.execTimer = setTimeout(() => {
+            if (this.worker) {
+              try {
+                this.worker.terminate();
+              } catch {}
+            }
+            this.initWorker();
+            this.pendingRequests.delete(id);
+            req.resolve({
+              id,
+              success: false,
+              outputs: [
+                ...req.outputs,
+                {
+                  type: 'error',
+                  text: 'Execution timed out (5.0s limit exceeded)',
+                  timestamp: Date.now(),
+                },
+              ],
+              executionTimeMs: 5000,
+            });
+          }, 5000);
+        } else if (type === 'output') {
           req.outputs.push(payload);
+          req.onOutput?.(payload);
         } else if (type === 'complete') {
-          clearTimeout(req.timer);
+          if (req.initTimer) clearTimeout(req.initTimer);
+          if (req.execTimer) clearTimeout(req.execTimer);
+
           const executionTimeMs = Math.round(performance.now() - req.startTime);
           this.pendingRequests.delete(id);
           req.resolve({
@@ -55,24 +96,23 @@ class WasmSandboxManager {
 
   public async runCode(
     language: ExecutionRequest['language'],
-    code: string
+    code: string,
+    onOutput?: (output: ExecutionOutputItem) => void
   ): Promise<ExecutionResponse> {
     if (!this.worker) this.initWorker();
     const id = `exec_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        // Hard kill on infinite loops (5000ms protection limit)
-        if (this.worker) {
-          try {
-            this.worker.terminate();
-          } catch {}
-        }
-        this.worker = null;
-        this.initWorker();
-
+      // 60-second grace window for CDN package downloads
+      const initTimer = setTimeout(() => {
         const req = this.pendingRequests.get(id);
         if (req) {
+          if (this.worker) {
+            try {
+              this.worker.terminate();
+            } catch {}
+          }
+          this.initWorker();
           this.pendingRequests.delete(id);
           req.resolve({
             id,
@@ -81,27 +121,29 @@ class WasmSandboxManager {
               ...req.outputs,
               {
                 type: 'error',
-                text: 'Execution timed out (5.0s limit exceeded)',
+                text: 'Runtime initialization timed out (failed to fetch Pyodide CDN assets)',
                 timestamp: Date.now(),
               },
             ],
-            executionTimeMs: 5000,
+            executionTimeMs: 60000,
           });
         }
-      }, 5000);
+      }, 60000);
 
       this.pendingRequests.set(id, {
         resolve,
         reject,
-        timer,
+        initTimer,
+        execTimer: null,
         startTime: performance.now(),
         outputs: [],
+        onOutput,
       });
 
       if (this.worker) {
         this.worker.postMessage({ id, language, code });
       } else {
-        clearTimeout(timer);
+        clearTimeout(initTimer);
         this.pendingRequests.delete(id);
         resolve({
           id,
@@ -111,6 +153,12 @@ class WasmSandboxManager {
         });
       }
     });
+  }
+
+  public async preloadPythonRuntime(): Promise<void> {
+    try {
+      await this.runCode('python', 'pass');
+    } catch {}
   }
 }
 

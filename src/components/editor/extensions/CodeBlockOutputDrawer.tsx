@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { ExecutionOutputItem } from '@/src/lib/sandbox/types';
-import { CornerDownLeft, Trash2, Clock } from 'lucide-react';
+import { CornerDownLeft, Trash2, Clock, Loader2, CheckCircle2 } from 'lucide-react';
 
 interface CodeBlockOutputDrawerProps {
   outputs: ExecutionOutputItem[];
@@ -18,6 +18,8 @@ export function CodeBlockOutputDrawer({
   onClear,
 }: CodeBlockOutputDrawerProps) {
   if (outputs.length === 0) return null;
+
+  const hasRealContent = outputs.some((o) => o.type !== 'status');
 
   return (
     <div
@@ -35,15 +37,17 @@ export function CodeBlockOutputDrawer({
           )}
         </div>
         <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={onInsertIntoNote}
-            className="flex items-center gap-1 px-2 py-0.5 rounded bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 text-[10px] transition-colors cursor-pointer"
-            title="Insert output into note beneath code block"
-          >
-            <CornerDownLeft className="w-3 h-3" />
-            <span>Insert into Note</span>
-          </button>
+          {hasRealContent && (
+            <button
+              type="button"
+              onClick={onInsertIntoNote}
+              className="flex items-center gap-1 px-2 py-0.5 rounded bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 text-[10px] transition-colors cursor-pointer"
+              title="Insert output into note beneath code block"
+            >
+              <CornerDownLeft className="w-3 h-3" />
+              <span>Insert into Note</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={onClear}
@@ -55,8 +59,32 @@ export function CodeBlockOutputDrawer({
         </div>
       </div>
 
-      <div className="max-h-48 overflow-y-auto space-y-1 pr-1 font-mono text-[11.5px] leading-relaxed">
+      <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1 font-mono text-[11.5px] leading-relaxed">
         {outputs.map((item, idx) => {
+          if (item.type === 'status') {
+            const isReady =
+              item.text.toLowerCase().includes('initialized') ||
+              item.text.toLowerCase().includes('ready');
+
+            return (
+              <div
+                key={idx}
+                className={`flex items-center gap-2 px-2.5 py-1.5 rounded text-[11px] font-sans ${
+                  isReady
+                    ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
+                    : 'bg-sky-500/10 border border-sky-500/20 text-sky-400 animate-pulse'
+                }`}
+              >
+                {isReady ? (
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+                ) : (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0 text-sky-400" />
+                )}
+                <span>{item.text}</span>
+              </div>
+            );
+          }
+
           if (item.type === 'stderr' || item.type === 'error') {
             return (
               <div key={idx} className="text-rose-400 whitespace-pre-wrap">
