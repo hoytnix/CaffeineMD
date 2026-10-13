@@ -13,7 +13,7 @@ export interface BacklinksPanelProps {
   onUpdateFile: (updatedFile: VaultFile) => void;
   editor?: Editor | null;
   rawMarkdown?: string;
-  editorMode?: 'rich' | 'plain' | 'diff';
+  editorMode?: 'richtext' | 'plaintext' | 'diff' | 'rich' | 'plain';
 }
 
 /**

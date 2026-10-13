@@ -7,7 +7,7 @@ import { FRONTMATTER_REGEX } from '@/src/lib/markdown/frontmatter';
 export interface NoteMetricsBarProps {
   editor?: Editor | null;
   rawMarkdown?: string;
-  editorMode?: 'rich' | 'plain' | 'diff';
+  editorMode?: 'richtext' | 'plaintext' | 'diff' | 'rich' | 'plain';
   fallbackContent?: string;
 }
 
@@ -74,7 +74,7 @@ export function NoteMetricsBar({
 
   // Determine active text based on current authoring mode
   const activeText = useMemo(() => {
-    if (editorMode === 'plain' || editorMode === 'diff') {
+    if (editorMode === 'plain' || editorMode === 'plaintext' || editorMode === 'diff') {
       const plain = rawMarkdown !== undefined ? rawMarkdown : fallbackContent;
       return plain.replace(FRONTMATTER_REGEX, '');
     }

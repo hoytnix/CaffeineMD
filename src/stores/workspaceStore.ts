@@ -24,6 +24,7 @@ export interface TabItem {
 export type ActiveWorkspaceView = 'editor' | 'graph' | 'table' | 'board' | 'list' | 'tags' | 'settings';
 export type WorkspaceTabId = ActiveWorkspaceView | 'kanban';
 export type ToolboxPosition = 'left' | 'right' | 'bottom' | 'top';
+export type EditorModeType = 'richtext' | 'plaintext' | 'diff';
 
 export const AUTOSAVE_INTERVAL_PRESETS = [
   { value: 0, label: 'Manual only (Off)' },
@@ -45,6 +46,8 @@ export interface WorkspaceState {
   activeNotePath: string | null;
   activeView: ActiveWorkspaceView;
   activeTab: WorkspaceTabId;
+  editorMode: EditorModeType;
+  setEditorMode: (mode: EditorModeType) => void;
   openTabs: TabItem[];
   isImportModalOpen: boolean;
   importProgress: ImportProgress | null;
@@ -197,6 +200,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   activeNotePath: 'Welcome to CaffeineMD.md',
   activeView: 'editor',
   activeTab: 'editor',
+  editorMode: 'richtext',
+  setEditorMode: (mode) => set({ editorMode: mode }),
   openTabs: [
     { path: 'Welcome to CaffeineMD.md', title: 'Welcome to CaffeineMD' },
     { path: 'Projects/Product Roadmap 2026.md', title: 'Product Roadmap 2026' },

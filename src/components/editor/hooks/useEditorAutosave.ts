@@ -14,6 +14,7 @@ import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 
 export interface UseEditorAutosaveProps {
   filePath: string;
+  editor?: Editor | null;
 }
 
 function isContentEqual(a: string, b: string): boolean {
@@ -26,7 +27,7 @@ function isContentEqual(a: string, b: string): boolean {
  * Coordinates configurable interval autosaving, debounced note persistence,
  * immediate flushes on note switch / tab close, dirty tracking, and seamless mode switching.
  */
-export function useEditorAutosave({ filePath }: UseEditorAutosaveProps) {
+export function useEditorAutosave({ filePath, editor }: UseEditorAutosaveProps) {
   const { autosaveInterval = 300000 } = useWorkspaceStore();
 
   const {
@@ -37,7 +38,13 @@ export function useEditorAutosave({ filePath }: UseEditorAutosaveProps) {
 
   const {
     editorMode, setEditorMode, switchToPlaintext, switchToRichText, switchToDiff,
-  } = useEditorModeSwitch({ file, rawMarkdown, setRawMarkdown });
+  } = useEditorModeSwitch({
+    file,
+    rawMarkdown,
+    setRawMarkdown,
+    editor,
+    onPersistRawMarkdown: persistRawMarkdown,
+  });
 
   const [isDirty, setIsDirty] = useState(false);
 
@@ -228,7 +235,7 @@ export function useEditorAutosave({ filePath }: UseEditorAutosaveProps) {
       dirtyContentRef.current = null;
       setIsDirty(false);
 
-      if (editorMode === 'plain' || editorMode === 'diff') {
+      if (editorMode === 'plaintext' || editorMode === 'diff') {
         if (file) {
           const updated = await persistRawMarkdown(rawMarkdown, file);
           if (updated?.content) lastSavedContentRef.current = updated.content;
@@ -246,7 +253,7 @@ export function useEditorAutosave({ filePath }: UseEditorAutosaveProps) {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
         e.preventDefault();
-        if (editorMode === 'plain' || editorMode === 'diff') {
+        if (editorMode === 'plaintext' || editorMode === 'diff') {
           if (file) handleManualSave(null);
         }
       }

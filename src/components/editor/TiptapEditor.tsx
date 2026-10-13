@@ -145,12 +145,8 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
         file={file}
         isSaving={isSaving}
         saveSuccess={saveSuccess}
-        editorMode={editorMode}
-        onSwitchToRichText={() => switchToRichText(editor)}
-        onSwitchToPlaintext={() => switchToPlaintext(editor)}
-        onSwitchToDiff={() => switchToDiff(editor)}
         onManualSave={() => handleManualSave(editor)}
-        isSaveDisabled={isSaving || (editorMode === 'rich' && (!editor || editor.isDestroyed))}
+        isSaveDisabled={isSaving || (editorMode === 'richtext' && (!editor || editor.isDestroyed))}
         onUpdateProperties={updateProperties}
         onTitleChange={setTitle}
         isDirty={isDirty}
@@ -159,7 +155,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
       {/* Body container: holds the vertical side toolbar and document workspace */}
       <div className="flex-1 flex flex-row overflow-hidden relative min-h-0">
         {/* Left Toolbar Dock */}
-        {editorMode === 'rich' && editor && !editor.isDestroyed && toolboxPosition === 'left' && (
+        {editorMode === 'richtext' && editor && !editor.isDestroyed && toolboxPosition === 'left' && (
           <div className="flex flex-col justify-center pl-3 py-4 shrink-0 z-30 animate-in fade-in slide-in-from-left-2">
             <EditorBottomToolbar editor={editor} position="left" />
           </div>
@@ -172,14 +168,14 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
           className="flex-1 flex flex-col h-full overflow-y-auto overflow-x-hidden min-w-0 relative"
         >
           {/* Top Toolbar Dock */}
-          {editorMode === 'rich' && editor && !editor.isDestroyed && toolboxPosition === 'top' && (
+          {editorMode === 'richtext' && editor && !editor.isDestroyed && toolboxPosition === 'top' && (
             <div className="sticky top-3 z-30 w-full flex justify-center px-4 pt-1 pb-2 shrink-0 animate-in fade-in slide-in-from-top-2">
               <EditorBottomToolbar editor={editor} position="top" />
             </div>
           )}
 
           <div className="max-w-4xl w-full mx-auto px-4 pt-4 sm:pt-6 md:pt-8 pb-8 sm:px-6 md:px-10 flex-1">
-            {editorMode === 'rich' ? (
+            {editorMode === 'richtext' ? (
               <>
                 {editor && !editor.isDestroyed && <BlockHandle editor={editor} />}
                 {editor && !editor.isDestroyed ? (
@@ -193,7 +189,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
                   </div>
                 )}
               </>
-            ) : editorMode === 'plain' ? (
+            ) : editorMode === 'plaintext' ? (
               <PlaintextMarkdownEditor
                 rawMarkdown={rawMarkdown}
                 onMarkdownChange={(val) => {
@@ -222,7 +218,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
               onUpdateFile={(updated) => {
                 setFile(updated);
                 db.files.put(updated);
-                if (editorMode === 'plain' || editorMode === 'diff') {
+                if (editorMode === 'plaintext' || editorMode === 'diff') {
                   const parsed = parseMarkdownContent(rawMarkdown, updated.title);
                   setRawMarkdown(serializeMarkdownWithFrontmatter(parsed.body, updated.frontmatter || {}));
                 }
@@ -231,7 +227,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
           </div>
 
           {/* Bottom Toolbar Dock */}
-          {editorMode === 'rich' && editor && !editor.isDestroyed && toolboxPosition === 'bottom' && (
+          {editorMode === 'richtext' && editor && !editor.isDestroyed && toolboxPosition === 'bottom' && (
             <EditorBottomToolbar editor={editor} position="bottom" />
           )}
         </div>
@@ -250,7 +246,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
         />
 
         {/* Right Toolbar Dock */}
-        {editorMode === 'rich' && editor && !editor.isDestroyed && toolboxPosition === 'right' && (
+        {editorMode === 'richtext' && editor && !editor.isDestroyed && toolboxPosition === 'right' && (
           <div className="flex flex-col justify-center pr-3 py-4 shrink-0 z-30 animate-in fade-in slide-in-from-right-2">
             <EditorBottomToolbar editor={editor} position="right" />
           </div>

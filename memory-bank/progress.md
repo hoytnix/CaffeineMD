@@ -141,12 +141,17 @@
   - Added recursive soft-deletion within an atomic Dexie transaction updating `isTrash`, `isDeleted`, `deletedAt`, and `updatedAt` for all nested files.
   - Integrated `customFolders` state management (`addCustomFolder`, `removeCustomFolder`, `renameCustomFolder`) in [workspaceStore.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/workspaceStore.ts) and tree mapping in [useTreeStructure.ts](file:///home/oloty/Dev/CaffeineMD/src/hooks/useTreeStructure.ts).
   - Updated [useFileTreeActions.ts](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/useFileTreeActions.ts) with `handleDelete`, `renameNode`, and `moveNode` handling both files and folders, closing open tabs, and synchronizing active editor paths.
-  - Implemented `renameFolder` and `moveFolder` supporting batch path and backlink migrations.
+- [x] **Top-Bar Mode Switcher Navigation (Editor, Plaintext, Diff)**:
+  - Removed the 3-button mode switcher pill from [EditorHeader.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/EditorHeader.tsx) and stripped redundant `onSwitchTo*` props from `<EditorHeader />` and [TiptapEditor.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/TiptapEditor.tsx).
+  - Added global `editorMode: 'richtext' | 'plaintext' | 'diff'` and `setEditorMode` to [workspaceStore.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/workspaceStore.ts).
+  - Added **Plaintext** (`Code2`) and **Diff** (`GitCompare`) tabs immediately following **Editor** (`FileText`) in [WorkspaceHeader.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/workspace/WorkspaceHeader.tsx) desktop nav and mobile `<select>` view switcher, with theme accent highlights.
+  - Upgraded [useEditorModeSwitch.ts](file:///home/oloty/Dev/CaffeineMD/src/components/editor/hooks/useEditorModeSwitch.ts) with reactive `useEffect` and `useRef` transition detection to seamlessly serialize HTML-to-Markdown and parse Markdown-to-HTML without loss.
 
 ## Verification Status
 - Lint verification: Passing cleanly with 0 errors and 0 warnings (`pnpm run lint`).
 - TypeScript verification: Passing cleanly with 0 errors (`tsc --noEmit`).
 - Tiered LOC Limits: 100% compliant (<100 LOC sweet spot, <250 LOC soft limit, strictly <400 LOC across all modules).
+
 
 
 

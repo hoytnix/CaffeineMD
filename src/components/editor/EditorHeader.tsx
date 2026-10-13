@@ -6,10 +6,7 @@ import { NoteProperties, DEFAULT_NOTE_PROPERTIES, normalizeEisenhower } from '@/
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import {
   FileText,
-  Code,
-  Save,
   Check,
-  Trash2,
   Tag as TagIcon,
   User,
   Flag,
@@ -18,20 +15,13 @@ import {
   X,
   ChevronDown,
   ChevronUp,
-  GitCompare,
 } from 'lucide-react';
 import { EditorUxControls } from './header/EditorUxControls';
-
-export type EditorMode = 'rich' | 'plain' | 'diff';
 
 interface EditorHeaderProps {
   file: VaultFile;
   isSaving: boolean;
   saveSuccess: boolean;
-  editorMode: EditorMode;
-  onSwitchToRichText: () => void;
-  onSwitchToPlaintext: () => void;
-  onSwitchToDiff: () => void;
   onManualSave: () => void;
   isSaveDisabled: boolean;
   onUpdateProperties?: (props: Partial<NoteProperties>) => Promise<any> | void;
@@ -56,10 +46,6 @@ export function EditorHeader({
   file,
   isSaving,
   saveSuccess,
-  editorMode,
-  onSwitchToRichText,
-  onSwitchToPlaintext,
-  onSwitchToDiff,
   onManualSave,
   isSaveDisabled,
   onUpdateProperties,
@@ -194,49 +180,6 @@ export function EditorHeader({
               <Check className="w-3.5 h-3.5" />
             </span>
           )}
-
-          {/* Mode Toggle: Rich Text Mode vs Plaintext Mode (Icon-Only) */}
-          <div className="flex items-center p-0.5 rounded-lg bg-[var(--card)] border border-[var(--border)] text-xs shadow-2xs">
-            <button
-              type="button"
-              onClick={onSwitchToRichText}
-              className={`p-1.5 rounded-md transition-all cursor-pointer ${
-                editorMode === 'rich'
-                  ? 'bg-[var(--accent)] text-white shadow-xs'
-                  : 'text-neutral-400 hover:text-[var(--foreground)]'
-              }`}
-              title="Rich Text Mode (WYSIWYG formatted editing)"
-              aria-label="Rich Text Mode"
-            >
-              <FileText className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={onSwitchToPlaintext}
-              className={`p-1.5 rounded-md transition-all cursor-pointer ${
-                editorMode === 'plain'
-                  ? 'bg-[var(--accent)] text-white shadow-xs'
-                  : 'text-neutral-400 hover:text-[var(--foreground)]'
-              }`}
-              title="Plaintext Mode (Raw Markdown editing)"
-              aria-label="Plaintext Mode"
-            >
-              <Code className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={onSwitchToDiff}
-              className={`p-1.5 rounded-md transition-all cursor-pointer ${
-                editorMode === 'diff'
-                  ? 'bg-[var(--accent)] text-white shadow-xs'
-                  : 'text-neutral-400 hover:text-[var(--foreground)]'
-              }`}
-              title="Diff (Unsaved vs Saved)"
-              aria-label="Diff View"
-            >
-              <GitCompare className="w-3.5 h-3.5" />
-            </button>
-          </div>
 
           <EditorUxControls
             onManualSave={onManualSave}

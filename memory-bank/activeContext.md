@@ -114,10 +114,17 @@
         - **Open Tab & Active File Cleanup**: Automatically closes open tabs for deleted nested notes and safely resets `activeFilePath` if it belonged to the deleted directory.
         - **Folder Renaming & Moving**: Added `renameFolder` and `moveFolder` in [fileOperations.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/repositories/fileOperations.ts) to recursively update note paths, folders, backlinks, and disk files inside atomic transactions.
 
+     32. **Top-Bar Mode Switcher Navigation (Live & Verified)**:
+        - **Relocated Mode Switcher**: Replaced the 3-button mode pill inside [EditorHeader.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/EditorHeader.tsx) with primary navigation tabs in [WorkspaceHeader.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/workspace/WorkspaceHeader.tsx).
+        - **Global `editorMode` State**: Added `editorMode: 'richtext' | 'plaintext' | 'diff'` and `setEditorMode` to [workspaceStore.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/workspaceStore.ts).
+        - **Navigation Bar Sequence**: Structured top tabs as **Editor** (`FileText`), **Plaintext** (`Code2`), **Diff** (`GitCompare`), **Graph** (`Network`), **Table** (`Table`), **Board** (`Kanban`), **List** (`List`), and **Tags** (`Tag`), with responsive mobile `<select>` view switching and theme accent highlights.
+        - **Seamless Buffer Transitions**: Upgraded [useEditorModeSwitch.ts](file:///home/oloty/Dev/CaffeineMD/src/components/editor/hooks/useEditorModeSwitch.ts) with `useEffect` and `useRef` transition tracking, automatically synchronizing HTML-to-Markdown and Markdown-to-HTML across Rich Text, Plaintext, and Diff modes.
+
 - **Architecture & Tiered LOC Compliance**: All modules decomposed strictly within tiered LOC boundaries (<100 LOC sweet spot, <250 LOC soft limit, strictly <400 LOC).
 - **Verification Rule**: ESLint passing with 0 errors and 0 warnings (`pnpm run lint`). TypeScript check passing with 0 errors (`tsc --noEmit`).
 
 ## Next Steps
 - Maintain modular <100-250 LOC boundaries across all components.
 - Run `pnpm run lint` verification on every turn without building.
+
 
