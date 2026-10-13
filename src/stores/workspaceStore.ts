@@ -152,6 +152,7 @@ export interface WorkspaceState {
   // Actions
   setActiveFilePath: (path: string | null) => void;
   setActiveNotePath: (path: string | null) => void;
+  setActiveNoteId: (id: string) => void;
   openFileTab: (path: string, title?: string) => void;
   closeFileTab: (path: string) => void;
   closeOtherTabs: (path: string) => void;
@@ -401,6 +402,10 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
   setActiveNotePath: (path) => {
     get().setActiveFilePath(path);
+  },
+
+  setActiveNoteId: (id) => {
+    get().openFileTab(id);
   },
 
   openFileTab: (path, title) => {

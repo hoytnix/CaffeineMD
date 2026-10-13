@@ -25,6 +25,7 @@ export function DocumentTabBar({ currentPath }: DocumentTabBarProps) {
     openTabs,
     pinnedTabs,
     openFileTab,
+    setActiveNoteId,
     closeFileTab,
     closeOtherTabs,
     closeTabsToTheRight,
@@ -99,7 +100,13 @@ export function DocumentTabBar({ currentPath }: DocumentTabBarProps) {
 
   return (
     <>
-      <div className="flex items-center gap-1 px-3 py-1 bg-[var(--card)]/40 border-b border-[var(--border)] overflow-x-auto no-scrollbar text-xs select-none min-h-[36px]">
+      <div
+        className="flex items-center gap-1 px-3 py-1 border-b overflow-x-auto no-scrollbar text-xs select-none min-h-[36px]"
+        style={{
+          backgroundColor: 'var(--theme-bg-sidebar)',
+          borderColor: 'var(--theme-border)',
+        }}
+      >
         {openTabs.map((tab) => {
           const isActive = tab.path === currentPath;
           const isPinned = pinnedTabs.includes(tab.path);
@@ -107,21 +114,42 @@ export function DocumentTabBar({ currentPath }: DocumentTabBarProps) {
           return (
             <div
               key={tab.path}
-              onClick={() => openFileTab(tab.path, tab.title)}
+              onClick={() => {
+                React.startTransition(() => {
+                  if (setActiveNoteId) {
+                    setActiveNoteId(tab.path);
+                  }
+                  openFileTab(tab.path, tab.title);
+                });
+              }}
               onContextMenu={(e) => openMenu(e, tab)}
               {...bindLongPress(tab)}
               className={`group flex items-center gap-1.5 px-3 py-1 rounded-lg transition-all cursor-pointer shrink-0 max-w-[200px] border ${
-                isActive
-                  ? 'bg-[var(--card)] border-[var(--border)] text-[var(--foreground)] font-medium shadow-xs'
-                  : 'bg-transparent border-transparent text-neutral-400 hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/5'
+                isActive ? 'font-medium shadow-xs' : 'hover:opacity-85'
               }`}
+              style={{
+                backgroundColor: isActive ? 'var(--theme-bg-card)' : 'transparent',
+                borderColor: isActive ? 'var(--theme-border)' : 'transparent',
+                color: isActive ? 'var(--theme-text-primary)' : 'var(--theme-text-muted)',
+              }}
               title={tab.path}
             >
-              <FileText className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-[var(--accent)]' : 'text-neutral-400'}`} />
-              <span className="truncate">{tab.title || tab.path.split('/').pop()?.replace(/\.[^/.]+$/, '')}</span>
+              <FileText
+                className="w-3.5 h-3.5 shrink-0"
+                style={{ color: isActive ? 'var(--theme-accent)' : 'var(--theme-text-muted)' }}
+              />
+              <span
+                className="truncate"
+                style={{ color: isActive ? 'var(--theme-text-primary)' : 'var(--theme-text-secondary)' }}
+              >
+                {tab.title || tab.path.split('/').pop()?.replace(/\.[^/.]+$/, '')}
+              </span>
 
               {isPinned ? (
-                <Pin className="w-3 h-3 text-indigo-400 shrink-0 ml-0.5" />
+                <Pin
+                  className="w-3 h-3 shrink-0 ml-0.5"
+                  style={{ color: 'var(--theme-accent)' }}
+                />
               ) : (
                 <button
                   type="button"
@@ -129,7 +157,8 @@ export function DocumentTabBar({ currentPath }: DocumentTabBarProps) {
                     e.stopPropagation();
                     closeFileTab(tab.path);
                   }}
-                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700/60 transition-opacity cursor-pointer text-neutral-400 hover:text-[var(--foreground)] shrink-0 ml-0.5"
+                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded transition-opacity cursor-pointer shrink-0 ml-0.5 hover:bg-black/10 dark:hover:bg-white/10"
+                  style={{ color: 'var(--theme-text-muted)' }}
                   title="Close tab (⌘W)"
                 >
                   <X className="w-3 h-3" />

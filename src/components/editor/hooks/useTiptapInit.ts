@@ -85,15 +85,19 @@ export function useTiptapInit({
     const isFileSwitch = loadedPathRef.current !== file.path;
 
     if (isFileSwitch) {
-      try {
-        const parsed = parseMarkdownContent(file.content || '', file.title);
-        const editorHtml = markdownToEditorHtml(parsed.body);
-        editor.commands.setContent(editorHtml, { emitUpdate: false });
-        loadedPathRef.current = file.path;
-      } catch (err) {
-        console.warn('Failed to parse note markdown for editor:', err);
-      }
-      return;
+      const rafId = requestAnimationFrame(() => {
+        try {
+          const parsed = parseMarkdownContent(file.content || '', file.title);
+          const editorHtml = markdownToEditorHtml(parsed.body);
+          editor.commands.setContent(editorHtml, { emitUpdate: false });
+          loadedPathRef.current = file.path;
+        } catch (err) {
+          console.warn('Failed to parse note markdown for editor:', err);
+        }
+      });
+      return () => {
+        cancelAnimationFrame(rafId);
+      };
     }
 
     // If currently focused and typing, NEVER overwrite document state from reactive local saves

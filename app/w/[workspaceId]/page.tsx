@@ -23,7 +23,7 @@ import { DeleteConfirmModal } from '@/src/components/common/DeleteConfirmModal';
 import { NewNoteModal } from '@/src/components/sidebar/NewNoteModal';
 import { ExportPwaModal } from '@/src/components/export/ExportPwaModal';
 import { VaultFindReplaceModal } from '@/src/components/search/VaultFindReplaceModal';
-import { X, Plus, FileText, Check, Maximize2 } from 'lucide-react';
+import { FileText, Check } from 'lucide-react';
 
 export default function WorkspacePage() {
   // Bi-directional Gmail-style URL and hash routing synchronization
@@ -34,9 +34,6 @@ export default function WorkspacePage() {
     activeView,
     activeTab,
     setActiveTab,
-    openTabs,
-    openFileTab,
-    closeFileTab,
     sidebarCollapsed,
     isImportModalOpen,
     setImportModalOpen,
@@ -94,53 +91,7 @@ export default function WorkspacePage() {
       {/* 1. Top Navigation Bar (Hidden in Focus Mode) */}
       {!isFocusMode && <WorkspaceHeader />}
 
-      {/* 2. Workspace Document Tabs Bar (Shown in Editor View, Hidden in Focus Mode) */}
-      {!isFocusMode && activeView === 'editor' && activeTab !== 'settings' && (
-        <div className="flex items-center bg-[var(--card)]/60 border-b border-[var(--border)] px-2 py-0 overflow-x-auto select-none shrink-0">
-          {openTabs.map((tab) => {
-            const isActive = tab.path === activeFilePath;
-            return (
-              <div
-                key={tab.path}
-                onClick={() => openFileTab(tab.path, tab.title)}
-                className={`group flex items-center gap-2 py-1.5 px-3 border-r border-[var(--border)] text-xs cursor-pointer transition-colors max-w-[200px] shrink-0 ${
-                  isActive
-                    ? 'bg-[var(--background)] font-semibold text-[var(--foreground)] border-t-2 border-t-[var(--accent)]'
-                    : 'text-[var(--foreground)]/60 hover:text-[var(--foreground)] hover:bg-[var(--card)]'
-                }`}
-              >
-                <FileText className="w-3.5 h-3.5 text-[var(--foreground)]/40 shrink-0" />
-                <span className="truncate">{tab.title}</span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    closeFileTab(tab.path);
-                  }}
-                  className={`p-0.5 rounded hover:bg-[var(--foreground)]/10 text-[var(--foreground)]/40 hover:text-[var(--foreground)] transition-opacity ml-1 ${
-                    isActive
-                      ? 'opacity-100'
-                      : 'opacity-100 md:opacity-0 md:group-hover:opacity-100'
-                  }`}
-                  title="Close tab"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            );
-          })}
-
-          <button
-            onClick={() => setNewNoteModalOpen(true)}
-            className="p-1.5 text-[var(--foreground)]/50 hover:text-[var(--foreground)] ml-1 rounded hover:bg-[var(--foreground)]/10 transition-colors cursor-pointer"
-            title="New Note"
-            aria-label="New Note"
-          >
-            <Plus className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
-
-      {/* 3. Main Split View (Sidebar + Canvas) */}
+      {/* 2. Main Split View (Sidebar + Canvas) */}
       <div className="flex-1 flex overflow-hidden min-h-0">
         {/* Sidebar (Hidden in Focus Mode) */}
         {!sidebarCollapsed && !isFocusMode && activeView !== 'settings' && activeTab !== 'settings' && (
