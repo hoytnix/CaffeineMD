@@ -68,9 +68,21 @@
   - Refreshed [LandingShortcuts.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/landing/LandingShortcuts.tsx) with styled `<kbd>` tags covering Vault RegEx (`⌘⇧H`), WASM Runner (`⇧↵`), Split Panes (`⌘\`), PWA Drawer (`⌘E`), Quick-Switcher (`⌘P`), and Context Menu (`Right Click`).
   - Aligned [LandingMegaCTA.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/landing/LandingMegaCTA.tsx) with developer-centric conversion copy, primary workspace launch CTA, and sample exported PWA link.
 
+- [x] **Gemini BYOK Jinja Theme Generator & Vault-Stored Template Engine**:
+  - Zero-dependency client-side Jinja evaluator ([jinjaCompiler.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/jinjaCompiler.ts)) with variables, filters (`escape`, `lower`, `upper`, `trim`), booleans, negation, equality expressions, and loops.
+  - Gemini BYOK prompt generator ([geminiTemplateGenerator.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/geminiTemplateGenerator.ts)) targeting `gemini-2.5-flash` with candidate fallback models and markdown fence cleaning.
+  - Template discovery and persistence helpers ([noteRepository.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/repositories/noteRepository.ts)): `findVaultTemplate()` ascending folder hierarchies up to vault root, and `saveVaultTemplate()` persisting `_template.html` directly in IndexedDB.
+  - Interactive AI Theme Studio accordion in Export PWA dialog ([AiThemePromptDrawer.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/AiThemePromptDrawer.tsx), [ExportPwaModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportPwaModal.tsx)) with presets, API key persistence, and instant workspace editing.
+  - Dedicated storage settings card ([GeminiSettingsCard.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/settings/sections/GeminiSettingsCard.tsx), [StorageSettingsSection.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/settings/sections/StorageSettingsSection.tsx)) for key management and live ping testing.
+
+- [x] **Streamlined Editor UX Controls & Relocated Vault Actions**:
+  - Streamlined [EditorUxControls.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/header/EditorUxControls.tsx) down to 108 LOC retaining only Outline TOC HUD, Split View, Focus Mode, Save, and Delete buttons.
+  - Relocated Code Minimap and Typewriter Mode toggles into [EditorSettingsSection.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/settings/sections/EditorSettingsSection.tsx) under a dedicated "Editor Display & Behavior" group with persistent localStorage backing in [workspaceStore.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/workspaceStore.ts).
+  - Relocated Vault RegEx Find & Replace action button to the File Explorer search bar header in [FileTree.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/FileTree.tsx).
+  - Maintained Export Document / PWA access in right-click context menus ([EditorContextMenu.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/EditorContextMenu.tsx) and [FileActionMenu.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/FileActionMenu.tsx)).
+
 ## Verification Status
 - Lint verification: Passing cleanly with 0 errors and 0 warnings (`pnpm run lint`).
 - TypeScript verification: Passing cleanly with 0 errors (`tsc --noEmit`).
-- Production build: Passing cleanly (`next build` / `pnpm run build`).
-- Tiered LOC Limits: 100% compliant (<100 LOC sweet spot, <250 LOC soft limit across all landing & core modules).
+- Tiered LOC Limits: 100% compliant (<100 LOC sweet spot, <250 LOC soft limit across all modules).
 

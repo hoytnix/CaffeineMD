@@ -26,8 +26,23 @@
   16. **Competitive Architecture Matrix**: 8-dimension comparative table positioning CaffeineMD's 100% client-side privacy, native edge publishing, WASM code execution, and zero paywalls against Obsidian, Notion, and Bear ([LandingComparison.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/landing/LandingComparison.tsx)).
   17. **Workflow Keyboard Shortcuts HUD & Mega CTA**: Visual accelerator cards with styled `<kbd>` tags (`⌘⇧H`, `⇧↵`, `⌘\`, `⌘E`, `⌘P`, `Right Click`) and high-impact conversion section with direct workspace launch and sample exported PWA demo ([LandingShortcuts.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/landing/LandingShortcuts.tsx), [LandingMegaCTA.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/landing/LandingMegaCTA.tsx)).
 
+- **Gemini BYOK Jinja Theme Generator & Vault-Stored Template Engine (Live & Integrated)**:
+  18. **AI Theme Studio & Client-Side Jinja Compiler**:
+      - Zero-dependency client-side Jinja evaluator ([jinjaCompiler.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/jinjaCompiler.ts)) supporting variables, filters (`escape`, `lower`, `upper`, `trim`), conditionals (`if`/`else`, negation, equality checks), and loops (`{% for page in pages %}`).
+      - Client-side Gemini BYOK template generator ([geminiTemplateGenerator.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/geminiTemplateGenerator.ts)) prompting `gemini-2.5-flash` with candidate model fallbacks and automated code fence stripping.
+      - Vault storage helpers ([noteRepository.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/repositories/noteRepository.ts)): recursive directory-tree template discovery `findVaultTemplate()` and `saveVaultTemplate()` persisting editable `_template.html` files directly in IndexedDB.
+      - Integrated AI Theme Prompt Drawer accordion in Export PWA dialog ([AiThemePromptDrawer.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/AiThemePromptDrawer.tsx), [ExportPwaModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportPwaModal.tsx)) with 4 aesthetic presets, browser API key storage, and instant "Edit in Workspace" tab triggers.
+      - Settings configuration card ([GeminiSettingsCard.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/settings/sections/GeminiSettingsCard.tsx), [StorageSettingsSection.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/settings/sections/StorageSettingsSection.tsx)) with token test ping and workspace persistence.
+
+- **Editor UX Controls Streamline & Vault Action Relocation (Live & Integrated)**:
+  19. **Streamlined Header & Relocated Controls**:
+      - Cleaned [EditorUxControls.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/header/EditorUxControls.tsx) to strictly retain Outline TOC HUD, Split View, Focus Mode, Save, and Delete buttons; removed redundant Minimap, Typewriter, Export, and Find & Replace buttons.
+      - Relocated Code Minimap and Typewriter Mode toggles to [EditorSettingsSection.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/settings/sections/EditorSettingsSection.tsx) under "Editor Display & Behavior" with persistent local storage backing in [workspaceStore.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/workspaceStore.ts).
+      - Relocated Vault RegEx Find & Replace button to sit directly right of the "Search notes..." bar in [FileTree.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/FileTree.tsx).
+      - Export PWA / HTML preserved and accessible via right-click context menus in [EditorContextMenu.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/EditorContextMenu.tsx) and [FileActionMenu.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/FileActionMenu.tsx).
+
 - **Architecture & Tiered LOC Compliance**: All modules decomposed strictly within tiered LOC boundaries (<100 LOC sweet spot, <250 LOC soft limit, strictly <400 LOC). All landing modules strictly <= 247 LOC.
-- **Verification Rule**: ESLint passing with 0 errors and 0 warnings (`pnpm run lint`). TypeScript check passing with 0 errors (`tsc --noEmit`). Production build verified (`next build`).
+- **Verification Rule**: ESLint passing with 0 errors and 0 warnings (`pnpm run lint`). TypeScript check passing with 0 errors (`tsc --noEmit`).
 
 ## Next Steps
 - Maintain modular <100-250 LOC boundaries across all components.

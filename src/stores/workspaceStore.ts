@@ -79,8 +79,15 @@ export interface WorkspaceState {
   setFocusMode: (open: boolean) => void;
   toggleFocusMode: () => void;
   isTypewriterScrolling: boolean;
+  typewriterMode: boolean;
   setTypewriterScrolling: (val: boolean) => void;
   toggleTypewriterScrolling: () => void;
+  toggleTypewriterMode: () => void;
+
+  // Editor Outline HUD
+  isOutlineOpen: boolean;
+  setIsOutlineOpen: (open: boolean) => void;
+  toggleOutline: () => void;
 
   // Editor Minimap
   showMinimap: boolean;
@@ -241,9 +248,35 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   isFocusMode: false,
   setFocusMode: (open) => set({ isFocusMode: open }),
   toggleFocusMode: () => set((state) => ({ isFocusMode: !state.isFocusMode })),
-  isTypewriterScrolling: false,
-  setTypewriterScrolling: (val) => set({ isTypewriterScrolling: val }),
-  toggleTypewriterScrolling: () => set((state) => ({ isTypewriterScrolling: !state.isTypewriterScrolling })),
+  isTypewriterScrolling:
+    typeof window !== 'undefined'
+      ? localStorage.getItem('caffeinemd-typewriter-mode') === 'true'
+      : false,
+  typewriterMode:
+    typeof window !== 'undefined'
+      ? localStorage.getItem('caffeinemd-typewriter-mode') === 'true'
+      : false,
+  setTypewriterScrolling: (val) => {
+    set({ isTypewriterScrolling: val, typewriterMode: val });
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('caffeinemd-typewriter-mode', String(val));
+      } catch {}
+    }
+  },
+  toggleTypewriterScrolling: () => {
+    const nextVal = !get().isTypewriterScrolling;
+    get().setTypewriterScrolling(nextVal);
+  },
+  toggleTypewriterMode: () => {
+    const nextVal = !get().isTypewriterScrolling;
+    get().setTypewriterScrolling(nextVal);
+  },
+
+  // Editor Outline HUD
+  isOutlineOpen: false,
+  setIsOutlineOpen: (open) => set({ isOutlineOpen: open }),
+  toggleOutline: () => set((state) => ({ isOutlineOpen: !state.isOutlineOpen })),
 
   // Editor Minimap
   showMinimap:

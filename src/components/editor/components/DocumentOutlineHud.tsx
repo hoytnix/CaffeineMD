@@ -4,6 +4,8 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Editor } from '@tiptap/react';
 import { AlignLeft, ChevronRight, ChevronLeft, Bookmark } from 'lucide-react';
 
+import { useWorkspaceStore } from '@/src/stores/workspaceStore';
+
 interface HeadingItem {
   id: string;
   level: number;
@@ -22,7 +24,7 @@ export function DocumentOutlineHud({
   rawMarkdown = '',
   editorMode,
 }: DocumentOutlineHudProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const { isOutlineOpen, setIsOutlineOpen } = useWorkspaceStore();
   const [activeHeadingIndex, setActiveHeadingIndex] = useState<number | null>(null);
 
   // Parse headings from rich text AST or raw markdown text
@@ -113,10 +115,10 @@ export function DocumentOutlineHud({
       className="fixed left-4 top-20 z-20 flex items-start select-none group"
     >
       {/* Collapsed Toggle Pill */}
-      {!isOpen ? (
+      {!isOutlineOpen ? (
         <button
           type="button"
-          onClick={() => setIsOpen(true)}
+          onClick={() => setIsOutlineOpen(true)}
           title="Open Document Outline (HUD)"
           className="p-2 rounded-xl bg-[var(--card)]/90 backdrop-blur-md border border-[var(--border)] shadow-md text-neutral-400 hover:text-[var(--accent)] hover:border-[var(--accent)] transition-all cursor-pointer flex items-center gap-1.5"
         >
@@ -136,7 +138,7 @@ export function DocumentOutlineHud({
             </div>
             <button
               type="button"
-              onClick={() => setIsOpen(false)}
+              onClick={() => setIsOutlineOpen(false)}
               className="p-1 rounded-lg text-neutral-400 hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/10 transition-colors cursor-pointer"
               title="Close outline"
             >

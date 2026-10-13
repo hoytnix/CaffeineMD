@@ -2,15 +2,11 @@
 
 import React from 'react';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
-import { useFindReplaceStore } from '@/src/stores/findReplaceStore';
 import {
   Columns as SplitIcon,
   Maximize2,
   Minimize2,
-  ChevronsUpDown,
-  Map as MapIcon,
-  Download,
-  Replace,
+  AlignLeft,
   Save,
   Trash2,
 } from 'lucide-react';
@@ -31,14 +27,27 @@ export function EditorUxControls({
     splitPaneMode,
     isFocusMode,
     toggleFocusMode,
-    isTypewriterScrolling,
-    toggleTypewriterScrolling,
-    showMinimap,
-    toggleMinimap,
+    isOutlineOpen,
+    toggleOutline,
   } = useWorkspaceStore();
 
   return (
     <div className="flex items-center gap-1.5 shrink-0">
+      {/* Outline TOC HUD Toggle */}
+      <button
+        type="button"
+        onClick={toggleOutline}
+        className={`p-1.5 rounded-md border border-[var(--border)] transition-colors cursor-pointer ${
+          isOutlineOpen
+            ? 'bg-[var(--accent)] text-white'
+            : 'bg-[var(--card)] text-neutral-400 hover:text-[var(--foreground)]'
+        }`}
+        title={`Document Outline HUD (${isOutlineOpen ? 'Open' : 'Closed'})`}
+        aria-label="Toggle document outline HUD"
+      >
+        <AlignLeft className="w-3.5 h-3.5" />
+      </button>
+
       {/* Split Pane View Toggle (⌘\) */}
       <button
         type="button"
@@ -54,36 +63,6 @@ export function EditorUxControls({
         <SplitIcon className="w-3.5 h-3.5" />
       </button>
 
-      {/* Typewriter Scrolling Toggle */}
-      <button
-        type="button"
-        onClick={toggleTypewriterScrolling}
-        className={`p-1.5 rounded-md border border-[var(--border)] transition-colors cursor-pointer ${
-          isTypewriterScrolling
-            ? 'bg-[var(--accent)] text-white'
-            : 'bg-[var(--card)] text-neutral-400 hover:text-[var(--foreground)]'
-        }`}
-        title={`Typewriter Scrolling (${isTypewriterScrolling ? 'On' : 'Off'})`}
-        aria-label="Toggle typewriter scrolling"
-      >
-        <ChevronsUpDown className="w-3.5 h-3.5" />
-      </button>
-
-      {/* Editor Minimap Toggle */}
-      <button
-        type="button"
-        onClick={toggleMinimap}
-        className={`p-1.5 rounded-md border border-[var(--border)] transition-colors cursor-pointer ${
-          showMinimap
-            ? 'bg-[var(--card)] text-[var(--foreground)]'
-            : 'bg-[var(--card)] text-neutral-400 opacity-60 hover:opacity-100'
-        }`}
-        title={`Minimap Overview (${showMinimap ? 'Visible' : 'Hidden'})`}
-        aria-label="Toggle minimap"
-      >
-        <MapIcon className="w-3.5 h-3.5" />
-      </button>
-
       {/* Distraction-Free Focus Mode (F11 / ⌘⇧F) */}
       <button
         type="button"
@@ -97,28 +76,6 @@ export function EditorUxControls({
         aria-label="Toggle focus mode"
       >
         {isFocusMode ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-      </button>
-
-      {/* Vault RegEx Find & Replace (⌘⇧H) */}
-      <button
-        type="button"
-        onClick={() => useFindReplaceStore.getState().setOpen(true)}
-        className="p-1.5 rounded-md border border-[var(--border)] bg-[var(--card)] text-neutral-400 hover:text-[var(--foreground)] transition-colors cursor-pointer"
-        title="Vault Find & Replace (⌘⇧H)"
-        aria-label="Vault Find & Replace"
-      >
-        <Replace className="w-3.5 h-3.5" />
-      </button>
-
-      {/* Export Document / PWA */}
-      <button
-        type="button"
-        onClick={() => useWorkspaceStore.getState().openExportModal()}
-        className="p-1.5 rounded-md border border-[var(--border)] bg-[var(--card)] text-neutral-400 hover:text-[var(--foreground)] transition-colors cursor-pointer"
-        title="Export Document / PWA"
-        aria-label="Export Document / PWA"
-      >
-        <Download className="w-3.5 h-3.5" />
       </button>
 
       {/* Save Button */}

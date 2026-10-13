@@ -61,6 +61,10 @@ export function EditorSettingsSection({
 }: EditorSettingsSectionProps) {
   const storeAutosaveInterval = useWorkspaceStore((s) => s.autosaveInterval);
   const storeSetAutosaveInterval = useWorkspaceStore((s) => s.setAutosaveInterval);
+  const showMinimap = useWorkspaceStore((s) => s.showMinimap);
+  const toggleMinimap = useWorkspaceStore((s) => s.toggleMinimap);
+  const typewriterMode = useWorkspaceStore((s) => s.typewriterMode);
+  const toggleTypewriterMode = useWorkspaceStore((s) => s.toggleTypewriterMode);
 
   const activeAutosaveInterval = autosaveInterval ?? storeAutosaveInterval;
   const updateAutosaveInterval = setAutosaveInterval ?? storeSetAutosaveInterval;
@@ -220,6 +224,71 @@ export function EditorSettingsSection({
                 ))}
               </select>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Editor Display & Behavior */}
+      <div>
+        <div className="px-3 mb-2 flex items-center justify-between">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+            Editor Display &amp; Behavior
+          </span>
+        </div>
+
+        <div className="rounded-2xl bg-[var(--card)] border border-[var(--border)] overflow-hidden shadow-xs divide-y divide-[var(--border)] px-4 sm:px-5">
+          {/* Editor Minimap Toggle */}
+          <div className="flex items-center justify-between py-3.5">
+            <div className="space-y-0.5">
+              <label className="text-sm font-medium text-[var(--foreground)]">
+                Code Minimap
+              </label>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                Display a high-level visual code minimap on the right edge of the editor.
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={showMinimap}
+              onClick={toggleMinimap}
+              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer shrink-0 ${
+                showMinimap ? 'bg-indigo-600' : 'bg-neutral-300 dark:bg-zinc-700'
+              }`}
+            >
+              <span
+                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                  showMinimap ? 'translate-x-4.5' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Typewriter Scrolling Toggle */}
+          <div className="flex items-center justify-between py-3.5">
+            <div className="space-y-0.5">
+              <label className="text-sm font-medium text-[var(--foreground)]">
+                Typewriter Mode
+              </label>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                Keep the active cursor line vertically centered in the viewport while drafting.
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={typewriterMode}
+              onClick={toggleTypewriterMode}
+              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer shrink-0 ${
+                typewriterMode ? 'bg-indigo-600' : 'bg-neutral-300 dark:bg-zinc-700'
+              }`}
+            >
+              <span
+                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                  typewriterMode ? 'translate-x-4.5' : 'translate-x-1'
+                }`}
+              />
+            </button>
           </div>
         </div>
       </div>

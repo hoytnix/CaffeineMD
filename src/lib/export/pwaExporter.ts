@@ -1,6 +1,7 @@
 import JSZip from 'jszip';
 import { Note } from '@/src/lib/storage/schema';
 import { db } from '@/src/lib/storage/db';
+import { findVaultTemplate } from '@/src/lib/storage/repositories/noteRepository';
 import { buildStandaloneHtml, escapeHtml, ExportHtmlOptions } from './standaloneHtmlBuilder';
 
 export interface PwaExportBundleOptions extends ExportHtmlOptions {
@@ -115,19 +116,65 @@ self.addEventListener('fetch', (e) => {
   zip.file('sw.js', swScript);
 
   // 4. Render HTML files
+  let template = options.customTemplate;
+  if (!template) {
+    const searchFolder =
+      options.folderPath ||
+      (activeNote.path.includes('/')
+        ? activeNote.path.slice(0, activeNote.path.lastIndexOf('/'))
+        : '');
+    const found = await findVaultTemplate(options.workspaceId, searchFolder);
+    if (found?.content) {
+      template = found.content;
+    }
+  }
+
+  const pages = notesToExport.map((n) => {
+    const pTitle = n.title || n.name?.replace(/\.[^/.]+$/, '') || 'Untitled';
+    const url = `./${slugify(n.title || n.name)}.html`;
+    const excerpt = (n.content || '').slice(0, 150).replace(/[#*`\n]/g, ' ').trim();
+    return {
+      title: pTitle,
+      url,
+      path: n.path,
+      excerpt,
+      date: new Date(n.updatedAt || Date.now()).toLocaleDateString(),
+    };
+  });
+
   if (options.scopeMode === 'single') {
-    const singleHtml = buildStandaloneHtml(activeNote, { ...options, isPwa: true });
+    const singleHtml = await buildStandaloneHtml(activeNote, {
+      ...options,
+      isPwa: true,
+      customTemplate: template,
+      pages,
+    });
     zip.file('index.html', remapWikiLinksToHtml(singleHtml));
   } else {
     // Generate an index navigation hub + subpages
-    const indexHtml = buildDirectoryIndexHtml(notesToExport, options);
-    zip.file('index.html', indexHtml);
+    if (template && (template.includes('pages') || template.includes('{% for'))) {
+      const indexHtml = await buildStandaloneHtml(activeNote, {
+        ...options,
+        isPwa: true,
+        customTemplate: template,
+        pages,
+      });
+      zip.file('index.html', remapWikiLinksToHtml(indexHtml));
+    } else {
+      const indexHtml = buildDirectoryIndexHtml(notesToExport, options);
+      zip.file('index.html', indexHtml);
+    }
 
-    notesToExport.forEach((n) => {
-      const pageHtml = buildStandaloneHtml(n, { ...options, isPwa: true });
+    for (const n of notesToExport) {
+      const pageHtml = await buildStandaloneHtml(n, {
+        ...options,
+        isPwa: true,
+        customTemplate: template,
+        pages,
+      });
       const filename = `${slugify(n.title || n.name)}.html`;
       zip.file(filename, remapWikiLinksToHtml(pageHtml));
-    });
+    }
   }
 
   // 5. Package Placeholder Icons

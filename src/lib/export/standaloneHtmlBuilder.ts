@@ -1,12 +1,16 @@
 import { Note } from '@/src/lib/storage/schema';
 import { markdownToHtml } from '@/src/lib/markdown/markdownToHtml';
 import { themeDefinitions, ThemeDefinition } from '@/src/lib/themes/themeDefinitions';
+import { findVaultTemplate } from '@/src/lib/storage/repositories/noteRepository';
+import { renderJinjaTemplate, TemplateContext, TemplatePage } from './jinjaCompiler';
 
 export interface ExportHtmlOptions {
   themeId: string;
   includeThemeSwitcher: boolean;
   appTitle?: string;
   isPwa?: boolean;
+  customTemplate?: string;
+  pages?: TemplatePage[];
 }
 
 export function escapeHtml(str: string): string {
@@ -23,7 +27,50 @@ function resolveTheme(themeId: string): ThemeDefinition {
   return themeDefinitions.find((t) => t.id === themeId) || themeDefinitions[0];
 }
 
-export function buildStandaloneHtml(note: Note, options: ExportHtmlOptions): string {
+export function renderWithJinjaTemplate(
+  note: Note,
+  template: string,
+  options: ExportHtmlOptions
+): string {
+  const renderedContent = markdownToHtml(note.content || '');
+  const title = options.appTitle || note.title || note.name?.replace(/\.[^/.]+$/, '') || 'Untitled Document';
+  const wordCount = (note.content || '').trim().split(/\s+/).filter(Boolean).length;
+  const readingTimeVal = `${Math.max(1, Math.ceil(wordCount / 200))} min read`;
+  const dateVal = new Date(note.updatedAt || Date.now()).toLocaleDateString();
+
+  const context: TemplateContext = {
+    title,
+    content: renderedContent,
+    description: `${title} - Offline Standalone Document`,
+    date: dateVal,
+    wordCount,
+    readingTime: readingTimeVal,
+    reading_time: readingTimeVal,
+    word_count: wordCount,
+    isPwa: Boolean(options.isPwa),
+    is_pwa: Boolean(options.isPwa),
+    frontmatter: note.frontmatter || {},
+    pages: options.pages,
+    themeVars: `/* custom theme */`,
+  };
+
+  return renderJinjaTemplate(template, context);
+}
+
+export async function buildStandaloneHtml(note: Note, options: ExportHtmlOptions): Promise<string> {
+  let template = options.customTemplate;
+  if (!template) {
+    const folderPath = note.path.includes('/') ? note.path.slice(0, note.path.lastIndexOf('/')) : '';
+    const found = await findVaultTemplate(note.vaultId || 'default-vault', folderPath);
+    if (found?.content) {
+      template = found.content;
+    }
+  }
+
+  if (template) {
+    return renderWithJinjaTemplate(note, template, options);
+  }
+
   const selectedTheme = resolveTheme(options.themeId);
   const renderedContent = markdownToHtml(note.content || '');
   const title = options.appTitle || note.title || note.name?.replace(/\.[^/.]+$/, '') || 'Untitled Document';

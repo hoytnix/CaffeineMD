@@ -13,10 +13,11 @@ import { useFileTreeActions } from './useFileTreeActions';
 import { useTreeDragAndDrop } from './hooks/useTreeDragAndDrop';
 import { useSidebarResize } from './hooks/useSidebarResize';
 import { SidebarResizer } from './SidebarResizer';
-import { Search, FolderUp, Settings } from 'lucide-react';
+import { Search, FolderUp, Settings, Replace } from 'lucide-react';
 import Link from 'next/link';
 import { useContextMenu } from '@/src/hooks/useContextMenu';
 import { FileTreeCanvasContextMenu } from './tree/FileTreeCanvasContextMenu';
+import { useFindReplaceStore } from '@/src/stores/findReplaceStore';
 
 export function FileTree() {
   const rawFiles = useLiveQuery(() => db.files.toArray());
@@ -150,12 +151,12 @@ export function FileTree() {
         isDragOverTree ? 'ring-2 ring-indigo-500 bg-indigo-50/20' : ''
       }`}
     >
-      {/* ⌘K Search Bar */}
-      <div className="p-2 border-b border-[var(--border)]">
+      {/* ⌘K Search Bar & Vault RegEx Find-and-Replace */}
+      <div className="p-2 border-b border-[var(--border)] flex items-center gap-1.5">
         <button
           type="button"
           onClick={() => setIsSearchOpen(true)}
-          className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-[var(--background)] hover:bg-[var(--border)]/40 border border-[var(--border)] text-xs text-neutral-400 hover:text-[var(--foreground)] transition-colors cursor-pointer group"
+          className="flex-1 min-w-0 flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-[var(--background)] hover:bg-[var(--border)]/40 border border-[var(--border)] text-xs text-neutral-400 hover:text-[var(--foreground)] transition-colors cursor-pointer group"
           title="Search notes (⌘K)"
           aria-label="Search notes (⌘K)"
         >
@@ -166,6 +167,15 @@ export function FileTree() {
           <kbd className="font-mono text-[10px] text-neutral-400 group-hover:text-[var(--foreground)] border border-[var(--border)] bg-[var(--card)] px-1 py-0.5 rounded shrink-0 transition-colors">
             ⌘K
           </kbd>
+        </button>
+        <button
+          type="button"
+          onClick={() => useFindReplaceStore.getState().setOpen(true)}
+          title="Vault RegEx Find & Replace (Cmd+Shift+H)"
+          aria-label="Vault RegEx Find & Replace (Cmd+Shift+H)"
+          className="p-1.5 rounded-lg border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--border)]/40 text-neutral-400 hover:text-[var(--foreground)] transition-colors shrink-0 cursor-pointer"
+        >
+          <Replace className="w-3.5 h-3.5" />
         </button>
       </div>
 

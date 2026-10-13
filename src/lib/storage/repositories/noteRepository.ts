@@ -212,3 +212,91 @@ export async function updateNoteDeployMeta(
   }
 }
 
+/**
+ * Discover a custom Jinja/HTML template (_template.html or _theme.jinja) in the target folder
+ * or recursively check parent directories up to vault root.
+ */
+export async function findVaultTemplate(
+  workspaceId: string,
+  folderPath?: string
+): Promise<VaultFile | null> {
+  const allFiles = await db.files.toArray();
+  const vaultFiltered = allFiles.filter((f) => {
+    if (f.isTrash) return false;
+    if (!workspaceId) return true;
+    if (workspaceId === 'default-vault') return !f.vaultId || f.vaultId === 'default-vault';
+    return f.vaultId === workspaceId;
+  });
+
+  const templateNames = ['_template.html', '_theme.jinja'];
+  const candidateFolderPaths: string[] = [];
+  let currentFolder = (folderPath || '').trim().replace(/^\/+|\/+$/g, '');
+  candidateFolderPaths.push(currentFolder);
+
+  while (currentFolder) {
+    const lastSlash = currentFolder.lastIndexOf('/');
+    if (lastSlash === -1) {
+      currentFolder = '';
+    } else {
+      currentFolder = currentFolder.slice(0, lastSlash);
+    }
+    candidateFolderPaths.push(currentFolder);
+  }
+
+  for (const folder of candidateFolderPaths) {
+    for (const name of templateNames) {
+      const candidatePath = folder ? `${folder}/${name}` : name;
+      const found = vaultFiltered.find(
+        (f) => f.path === candidatePath || f.path === `/${candidatePath}`
+      );
+      if (found && found.content) {
+        return found;
+      }
+    }
+  }
+
+  const vaultFallback = vaultFiltered.find((f) =>
+    templateNames.includes(f.name) ||
+    templateNames.some((t) => f.path.endsWith(`/${t}`) || f.path === t)
+  );
+  if (vaultFallback && vaultFallback.content) {
+    return vaultFallback;
+  }
+
+  return null;
+}
+
+/**
+ * Save or update a Jinja template as _template.html in the specified vault folder
+ */
+export async function saveVaultTemplate(
+  workspaceId: string,
+  targetFolderPath: string,
+  templateContent: string
+): Promise<VaultFile> {
+  const cleanFolder = (targetFolderPath || '').trim().replace(/^\/+|\/+$/g, '');
+  const templatePath = cleanFolder ? `${cleanFolder}/_template.html` : '_template.html';
+
+  const existing = await db.files.get(templatePath);
+  const now = Date.now();
+  const templateFile: VaultFile = {
+    id: templatePath,
+    path: templatePath,
+    name: '_template.html',
+    title: '_template.html',
+    extension: 'html',
+    content: templateContent,
+    frontmatter: {},
+    tags: ['template'],
+    isBinary: false,
+    size: new Blob([templateContent]).size,
+    createdAt: existing?.createdAt || now,
+    updatedAt: now,
+    vaultId: workspaceId || 'default-vault',
+    isTrash: false,
+  };
+
+  await db.files.put(templateFile);
+  return templateFile;
+}
+

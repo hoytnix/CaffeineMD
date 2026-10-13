@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trash2, HardDrive } from 'lucide-react';
 import { DeploymentSettingsCard } from './DeploymentSettingsCard';
+import { GeminiSettingsCard } from './GeminiSettingsCard';
 
 export interface StorageSettingsSectionProps {
   trashRetentionDays: number;
@@ -134,6 +135,9 @@ export function StorageSettingsSection({
 
       {/* 1-Click Cloud Deployment Integrations */}
       <DeploymentSettingsCard />
+
+      {/* AI Theme Studio (Gemini BYOK) Settings */}
+      <GeminiSettingsCard />
 
       {/* Trash & Ephemeral Retention Settings */}
       <div>

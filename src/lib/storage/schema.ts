@@ -197,6 +197,7 @@ export interface WorkspaceRecord {
   netlifyToken?: string;
   githubToken?: string;
   defaultGithubRepo?: string;
+  geminiApiKey?: string;
   createdAt: number;
   updatedAt: number;
 }

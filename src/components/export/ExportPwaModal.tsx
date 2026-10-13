@@ -17,6 +17,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { DeploymentActionDrawer } from './DeploymentActionDrawer';
+import { AiThemePromptDrawer } from './AiThemePromptDrawer';
 
 function createFallbackNote(appName: string, workspaceId: string): VaultFile {
   const timestamp = Date.now();
@@ -46,6 +47,7 @@ function ExportPwaDialog() {
     vaultName,
     themeId: currentThemeId,
     showToast,
+    openFileTab,
   } = useWorkspaceStore();
 
   const [activeNote, setActiveNote] = useState<VaultFile | null>(null);
@@ -55,6 +57,7 @@ function ExportPwaDialog() {
   const [outputType, setOutputType] = useState<'html' | 'pwa'>('html');
   const [selectedThemeId, setSelectedThemeId] = useState<string>(() => currentThemeId || 'dark');
   const [includeThemeSwitcher, setIncludeThemeSwitcher] = useState(true);
+  const [customTemplateString, setCustomTemplateString] = useState<string | undefined>(undefined);
   const [appName, setAppName] = useState(() => vaultName || 'CaffeineMD Export');
   const [shortName, setShortName] = useState('CaffeineMD');
   const [appId, setAppId] = useState('com.caffeinemd.export');
@@ -82,11 +85,12 @@ function ExportPwaDialog() {
         activeNote || createFallbackNote(appName, activeWorkspaceId || 'default-vault');
 
       if (outputType === 'html') {
-        const html = buildStandaloneHtml(targetNote, {
+        const html = await buildStandaloneHtml(targetNote, {
           themeId: selectedThemeId,
           includeThemeSwitcher,
           appTitle: appName,
           isPwa: false,
+          customTemplate: customTemplateString,
         });
 
         const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
@@ -98,6 +102,7 @@ function ExportPwaDialog() {
           includeThemeSwitcher,
           appTitle: appName,
           isPwa: true,
+          customTemplate: customTemplateString,
           scopeMode,
           folderPath: exportModalTarget?.folderPath,
           workspaceId: activeWorkspaceId || 'default-vault',
@@ -298,6 +303,21 @@ function ExportPwaDialog() {
           </div>
         )}
 
+        {/* AI Theme Studio (Gemini BYOK) Accordion */}
+        <AiThemePromptDrawer
+          workspaceId={activeWorkspaceId || 'default-vault'}
+          folderPath={exportModalTarget?.folderPath}
+          isMultiPage={scopeMode === 'directory'}
+          onTemplateGenerated={(templateContent) => {
+            setCustomTemplateString(templateContent);
+          }}
+          onOpenTemplateInWorkspace={(templatePath) => {
+            openFileTab(templatePath, '_template.html');
+            closeExportModal();
+          }}
+          showToast={showToast}
+        />
+
         {/* 1-Click Cloud Deployment Action Drawer */}
         <DeploymentActionDrawer
           activeNote={
@@ -308,6 +328,7 @@ function ExportPwaDialog() {
             includeThemeSwitcher,
             appTitle: appName,
             isPwa: true,
+            customTemplate: customTemplateString,
             scopeMode,
             folderPath: exportModalTarget?.folderPath,
             workspaceId: activeWorkspaceId || 'default-vault',
