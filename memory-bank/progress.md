@@ -98,8 +98,18 @@
   - Updated theme generation prompt in [geminiTemplateGenerator.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/geminiTemplateGenerator.ts) with `.sidebar-nav` and `.sidebar-nav-link` specifications and multi-note container support.
   - Enabled Standalone HTML format for folder/vault scopes in [ExportPwaModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportPwaModal.tsx) and decomposed services strictly within tiered LOC limits (<400 LOC).
 
+- [x] **PWA & Standalone HTML Export Pipeline Overhaul (Phases 1–3)**:
+  - Phase 1: Constrained JSON schema design tokens (`ThemeDesignTokens`) via Gemini `responseMimeType: 'application/json'` in [geminiTemplateGenerator.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/geminiTemplateGenerator.ts) and audited base stylesheet in [themeTokens.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/themeTokens.ts).
+  - Phase 1: Local asset inlining via Base64 data URIs for Standalone HTML and `/assets/` zip extraction with Service Worker precaching for Production PWA via [assetBundler.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/assetBundler.ts) and [pwaExporter.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/pwaExporter.ts).
+  - Phase 2: Sandboxed live preview drawer with sandboxed `<iframe>`, automatic Blob URL cleanup, and Desktop/Tablet/Mobile viewport toggles in [ExportPreviewDrawer.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportPreviewDrawer.tsx).
+  - Phase 2: Debounced preview HTML compilation service in [exportPreviewCompiler.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/exportPreviewCompiler.ts).
+  - Phase 3: Client-side inverted search index and `⌘K` spotlight modal snippet injection in [vaultSearchIndex.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/vaultSearchIndex.ts).
+  - Phase 3: Standalone 2D HTML5 Canvas knowledge graph simulator with spring physics and note pane switching in [canvasGraphHud.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/canvasGraphHud.ts) and [canvasGraphStyles.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/canvasGraphStyles.ts).
+  - Decomposed export modal controls into [ExportOptionsForm.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportOptionsForm.tsx) and updated [ExportPwaModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportPwaModal.tsx).
+
 ## Verification Status
 - Lint verification: Passing cleanly with 0 errors and 0 warnings (`pnpm run lint`).
 - TypeScript verification: Passing cleanly with 0 errors (`tsc --noEmit`).
-- Tiered LOC Limits: 100% compliant (<100 LOC sweet spot, <250 LOC soft limit across all modules).
+- Tiered LOC Limits: 100% compliant (<100 LOC sweet spot, <250 LOC soft limit, strictly <400 LOC across all modules).
+
 

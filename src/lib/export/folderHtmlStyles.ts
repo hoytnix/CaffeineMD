@@ -58,6 +58,7 @@ export const ROUTER_SCRIPT = `
 
     window.addEventListener('hashchange', handleHash);
     window.addEventListener('DOMContentLoaded', handleHash);
+    window.switchVaultNote = switchNote;
     handleHash();
   })();
 </script>`;

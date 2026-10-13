@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { db, VaultFile } from '@/src/lib/storage/db';
-import { THEME_PRESETS } from '@/src/lib/themes/themeDefinitions';
+import { THEME_PRESETS as _THEME_PRESETS } from '@/src/lib/themes/themeDefinitions';
 import { slugify } from '@/src/lib/export/pwaExporter';
 import {
   normalizeFolderPath,
@@ -13,15 +13,13 @@ import {
 import {
   Download,
   X,
-  FileCode,
-  Package,
-  Layers,
-  Palette,
-  Smartphone,
   Loader2,
 } from 'lucide-react';
 import { DeploymentActionDrawer } from './DeploymentActionDrawer';
 import { AiThemePromptDrawer } from './AiThemePromptDrawer';
+import { ExportPreviewDrawer } from './ExportPreviewDrawer';
+import { ExportOptionsForm } from './ExportOptionsForm';
+import { compileExportPreviewHtml } from '@/src/lib/export/exportPreviewCompiler';
 
 function ExportPwaDialog() {
   const {
@@ -55,6 +53,50 @@ function ExportPwaDialog() {
   const [shortName, setShortName] = useState(() => defaultTitle.slice(0, 12));
   const [appId, setAppId] = useState(() => `com.caffeinemd.${slugify(defaultTitle)}`);
   const [isExporting, setIsExporting] = useState(false);
+
+  // Live preview compilation state
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      if (!cancelled) setIsPreviewLoading(true);
+      compileExportPreviewHtml({
+        scopeMode,
+        folderPath: exportModalTarget?.folderPath,
+        activeNote,
+        activeWorkspaceId,
+        appName,
+        selectedThemeId,
+        includeThemeSwitcher,
+        customTemplateString,
+      })
+        .then((html) => {
+          if (!cancelled) setPreviewHtml(html);
+        })
+        .catch((err) => {
+          console.warn('Preview compilation error:', err);
+        })
+        .finally(() => {
+          if (!cancelled) setIsPreviewLoading(false);
+        });
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [
+    scopeMode,
+    exportModalTarget?.folderPath,
+    activeNote,
+    activeWorkspaceId,
+    appName,
+    selectedThemeId,
+    includeThemeSwitcher,
+    customTemplateString,
+  ]);
 
   useEffect(() => {
     const notePath = exportModalTarget?.targetNotePath || activeFilePath;
@@ -104,15 +146,15 @@ function ExportPwaDialog() {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/70 backdrop-blur-xs animate-in fade-in duration-150"
       onClick={closeExportModal}
     >
       <div
-        className="w-full max-w-lg bg-[var(--card)] border border-[var(--border)] rounded-2xl shadow-2xl p-5 sm:p-6 text-[var(--foreground)] space-y-4"
+        className="w-full max-w-6xl max-h-[92vh] bg-[var(--card)] border border-[var(--border)] rounded-2xl shadow-2xl p-4 sm:p-6 text-[var(--foreground)] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+        <div className="flex items-center justify-between border-b border-[var(--border)] pb-3 mb-4 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)]">
               <Download className="w-5 h-5" />
@@ -131,179 +173,73 @@ function ExportPwaDialog() {
           </button>
         </div>
 
-        {/* Scope selector */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium text-neutral-400 flex items-center gap-1.5">
-            <Layers className="w-3.5 h-3.5" /> Export Scope
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setScopeMode('single')}
-              className={`p-2.5 rounded-xl border text-xs font-medium text-left transition-all cursor-pointer ${
-                scopeMode === 'single'
-                  ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]'
-                  : 'border-[var(--border)] bg-[var(--background)] text-neutral-400 hover:text-[var(--foreground)]'
-              }`}
-            >
-              <div className="font-semibold mb-0.5">Current Note</div>
-              <div className="text-[11px] opacity-75 truncate">{activeNote?.title || 'Active Document'}</div>
-            </button>
-            <button
-              type="button"
-              onClick={() => setScopeMode('directory')}
-              className={`p-2.5 rounded-xl border text-xs font-medium text-left transition-all cursor-pointer ${
-                scopeMode === 'directory'
-                  ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]'
-                  : 'border-[var(--border)] bg-[var(--background)] text-neutral-400 hover:text-[var(--foreground)]'
-              }`}
-            >
-              <div className="font-semibold mb-0.5">
-                {exportModalTarget?.folderPath ? 'Folder' : 'Entire Vault'}
-              </div>
-              <div className="text-[11px] opacity-75 truncate">
-                {exportModalTarget?.folderPath ? normalizeFolderPath(exportModalTarget.folderPath) : 'All IndexedDB Notes'}
-              </div>
-            </button>
+        {/* Main Split Layout: Options Panel (Left) & Sandboxed Preview Drawer (Right) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0 overflow-y-auto pr-1">
+          {/* Options Column */}
+          <div className="lg:col-span-6 space-y-4">
+            <ExportOptionsForm
+              scopeMode={scopeMode}
+              setScopeMode={setScopeMode}
+              outputType={outputType}
+              setOutputType={setOutputType}
+              selectedThemeId={selectedThemeId}
+              setSelectedThemeId={setSelectedThemeId}
+              includeThemeSwitcher={includeThemeSwitcher}
+              setIncludeThemeSwitcher={setIncludeThemeSwitcher}
+              appName={appName}
+              setAppName={setAppName}
+              appId={appId}
+              setAppId={setAppId}
+              activeNote={activeNote}
+              folderPath={exportModalTarget?.folderPath}
+            />
+
+            {/* AI Theme Studio (Gemini BYOK) Accordion */}
+            <AiThemePromptDrawer
+              workspaceId={activeWorkspaceId || 'default-vault'}
+              folderPath={exportModalTarget?.folderPath}
+              isMultiPage={scopeMode === 'directory'}
+              onTemplateGenerated={(templateContent) => {
+                setCustomTemplateString(templateContent);
+              }}
+              onOpenTemplateInWorkspace={(templatePath) => {
+                openFileTab(templatePath, '_template.html');
+                closeExportModal();
+              }}
+              showToast={showToast}
+            />
+
+            {/* 1-Click Cloud Deployment Action Drawer */}
+            <DeploymentActionDrawer
+              activeNote={
+                activeNote || createFallbackNote(appName, activeWorkspaceId || 'default-vault')
+              }
+              bundleOptions={{
+                themeId: selectedThemeId,
+                includeThemeSwitcher,
+                appTitle: appName,
+                isPwa: true,
+                customTemplate: customTemplateString,
+                scopeMode,
+                folderPath: exportModalTarget?.folderPath,
+                workspaceId: activeWorkspaceId || 'default-vault',
+                appName,
+                shortName,
+                appId,
+              }}
+              onToast={showToast}
+            />
+          </div>
+
+          {/* Sandboxed Live Preview Column */}
+          <div className="lg:col-span-6 h-[380px] lg:h-auto min-h-[350px] flex flex-col">
+            <ExportPreviewDrawer
+              compiledHtml={previewHtml}
+              isLoading={isPreviewLoading}
+              appName={appName}
+            />
           </div>
         </div>
-
-        {/* Output format */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium text-neutral-400 flex items-center gap-1.5">
-            <Package className="w-3.5 h-3.5" /> Output Format
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setOutputType('html')}
-              className={`p-2.5 rounded-xl border text-xs font-medium text-left transition-all cursor-pointer ${
-                outputType === 'html'
-                  ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]'
-                  : 'border-[var(--border)] bg-[var(--background)] text-neutral-400 hover:text-[var(--foreground)]'
-              }`}
-            >
-              <div className="flex items-center gap-1.5 font-semibold mb-0.5">
-                <FileCode className="w-3.5 h-3.5" /> Standalone HTML
-              </div>
-              <div className="text-[11px] opacity-75">
-                {scopeMode === 'directory' ? 'Single multi-note SPA file' : 'Single self-contained .html file'}
-              </div>
-            </button>
-            <button
-              type="button"
-              onClick={() => setOutputType('pwa')}
-              className={`p-2.5 rounded-xl border text-xs font-medium text-left transition-all cursor-pointer ${
-                outputType === 'pwa'
-                  ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]'
-                  : 'border-[var(--border)] bg-[var(--background)] text-neutral-400 hover:text-[var(--foreground)]'
-              }`}
-            >
-              <div className="flex items-center gap-1.5 font-semibold mb-0.5">
-                <Smartphone className="w-3.5 h-3.5" /> Production PWA (.zip)
-              </div>
-              <div className="text-[11px] opacity-75">Service Worker & Capacitor ready</div>
-            </button>
-          </div>
-        </div>
-
-        {/* Theme Selector */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-neutral-400 flex items-center gap-1.5">
-              <Palette className="w-3.5 h-3.5" /> Theme Styling
-            </label>
-            <select
-              value={selectedThemeId}
-              onChange={(e) => setSelectedThemeId(e.target.value)}
-              className="w-full px-2.5 py-1.5 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] outline-none focus:border-[var(--accent)] cursor-pointer"
-            >
-              {THEME_PRESETS.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-neutral-400">Theme Features</label>
-            <label className="flex items-center gap-2 p-1.5 rounded-lg border border-[var(--border)] bg-[var(--background)] text-xs cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={includeThemeSwitcher}
-                onChange={(e) => setIncludeThemeSwitcher(e.target.checked)}
-                className="rounded accent-[var(--accent)] cursor-pointer"
-              />
-              <span className="text-[11px]">Include Invert Theme Switcher</span>
-            </label>
-          </div>
-        </div>
-
-        {/* PWA Configuration (Only when outputType === 'pwa') */}
-        {outputType === 'pwa' && (
-          <div className="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] space-y-2 text-xs">
-            <div className="font-semibold text-neutral-300 text-[11px] uppercase tracking-wider">
-              PWABuilder & Capacitor Settings
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div>
-                <span className="text-[10px] text-neutral-400">App Name</span>
-                <input
-                  type="text"
-                  value={appName}
-                  onChange={(e) => setAppName(e.target.value)}
-                  className="w-full px-2 py-1 rounded bg-[var(--card)] border border-[var(--border)] text-xs outline-none focus:border-[var(--accent)]"
-                />
-              </div>
-              <div>
-                <span className="text-[10px] text-neutral-400">Capacitor App ID</span>
-                <input
-                  type="text"
-                  value={appId}
-                  onChange={(e) => setAppId(e.target.value)}
-                  className="w-full px-2 py-1 rounded bg-[var(--card)] border border-[var(--border)] text-xs outline-none focus:border-[var(--accent)] font-mono"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* AI Theme Studio (Gemini BYOK) Accordion */}
-        <AiThemePromptDrawer
-          workspaceId={activeWorkspaceId || 'default-vault'}
-          folderPath={exportModalTarget?.folderPath}
-          isMultiPage={scopeMode === 'directory'}
-          onTemplateGenerated={(templateContent) => {
-            setCustomTemplateString(templateContent);
-          }}
-          onOpenTemplateInWorkspace={(templatePath) => {
-            openFileTab(templatePath, '_template.html');
-            closeExportModal();
-          }}
-          showToast={showToast}
-        />
-
-        {/* 1-Click Cloud Deployment Action Drawer */}
-        <DeploymentActionDrawer
-          activeNote={
-            activeNote || createFallbackNote(appName, activeWorkspaceId || 'default-vault')
-          }
-          bundleOptions={{
-            themeId: selectedThemeId,
-            includeThemeSwitcher,
-            appTitle: appName,
-            isPwa: true,
-            customTemplate: customTemplateString,
-            scopeMode,
-            folderPath: exportModalTarget?.folderPath,
-            workspaceId: activeWorkspaceId || 'default-vault',
-            appName,
-            shortName,
-            appId,
-          }}
-          onToast={showToast}
-        />
 
         {/* Action Buttons */}
         <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border)]">

@@ -62,14 +62,17 @@ export function cleanWikiLinks(html: string): string {
   return cleaned;
 }
 
-export function renderWithJinjaTemplate(
+import { inlineHtmlAssets } from './assetBundler';
+
+export async function renderWithJinjaTemplate(
   note: Note,
   template: string,
   options: ExportHtmlOptions
-): string {
+): Promise<string> {
   const rawContent = note.content || '';
   const { data: frontmatter, content: cleanMarkdown } = parseFrontmatter(rawContent);
-  const renderedContent = cleanWikiLinks(markdownToHtml(cleanMarkdown));
+  const rawCompiled = cleanWikiLinks(markdownToHtml(cleanMarkdown));
+  const renderedContent = await inlineHtmlAssets(rawCompiled);
 
   const title = options.appTitle || frontmatter.title || note.title || note.name?.replace(/\.[^/.]+$/, '') || 'Untitled Document';
   const wordCount = cleanMarkdown.trim().split(/\s+/).filter(Boolean).length;
@@ -145,7 +148,8 @@ export async function buildStandaloneHtml(
   const selectedTheme = resolveTheme(options.themeId);
   const rawContent = note.content || '';
   const { data: frontmatter, content: cleanMarkdown } = parseFrontmatter(rawContent);
-  const renderedContent = cleanWikiLinks(markdownToHtml(cleanMarkdown));
+  const rawCompiled = cleanWikiLinks(markdownToHtml(cleanMarkdown));
+  const renderedContent = await inlineHtmlAssets(rawCompiled);
   const title = options.appTitle || frontmatter.title || note.title || note.name?.replace(/\.[^/.]+$/, '') || 'Untitled Document';
 
   const bg = selectedTheme.background || '#121212';

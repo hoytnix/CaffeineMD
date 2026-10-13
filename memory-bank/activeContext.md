@@ -59,7 +59,23 @@
       - **Sidebar Navigation & Jinja Context**: Populated `notes` and `pages` lists in `TemplateContext` ([jinjaCompiler.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/jinjaCompiler.ts)), ensured templates render `<nav class="sidebar-nav">{% for note in notes %}<a href="#{{ note.id }}" class="sidebar-nav-link">{{ note.title }}</a>{% endfor %}</nav>`, and updated Gemini theme generation instructions ([geminiTemplateGenerator.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/geminiTemplateGenerator.ts)).
       - **Export Modal Ergonomics & LOC Decomposition**: Enabled Standalone HTML format for folder and vault directory scopes without forcing PWA; extracted export execution to [exportBundleService.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/exportBundleService.ts) maintaining strict <400 LOC limits across all modules.
 
-- **Architecture & Tiered LOC Compliance**: All modules decomposed strictly within tiered LOC boundaries (<100 LOC sweet spot, <250 LOC soft limit, strictly <400 LOC). All landing and export modules strictly compliant.
+- **PWA & Standalone HTML Export Pipeline Overhaul — Phases 1–3 (Live & Verified)**:
+  22. **Constrained JSON Schema Design Tokens & Audited Base Theme**:
+      - Defined `ThemeDesignTokens` interface with strict property constraints in [themeTokens.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/themeTokens.ts).
+      - Enforced Gemini JSON mode (`responseMimeType: 'application/json'`) in [geminiTemplateGenerator.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/geminiTemplateGenerator.ts) to eliminate raw CSS generation and exotic font hallucinations.
+      - Implemented `compileTokensToStylesheet()` and `buildAuditedThemeTemplate()` interpolating sanitized tokens into an audited responsive CSS stylesheet with typography resets, glassmorphic panels, and scoped WikiLink styling.
+  23. **Asset Fidelity & Local Inlining**:
+      - Implemented `inlineHtmlAssets()` in [assetBundler.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/assetBundler.ts) converting local images from IndexedDB to Base64 data URIs for 100% portable Standalone HTML files.
+      - Implemented `extractAndBundleZipAssets()` extracting assets into `/assets/` directory in `.zip` archives, rewriting Markdown image tags to relative paths (`./assets/filename.ext`), and appending them to the Service Worker precache manifest in [pwaExporter.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/pwaExporter.ts).
+  24. **Sandboxed Live Preview Drawer**:
+      - Built ephemeral live preview drawer in [ExportPreviewDrawer.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportPreviewDrawer.tsx) using sandboxed `<iframe>` (`sandbox="allow-scripts"`), automatic Blob URL cleanup via `useMemo` & `useEffect`, and responsive viewport switchers (Desktop, Tablet 768px, Mobile 375px).
+      - Integrated preview drawer into split-pane dialog in [ExportPwaModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportPwaModal.tsx) backed by debounced compilation in [exportPreviewCompiler.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/exportPreviewCompiler.ts).
+  25. **Vault Exploration & Distribution Architecture**:
+      - Built client-side inverted search index and Cmd+K / Ctrl+K spotlight modal in [vaultSearchIndex.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/vaultSearchIndex.ts).
+      - Built interactive 2D HTML5 canvas knowledge graph simulator with spring physics and click-to-navigate pane switching in [canvasGraphHud.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/canvasGraphHud.ts) and [canvasGraphStyles.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/canvasGraphStyles.ts).
+      - Decomposed options controls into [ExportOptionsForm.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportOptionsForm.tsx) ensuring all modules strictly honor tiered LOC boundaries (<400 LOC).
+
+- **Architecture & Tiered LOC Compliance**: All modules decomposed strictly within tiered LOC boundaries (<100 LOC sweet spot, <250 LOC soft limit, strictly <400 LOC).
 - **Verification Rule**: ESLint passing with 0 errors and 0 warnings (`pnpm run lint`). TypeScript check passing with 0 errors (`tsc --noEmit`).
 
 ## Next Steps

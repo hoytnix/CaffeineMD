@@ -6,6 +6,9 @@ import { findVaultTemplate } from '@/src/lib/storage/repositories/noteRepository
 import { renderJinjaTemplate, TemplateContext } from './jinjaCompiler';
 import { cleanWikiLinks, escapeHtml, ExportHtmlOptions } from './standaloneHtmlBuilder';
 import { ROUTER_SCRIPT, renderDefaultFolderHtmlStyles } from './folderHtmlStyles';
+import { inlineHtmlAssets } from './assetBundler';
+import { buildVaultSearchIndex, generateSpotlightSearchSnippet } from './vaultSearchIndex';
+import { buildVaultGraphData, generateCanvasGraphSnippet } from './canvasGraphHud';
 
 export interface ExportNoteItem {
   id: string;
@@ -32,32 +35,55 @@ export async function buildFolderStandaloneHtml(
 ): Promise<string> {
   const folderName = options.folderName || options.appTitle || 'Knowledge Index';
 
-  const processedNotes: ExportNoteItem[] = folderNotes.map((note) => {
-    const rawContent = note.content || '';
-    const { data: frontmatter, content: cleanMarkdown } = parseFrontmatter(rawContent);
-    const compiledHtml = cleanWikiLinks(markdownToHtml(cleanMarkdown));
-    const title =
-      frontmatter.title ||
-      note.title ||
-      note.name?.replace(/\.[^/.]+$/, '') ||
-      'Untitled Document';
-    const slug =
-      title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '') || String(note.id || 'note');
+  const processedNotes: ExportNoteItem[] = await Promise.all(
+    folderNotes.map(async (note) => {
+      const rawContent = note.content || '';
+      const { data: frontmatter, content: cleanMarkdown } = parseFrontmatter(rawContent);
+      const rawCompiledHtml = cleanWikiLinks(markdownToHtml(cleanMarkdown));
+      const compiledHtml = await inlineHtmlAssets(rawCompiledHtml);
+      const title =
+        frontmatter.title ||
+        note.title ||
+        note.name?.replace(/\.[^/.]+$/, '') ||
+        'Untitled Document';
+      const slug =
+        title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '') || String(note.id || 'note');
 
-    return {
-      id: String(note.id || note.path || slug),
-      title,
-      slug,
-      content: cleanMarkdown,
-      compiledHtml,
-      updatedAt: frontmatter.updatedAt || note.updatedAt
-        ? String(frontmatter.updatedAt || note.updatedAt)
-        : undefined,
-    };
-  });
+      return {
+        id: String(note.id || note.path || slug),
+        title,
+        slug,
+        content: cleanMarkdown,
+        compiledHtml,
+        updatedAt: frontmatter.updatedAt || note.updatedAt
+          ? String(frontmatter.updatedAt || note.updatedAt)
+          : undefined,
+      };
+    })
+  );
+
+  const searchIndex = buildVaultSearchIndex(folderNotes.map((n, i) => ({
+    id: processedNotes[i].id,
+    title: processedNotes[i].title,
+    slug: processedNotes[i].slug,
+    content: processedNotes[i].content,
+    tags: n.tags,
+    frontmatter: n.frontmatter,
+  })));
+  const searchSnippet = generateSpotlightSearchSnippet(searchIndex);
+
+  const graphData = buildVaultGraphData(folderNotes.map((n, i) => ({
+    id: processedNotes[i].id,
+    title: processedNotes[i].title,
+    slug: processedNotes[i].slug,
+    content: processedNotes[i].content,
+    tags: n.tags,
+    frontmatter: n.frontmatter,
+  })));
+  const graphSnippet = generateCanvasGraphSnippet(graphData);
 
   const multiNoteHtml = processedNotes
     .map(
@@ -141,10 +167,11 @@ export async function buildFolderStandaloneHtml(
     };
 
     let rendered = renderJinjaTemplate(normalizedTemplate, templateContext);
+    const scriptsToInject = `${searchSnippet}\n${graphSnippet}\n${ROUTER_SCRIPT}`;
     if (rendered.includes('</body>')) {
-      rendered = rendered.replace('</body>', `${ROUTER_SCRIPT}\n</body>`);
+      rendered = rendered.replace('</body>', `${scriptsToInject}\n</body>`);
     } else {
-      rendered += ROUTER_SCRIPT;
+      rendered += scriptsToInject;
     }
     return rendered;
   }
@@ -170,7 +197,11 @@ export async function buildFolderStandaloneHtml(
     <aside class="sidebar">
       <div class="sidebar-header">
         <h2>${escapeHtml(folderName)}</h2>
-        ${options.includeThemeSwitcher ? '<button class="theme-toggle-btn" id="theme-toggle">Invert</button>' : ''}
+        <div style="display: flex; gap: 0.35rem; align-items: center;">
+          <button class="spotlight-trigger-btn" onclick="window.openVaultSpotlight && window.openVaultSpotlight()" title="Search (⌘K)">Search</button>
+          <button class="graph-hud-trigger-btn" onclick="window.openVaultGraph && window.openVaultGraph()" title="Knowledge Graph">Graph</button>
+          ${options.includeThemeSwitcher ? '<button class="theme-toggle-btn" id="theme-toggle" title="Invert Theme">Invert</button>' : ''}
+        </div>
       </div>
       <nav class="sidebar-nav">
         ${processedNotes.map((n, idx) => `<a href="#note-${n.slug}" class="sidebar-nav-link ${idx === 0 ? 'active' : ''}">${escapeHtml(n.title)}</a>`).join('\n        ')}
@@ -202,6 +233,8 @@ export async function buildFolderStandaloneHtml(
       });
     }
   </script>` : ''}
+  ${searchSnippet}
+  ${graphSnippet}
   ${ROUTER_SCRIPT}
 </body>
 </html>`;
