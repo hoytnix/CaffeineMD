@@ -11,6 +11,7 @@
   - Simplified top navbar CTA button in [LandingNav.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/landing/LandingNav.tsx) from "Install CaffeineMD (Native App)" to "Install".
   - Resolved Service Worker hydration override: upgraded [public/sw.js](file:///home/oloty/Dev/CaffeineMD/public/sw.js) to `caffeinemd-v2` with **Network-First** strategy.
   - Added programmatic cache busting in [usePwaInstall.ts](file:///home/oloty/Dev/CaffeineMD/src/components/landing/hooks/usePwaInstall.ts) and immediate `reg.update()`.
+  - Integrated `@vercel/analytics` package into [app/layout.tsx](file:///home/oloty/Dev/CaffeineMD/app/layout.tsx) for real-time web traffic and telemetry.
 
 ## Next Steps
 - Maintain modular <100-250 LOC boundaries across all components.
