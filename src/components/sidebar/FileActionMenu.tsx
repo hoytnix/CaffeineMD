@@ -1,8 +1,22 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
-import { Edit3, Copy, FolderInput, Trash2, Download } from 'lucide-react';
+import React from 'react';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
+import { ContextMenu, ContextMenuElement } from '@/src/components/common/ContextMenu';
+import {
+  FileText,
+  Columns,
+  Edit3,
+  Copy,
+  FolderInput,
+  FolderPlus,
+  FilePlus,
+  Trash2,
+  Download,
+  Cloud,
+  Link,
+  Code,
+} from 'lucide-react';
 
 export interface FileActionMenuProps {
   isOpen: boolean;
@@ -15,6 +29,8 @@ export interface FileActionMenuProps {
   onDuplicate: () => void;
   onMove: () => void;
   onTrash: () => void;
+  onNewNoteInFolder?: () => void;
+  onNewSubfolder?: () => void;
 }
 
 export function FileActionMenu({
@@ -29,122 +45,151 @@ export function FileActionMenu({
   onMove,
   onTrash,
 }: FileActionMenuProps) {
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        onClose();
-      }
-    };
-
-    const handleMouseDown = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown, true);
-    window.addEventListener('mousedown', handleMouseDown, true);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown, true);
-      window.removeEventListener('mousedown', handleMouseDown, true);
-    };
-  }, [isOpen, onClose]);
+  const {
+    openFileTab,
+    duplicateToSplitView,
+    openExportModal,
+    showToast,
+    setNewNoteModalOpen,
+  } = useWorkspaceStore();
 
   if (!isOpen || !anchorRect) return null;
 
-  // Calculate coordinates ensuring menu doesn't overflow screen bottom
-  const top = Math.min(anchorRect.bottom + 4, window.innerHeight - 180);
-  const left = Math.min(Math.max(anchorRect.left, 8), window.innerWidth - 180);
+  const position = {
+    x: anchorRect.left,
+    y: anchorRect.bottom,
+  };
+
+  let menuItems: ContextMenuElement[] = [];
+
+  if (isFolder) {
+    menuItems = [
+      {
+        label: 'New Note in Folder',
+        icon: <FilePlus className="w-3.5 h-3.5" />,
+        onClick: () => setNewNoteModalOpen(true),
+      },
+      {
+        label: 'New Subfolder',
+        icon: <FolderPlus className="w-3.5 h-3.5" />,
+        onClick: () => setNewNoteModalOpen(true),
+      },
+      { isDivider: true },
+      {
+        label: 'Rename Folder...',
+        icon: <Edit3 className="w-3.5 h-3.5" />,
+        onClick: onRename,
+      },
+      {
+        label: 'Move Folder...',
+        icon: <FolderInput className="w-3.5 h-3.5" />,
+        onClick: onMove,
+      },
+      { isDivider: true },
+      {
+        label: 'Export Folder as PWA Bundle',
+        icon: <Download className="w-3.5 h-3.5" />,
+        onClick: () => openExportModal({ folderPath: filePath }),
+      },
+      {
+        label: 'Deploy Folder to Netlify',
+        icon: <Cloud className="w-3.5 h-3.5 text-teal-400" />,
+        onClick: () => openExportModal({ folderPath: filePath }),
+      },
+      { isDivider: true },
+      {
+        label: 'Delete Folder',
+        icon: <Trash2 className="w-3.5 h-3.5" />,
+        destructive: true,
+        onClick: onTrash,
+      },
+    ];
+  } else {
+    menuItems = [
+      {
+        label: 'Open',
+        icon: <FileText className="w-3.5 h-3.5" />,
+        shortcut: '↵',
+        onClick: () => openFileTab(filePath, fileName),
+      },
+      {
+        label: 'Open in Split View',
+        icon: <Columns className="w-3.5 h-3.5" />,
+        shortcut: '⌘Click',
+        onClick: () => duplicateToSplitView(filePath, 'vertical'),
+      },
+      { isDivider: true },
+      {
+        label: 'Rename...',
+        icon: <Edit3 className="w-3.5 h-3.5" />,
+        shortcut: 'F2',
+        onClick: onRename,
+      },
+      {
+        label: 'Duplicate Note',
+        icon: <Copy className="w-3.5 h-3.5" />,
+        shortcut: '⌘D',
+        onClick: onDuplicate,
+      },
+      {
+        label: 'Move to Folder...',
+        icon: <FolderInput className="w-3.5 h-3.5" />,
+        onClick: onMove,
+      },
+      { isDivider: true },
+      {
+        label: 'Export Document',
+        submenu: [
+          {
+            label: 'Standalone HTML',
+            icon: <Code className="w-3.5 h-3.5" />,
+            onClick: () => openExportModal({ targetNotePath: filePath }),
+          },
+          {
+            label: 'PWA Zip Bundle',
+            icon: <Download className="w-3.5 h-3.5" />,
+            onClick: () => openExportModal({ targetNotePath: filePath }),
+          },
+          {
+            label: 'Deploy to Netlify',
+            icon: <Cloud className="w-3.5 h-3.5 text-teal-400" />,
+            onClick: () => openExportModal({ targetNotePath: filePath }),
+          },
+        ],
+      },
+      {
+        label: 'Copy Relative Path',
+        icon: <Copy className="w-3.5 h-3.5" />,
+        onClick: () => {
+          navigator.clipboard.writeText(filePath);
+          showToast('Relative path copied');
+        },
+      },
+      {
+        label: 'Copy [[WikiLink]]',
+        icon: <Link className="w-3.5 h-3.5 text-indigo-400" />,
+        onClick: () => {
+          navigator.clipboard.writeText(`[[${fileName}]]`);
+          showToast(`[[${fileName}]] copied`);
+        },
+      },
+      { isDivider: true },
+      {
+        label: 'Move to Trash',
+        icon: <Trash2 className="w-3.5 h-3.5" />,
+        shortcut: 'Del',
+        destructive: true,
+        onClick: onTrash,
+      },
+    ];
+  }
 
   return (
-    <div
-      ref={menuRef}
-      style={{ top: `${top}px`, left: `${left}px` }}
-      role="menu"
-      aria-label={`Actions for ${fileName}`}
-      className="fixed z-50 min-w-[160px] py-1 bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-xl text-[var(--foreground)] text-xs animate-in fade-in zoom-in-95 duration-100"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div className="px-2.5 py-1 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider truncate border-b border-[var(--border)] mb-1">
-        {fileName}
-      </div>
-
-      <button
-        type="button"
-        role="menuitem"
-        onClick={() => {
-          onClose();
-          onRename();
-        }}
-        className="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-left cursor-pointer transition-colors"
-      >
-        <Edit3 className="w-3.5 h-3.5 text-neutral-400" />
-        <span>Rename</span>
-      </button>
-
-      {!isFolder && (
-        <button
-          type="button"
-          role="menuitem"
-          onClick={() => {
-            onClose();
-            onDuplicate();
-          }}
-          className="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-left cursor-pointer transition-colors"
-        >
-          <Copy className="w-3.5 h-3.5 text-neutral-400" />
-          <span>Duplicate</span>
-        </button>
-      )}
-
-      <button
-        type="button"
-        role="menuitem"
-        onClick={() => {
-          onClose();
-          onMove();
-        }}
-        className="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-left cursor-pointer transition-colors"
-      >
-        <FolderInput className="w-3.5 h-3.5 text-neutral-400" />
-        <span>Move to...</span>
-      </button>
-
-      <button
-        type="button"
-        role="menuitem"
-        onClick={() => {
-          onClose();
-          useWorkspaceStore.getState().openExportModal({
-            folderPath: isFolder ? filePath : undefined,
-            targetNotePath: !isFolder ? filePath : undefined,
-          });
-        }}
-        className="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-left cursor-pointer transition-colors"
-      >
-        <Download className="w-3.5 h-3.5 text-neutral-400" />
-        <span>Export {isFolder ? 'Folder PWA' : 'as PWA / HTML'}</span>
-      </button>
-
-      <div className="my-1 border-t border-[var(--border)]" />
-
-      <button
-        type="button"
-        role="menuitem"
-        onClick={() => {
-          onClose();
-          onTrash();
-        }}
-        className="w-full flex items-center gap-2 px-2.5 py-1.5 hover:bg-rose-500/10 text-rose-500 text-left cursor-pointer transition-colors"
-      >
-        <Trash2 className="w-3.5 h-3.5" />
-        <span>{isFolder ? 'Delete Folder' : 'Move to Trash'}</span>
-      </button>
-    </div>
+    <ContextMenu
+      isOpen={isOpen}
+      onClose={onClose}
+      position={position}
+      items={menuItems}
+    />
   );
 }

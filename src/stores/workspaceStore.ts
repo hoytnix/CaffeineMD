@@ -119,6 +119,10 @@ export interface WorkspaceState {
   isCreateWorkspaceModalOpen: boolean;
   setCreateWorkspaceModalOpen: (open: boolean) => void;
 
+  // New Note Creator Modal
+  isNewNoteModalOpen: boolean;
+  setNewNoteModalOpen: (open: boolean) => void;
+
   // Trash & Deletion Modal
   isDeleteModalOpen: boolean;
   deleteModalTarget: { path: string; title: string } | null;
@@ -137,6 +141,12 @@ export interface WorkspaceState {
   setActiveNotePath: (path: string | null) => void;
   openFileTab: (path: string, title?: string) => void;
   closeFileTab: (path: string) => void;
+  closeOtherTabs: (path: string) => void;
+  closeTabsToTheRight: (path: string) => void;
+  closeAllTabs: () => void;
+  pinnedTabs: string[];
+  togglePinTab: (path: string) => void;
+  duplicateToSplitView: (path: string, direction?: 'vertical' | 'horizontal') => void;
   renameFileTab: (oldPath: string, newPath: string, newTitle?: string) => void;
   deleteNote: (path: string) => Promise<boolean>;
   setActiveView: (view: ActiveWorkspaceView) => void;
@@ -180,6 +190,10 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   // Workspace Creation Modal
   isCreateWorkspaceModalOpen: false,
   setCreateWorkspaceModalOpen: (open: boolean) => set({ isCreateWorkspaceModalOpen: open }),
+
+  // New Note Creator Modal
+  isNewNoteModalOpen: false,
+  setNewNoteModalOpen: (open: boolean) => set({ isNewNoteModalOpen: open }),
 
   // Trash State & Deletion Modal
   isDeleteModalOpen: false,
@@ -372,6 +386,56 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       openTabs: newTabs,
       activeFilePath: nextActive,
       activeNotePath: nextActive,
+    });
+  },
+
+  pinnedTabs: [],
+  togglePinTab: (path) => {
+    const { pinnedTabs } = get();
+    const isPinned = pinnedTabs.includes(path);
+    set({
+      pinnedTabs: isPinned ? pinnedTabs.filter((p) => p !== path) : [...pinnedTabs, path],
+    });
+  },
+
+  closeOtherTabs: (path) => {
+    const { openTabs, pinnedTabs } = get();
+    const targetTab = openTabs.find((t) => t.path === path);
+    if (!targetTab) return;
+    const remaining = openTabs.filter((t) => t.path === path || pinnedTabs.includes(t.path));
+    set({
+      openTabs: remaining,
+      activeFilePath: path,
+      activeNotePath: path,
+    });
+  },
+
+  closeTabsToTheRight: (path) => {
+    const { openTabs, pinnedTabs } = get();
+    const idx = openTabs.findIndex((t) => t.path === path);
+    if (idx === -1) return;
+    const remaining = openTabs.filter((t, i) => i <= idx || pinnedTabs.includes(t.path));
+    set({
+      openTabs: remaining,
+      activeFilePath: path,
+      activeNotePath: path,
+    });
+  },
+
+  closeAllTabs: () => {
+    const { openTabs, pinnedTabs } = get();
+    const remaining = openTabs.filter((t) => pinnedTabs.includes(t.path));
+    set({
+      openTabs: remaining,
+      activeFilePath: remaining.length > 0 ? remaining[0].path : null,
+      activeNotePath: remaining.length > 0 ? remaining[0].path : null,
+    });
+  },
+
+  duplicateToSplitView: (path, direction = 'vertical') => {
+    set({
+      splitPaneMode: direction,
+      splitFilePath: path,
     });
   },
 

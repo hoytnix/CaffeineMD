@@ -158,6 +158,13 @@ export interface VaultFile {
   isTrash?: boolean;
   deletedAt?: number;
   originalPath?: string;
+  deployMeta?: {
+    netlifySiteId?: string;
+    netlifyUrl?: string;
+    githubRepo?: string;
+    githubUrl?: string;
+    lastDeployedAt?: number;
+  };
 }
 
 export interface BacklinkRecord {
@@ -187,6 +194,9 @@ export interface WorkspaceRecord {
   handle?: any; // FileSystemDirectoryHandle stored natively in IndexedDB
   driveFolderId?: string;
   lastSyncedAt?: number;
+  netlifyToken?: string;
+  githubToken?: string;
+  defaultGithubRepo?: string;
   createdAt: number;
   updatedAt: number;
 }

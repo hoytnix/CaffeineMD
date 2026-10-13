@@ -2,6 +2,8 @@
 
 import React, { useRef, useState, useMemo, useEffect, useLayoutEffect } from 'react';
 import { Code, WrapText } from 'lucide-react';
+import { useContextMenu } from '@/src/hooks/useContextMenu';
+import { PlaintextContextMenu, PlaintextSelectionInfo } from './PlaintextContextMenu';
 
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
@@ -26,6 +28,13 @@ export function PlaintextMarkdownEditor({
 
   const [wordWrap, setWordWrap] = useState(true);
   const [lineHeights, setLineHeights] = useState<number[]>([]);
+  const {
+    isOpen: isContextMenuOpen,
+    position: contextMenuPos,
+    targetData: contextMenuSelection,
+    openMenu: openContextMenu,
+    closeMenu: closeContextMenu,
+  } = useContextMenu<PlaintextSelectionInfo>();
 
   const gutterRef = externalGutterRef || internalGutterRef;
   const textareaRef = externalTextareaRef || internalTextareaRef;
@@ -206,6 +215,13 @@ export function PlaintextMarkdownEditor({
           onChange={(e) => onMarkdownChange(e.target.value)}
           onScroll={handleScroll}
           onKeyDown={handleTextareaKeyDown}
+          onContextMenu={(e) => {
+            const el = textareaRef.current;
+            const start = el?.selectionStart ?? 0;
+            const end = el?.selectionEnd ?? 0;
+            const text = start !== end ? rawMarkdown.substring(start, end) : '';
+            openContextMenu(e, { start, end, text });
+          }}
           placeholder="# Type raw markdown here (supports YAML frontmatter and [[WikiLinks]])..."
           spellCheck={false}
           autoCapitalize="off"
@@ -228,6 +244,17 @@ export function PlaintextMarkdownEditor({
           <div key={i}>{line || '\u00A0'}</div>
         ))}
       </div>
+
+      {/* Unified Glassmorphic Plaintext Context Menu */}
+      <PlaintextContextMenu
+        textareaRef={textareaRef}
+        rawMarkdown={rawMarkdown}
+        onMarkdownChange={onMarkdownChange}
+        isOpen={isContextMenuOpen}
+        onClose={closeContextMenu}
+        position={contextMenuPos}
+        selection={contextMenuSelection}
+      />
     </div>
   );
 }

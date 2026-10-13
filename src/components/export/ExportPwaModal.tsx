@@ -16,6 +16,7 @@ import {
   Smartphone,
   Loader2,
 } from 'lucide-react';
+import { DeploymentActionDrawer } from './DeploymentActionDrawer';
 
 function createFallbackNote(appName: string, workspaceId: string): VaultFile {
   const timestamp = Date.now();
@@ -296,6 +297,26 @@ function ExportPwaDialog() {
             </div>
           </div>
         )}
+
+        {/* 1-Click Cloud Deployment Action Drawer */}
+        <DeploymentActionDrawer
+          activeNote={
+            activeNote || createFallbackNote(appName, activeWorkspaceId || 'default-vault')
+          }
+          bundleOptions={{
+            themeId: selectedThemeId,
+            includeThemeSwitcher,
+            appTitle: appName,
+            isPwa: true,
+            scopeMode,
+            folderPath: exportModalTarget?.folderPath,
+            workspaceId: activeWorkspaceId || 'default-vault',
+            appName,
+            shortName,
+            appId,
+          }}
+          onToast={showToast}
+        />
 
         {/* Action Buttons */}
         <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border)]">

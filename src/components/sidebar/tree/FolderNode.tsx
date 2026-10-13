@@ -42,6 +42,10 @@ export const FolderNode = React.memo(function FolderNode({
       {/* Folder Row Header */}
       <div
         onClick={() => onToggleFolder(node.path)}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          onOpenActionMenu(e, node);
+        }}
         style={{ paddingLeft: `${depth * 12 + 10}px` }}
         className="flex items-center justify-between py-1 px-2 rounded-md hover:bg-neutral-200/50 dark:hover:bg-neutral-800/60 cursor-pointer text-xs font-medium text-neutral-700 dark:text-neutral-300 transition-colors group"
       >

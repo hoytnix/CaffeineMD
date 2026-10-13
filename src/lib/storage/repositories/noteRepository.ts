@@ -191,3 +191,24 @@ export async function seedInitialVaultIfEmpty(): Promise<void> {
     }
   });
 }
+
+/**
+ * Persist deployment metadata (Netlify site ID, GitHub Pages URL, etc.) to a note
+ */
+export async function updateNoteDeployMeta(
+  path: string,
+  deployMeta: NonNullable<VaultFile['deployMeta']>
+): Promise<void> {
+  const file = await db.files.get(path);
+  if (file) {
+    await db.files.update(path, {
+      deployMeta: {
+        ...file.deployMeta,
+        ...deployMeta,
+        lastDeployedAt: Date.now(),
+      },
+      updatedAt: Date.now(),
+    });
+  }
+}
+

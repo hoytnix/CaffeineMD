@@ -73,6 +73,10 @@ export const FileNodeRow = React.memo(function FileNodeRow({
       aria-selected={isActive}
       tabIndex={0}
       onClick={() => onOpenFile(node.path, node.file?.title)}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        onOpenActionMenu(e, node);
+      }}
       onKeyDown={(e) => {
         if (e.key === 'Enter') {
           onOpenFile(node.path, node.file?.title);

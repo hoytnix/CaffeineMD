@@ -4,7 +4,6 @@ import React from 'react';
 import { TreeNode } from '@/src/hooks/useTreeStructure';
 import { FileActionMenu } from '../FileActionMenu';
 import { RenameModal, MoveModal } from '../FileModals';
-import { NewNoteModal } from '../NewNoteModal';
 
 export interface FileTreeModalsProps {
   activeMenuNode: TreeNode | null;
@@ -14,8 +13,8 @@ export interface FileTreeModalsProps {
   setRenameTarget: (node: TreeNode | null) => void;
   moveTarget: TreeNode | null;
   setMoveTarget: (node: TreeNode | null) => void;
-  newNoteModal: boolean;
-  setNewNoteModal: (open: boolean) => void;
+  newNoteModal?: boolean;
+  setNewNoteModal?: (open: boolean) => void;
   folderSuggestions: string[];
   duplicateNode: (node: TreeNode) => Promise<void>;
   renameNode: (node: TreeNode, newName: string) => Promise<void>;
@@ -26,7 +25,6 @@ export interface FileTreeModalsProps {
 /**
  * FileTreeModals
  * Orchestrates and encapsulates all sidebar dialog modals and action popovers:
- * - New note creation modal
  * - Contextual file / folder action popover
  * - Rename dialog modal
  * - Destination move dialog modal
@@ -39,8 +37,6 @@ export function FileTreeModals({
   setRenameTarget,
   moveTarget,
   setMoveTarget,
-  newNoteModal,
-  setNewNoteModal,
   folderSuggestions,
   duplicateNode,
   renameNode,
@@ -49,13 +45,7 @@ export function FileTreeModals({
 }: FileTreeModalsProps) {
   return (
     <>
-      {/* New Note Creator Modal */}
-      <NewNoteModal
-        isOpen={newNoteModal}
-        onClose={() => setNewNoteModal(false)}
-      />
-
-      {/* Floating Action Menu Anchored to Ellipsis Button */}
+      {/* Floating Action Menu Anchored to Ellipsis Button or Context Menu */}
       <FileActionMenu
         isOpen={Boolean(activeMenuNode && menuAnchorRect)}
         onClose={onCloseActionMenu}

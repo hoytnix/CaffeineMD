@@ -15,18 +15,26 @@ import { useSidebarResize } from './hooks/useSidebarResize';
 import { SidebarResizer } from './SidebarResizer';
 import { Search, FolderUp, Settings } from 'lucide-react';
 import Link from 'next/link';
+import { useContextMenu } from '@/src/hooks/useContextMenu';
+import { FileTreeCanvasContextMenu } from './tree/FileTreeCanvasContextMenu';
 
 export function FileTree() {
   const rawFiles = useLiveQuery(() => db.files.toArray());
   const files = useMemo(() => rawFiles ?? [], [rawFiles]);
   const [openFolders, setOpenFolders] = useState<Set<string>>(new Set(['Projects', 'Engineering']));
-  const [newNoteModal, setNewNoteModal] = useState(false);
 
   // File action drawer/menu and modal targets
   const [activeMenuNode, setActiveMenuNode] = useState<TreeNode | null>(null);
   const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
   const [renameTarget, setRenameTarget] = useState<TreeNode | null>(null);
   const [moveTarget, setMoveTarget] = useState<TreeNode | null>(null);
+
+  const {
+    isOpen: isCanvasMenuOpen,
+    position: canvasMenuPosition,
+    openMenu: openCanvasMenu,
+    closeMenu: closeCanvasMenu,
+  } = useContextMenu();
 
   const {
     activeFilePath,
@@ -39,6 +47,8 @@ export function FileTree() {
     promptDeleteNote,
     showToast,
     purgeExpiredTrashNotes,
+    isNewNoteModalOpen,
+    setNewNoteModalOpen,
   } = useWorkspaceStore();
 
   const {
@@ -113,7 +123,18 @@ export function FileTree() {
   const handleOpenActionMenu = useCallback((e: React.MouseEvent, node: TreeNode) => {
     e.preventDefault();
     e.stopPropagation();
-    setMenuAnchorRect((e.currentTarget as HTMLElement).getBoundingClientRect());
+    if (e.type === 'contextmenu') {
+      setMenuAnchorRect({
+        left: e.clientX,
+        top: e.clientY,
+        right: e.clientX,
+        bottom: e.clientY,
+        width: 0,
+        height: 0,
+      } as DOMRect);
+    } else {
+      setMenuAnchorRect((e.currentTarget as HTMLElement).getBoundingClientRect());
+    }
     setActiveMenuNode(node);
   }, []);
 
@@ -149,7 +170,14 @@ export function FileTree() {
       </div>
 
       {/* File Tree List */}
-      <div className="flex-1 overflow-y-auto px-1.5 py-1 space-y-0.5">
+      <div
+        className="flex-1 overflow-y-auto px-1.5 py-1 space-y-0.5"
+        onContextMenu={(e) => {
+          if (e.target === e.currentTarget || !(e.target as HTMLElement).closest('[role="treeitem"]')) {
+            openCanvasMenu(e);
+          }
+        }}
+      >
         {treeData.length === 0 ? (
           <div className="text-center py-8 text-neutral-400 text-xs">
             No notes found.
@@ -213,13 +241,21 @@ export function FileTree() {
         setRenameTarget={setRenameTarget}
         moveTarget={moveTarget}
         setMoveTarget={setMoveTarget}
-        newNoteModal={newNoteModal}
-        setNewNoteModal={setNewNoteModal}
+        newNoteModal={isNewNoteModalOpen}
+        setNewNoteModal={setNewNoteModalOpen}
         folderSuggestions={folderSuggestions}
         duplicateNode={duplicateNode}
         renameNode={renameNode}
         moveNode={moveNode}
         promptDeleteNote={promptDeleteNote}
+      />
+
+      {/* Canvas Context Menu (Right-click on Empty Space) */}
+      <FileTreeCanvasContextMenu
+        isOpen={isCanvasMenuOpen}
+        position={canvasMenuPosition}
+        onClose={closeCanvasMenu}
+        onCollapseAll={() => setOpenFolders(new Set())}
       />
 
       {/* Draggable Sidebar Resizer Handle */}

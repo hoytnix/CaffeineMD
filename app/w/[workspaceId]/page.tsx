@@ -40,6 +40,8 @@ export default function WorkspacePage() {
     sidebarCollapsed,
     isImportModalOpen,
     setImportModalOpen,
+    isNewNoteModalOpen,
+    setNewNoteModalOpen,
     setTheme,
     toastMessage,
     isFocusMode,
@@ -50,7 +52,6 @@ export default function WorkspacePage() {
   // Activate universal emoji drawer global listener (Shift + Space)
   useEmojiDrawer();
 
-  const [isNewNoteModalOpen, setIsNewNoteModalOpen] = useState(false);
   const [, setHasInitialized] = useState(false);
 
   // Focus Mode Global Shortcut (F11, Cmd+Shift+F, Esc to exit)
@@ -129,7 +130,7 @@ export default function WorkspacePage() {
           })}
 
           <button
-            onClick={() => setIsNewNoteModalOpen(true)}
+            onClick={() => setNewNoteModalOpen(true)}
             className="p-1.5 text-[var(--foreground)]/50 hover:text-[var(--foreground)] ml-1 rounded hover:bg-[var(--foreground)]/10 transition-colors cursor-pointer"
             title="New Note"
             aria-label="New Note"
@@ -206,7 +207,7 @@ export default function WorkspacePage() {
 
       {/* Modals & Overlays */}
       <VaultDropzone isOpen={isImportModalOpen} onClose={() => setImportModalOpen(false)} />
-      <NewNoteModal isOpen={isNewNoteModalOpen} onClose={() => setIsNewNoteModalOpen(false)} />
+      <NewNoteModal isOpen={isNewNoteModalOpen} onClose={() => setNewNoteModalOpen(false)} />
       <ImportProgressModal />
       <QuickSearchModal />
       <DocumentQuickSwitcherModal />

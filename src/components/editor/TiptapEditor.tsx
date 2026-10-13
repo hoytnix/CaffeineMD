@@ -20,6 +20,9 @@ import { FloatingToolbarHost } from './FloatingToolbarHost';
 import { EditorBottomToolbar } from './EditorBottomToolbar';
 import { DocumentOutlineHud } from './components/DocumentOutlineHud';
 import { EditorMinimap } from './components/EditorMinimap';
+import { DocumentTabBar } from './DocumentTabBar';
+import { EditorContextMenu } from './EditorContextMenu';
+import { useContextMenu } from '@/src/hooks/useContextMenu';
 import { FileQuestion } from 'lucide-react';
 
 export interface TiptapEditorProps {
@@ -41,6 +44,12 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
   } = useEditorAutosave({ filePath });
 
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const {
+    isOpen: isContextMenuOpen,
+    position: contextMenuPos,
+    openMenu: openContextMenu,
+    closeMenu: closeContextMenu,
+  } = useContextMenu();
 
   const { handleDrop, handlePaste } = useEditorDropUpload({
     activeWorkspaceId: activeWorkspaceId || 'default-vault',
@@ -128,6 +137,9 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
         onDrop={() => setIsDraggingOver(false)}
       />
 
+      {/* Top Document Tab Bar with Glassmorphic Context Menu */}
+      <DocumentTabBar currentPath={file.path} />
+
       {/* Editor Header: Full width across the entire top edge, flush against sidebar */}
       <EditorHeader
         file={file}
@@ -156,6 +168,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
         {/* Main Note Scrollable Container */}
         <div
           ref={scrollContainerRef}
+          onContextMenu={openContextMenu}
           className="flex-1 flex flex-col h-full overflow-y-auto overflow-x-hidden min-w-0 relative"
         >
           {/* Top Toolbar Dock */}
@@ -250,6 +263,15 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
         filteredCommands={filteredCommands}
         onExecuteCommand={(item) => executeCommand(item, editor)}
         onExecuteWikiLink={(sugg) => executeWikiLink(sugg, editor)}
+      />
+
+      {/* Unified Glassmorphic Editor Context Menu */}
+      <EditorContextMenu
+        editor={editor}
+        filePath={filePath}
+        isOpen={isContextMenuOpen}
+        onClose={closeContextMenu}
+        position={contextMenuPos}
       />
     </div>
   );
