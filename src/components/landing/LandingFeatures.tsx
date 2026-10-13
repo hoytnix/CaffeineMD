@@ -32,7 +32,7 @@ export const LandingFeatures: React.FC<LandingFeaturesProps> = ({ installState }
 
       {/* 4-Pillar Asymmetric Bento Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-        {/* Card 1: Vibe-Coded PWA Generator & 1-Click Edge Publishing (Span 2 Columns) */}
+        {/* Card 1: Vibe Coding Editor & Direct AI App Synthesis (Span 2 Columns) */}
         <div className="md:col-span-2 bg-zinc-900/60 backdrop-blur-xl border border-white/10 hover:border-white/20 transition-all rounded-2xl p-8 flex flex-col justify-between group">
           <div>
             <div className="flex items-center justify-between mb-6">
@@ -40,20 +40,20 @@ export const LandingFeatures: React.FC<LandingFeaturesProps> = ({ installState }
                 <Sparkles className="w-6 h-6" />
               </div>
               <span className="px-3 py-1 rounded-full bg-emerald-950/50 border border-emerald-500/30 text-emerald-300 text-xs font-mono uppercase tracking-wide">
-                AI Vibe Studio • Zero Build
+                Vibe Coding Studio • Zero Build
               </span>
             </div>
             <h4 className="text-xl sm:text-2xl font-bold text-white mb-3">
-              Vibe-Coded PWA Generator &amp; 1-Click Edge Publishing
+              Vibe Coding Editor &amp; Direct AI App Synthesis
             </h4>
             <p className="text-sm sm:text-base text-[#94a39b] leading-relaxed mb-6">
-              Package individual notes or entire vaults into offline-first standalone web apps styled with AI.
-              Prompt Gemini via BYOK to vibe-code bespoke Jinja2 templates stored natively as editable <code className="text-emerald-300 font-mono text-xs">_template.html</code> files in your vault.
-              Ship directly to Netlify edge CDNs or GitHub Pages with zero build steps, or export Capacitor and PWABuilder packages.
+              Transform raw markdown vaults into living web apps with zero build tools.
+              Generate one-shot monolithic HTML files using Gemini BYOK with a static DOM-first architecture and pre-compiled HTML fragments—preventing JS template string crashes.
+              Or vibe-code custom Jinja2 templates stored as editable <code className="text-emerald-300 font-mono text-xs">_template.html</code> files in your vault, inspect live in the sandboxed multi-device preview drawer, and ship to Netlify Edge or GitHub Pages in 1 click.
             </p>
           </div>
           <div className="flex flex-wrap gap-2 pt-2 border-t border-white/5">
-            {['Gemini 3.8 BYOK', 'Client-Side Jinja Engine', 'Vault _template.html', 'Netlify Edge Stream', 'Capacitor-Ready'].map((tag) => (
+            {['Gemini 3.8 BYOK', 'Direct Monolithic HTML', 'Static DOM First', 'Live Preview Drawer', 'Vault _template.html', 'Netlify Edge Stream', 'Capacitor-Ready'].map((tag) => (
               <span
                 key={tag}
                 className="px-2.5 py-1 rounded-md bg-white/[0.04] border border-white/10 text-xs font-mono text-emerald-400/90"

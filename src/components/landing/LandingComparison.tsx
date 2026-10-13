@@ -27,11 +27,25 @@ export const LandingComparison: React.FC<LandingComparisonProps> = ({ installSta
       bear: { text: 'Cloud Sync', status: 'partial' },
     },
     {
+      feature: 'Direct AI App Synthesis (Monolithic HTML)',
+      caffeine: 'Static DOM-First (Zero JS Crashes)',
+      obsidian: { text: 'Not Supported', status: 'bad' },
+      notion: { text: 'Not Supported', status: 'bad' },
+      bear: { text: 'Not Supported', status: 'bad' },
+    },
+    {
       feature: '1-Click Edge PWA Publishing',
       caffeine: 'Native (Netlify & GitHub)',
       obsidian: { text: 'Third-Party SSG Plugins', status: 'partial' },
       notion: { text: 'Proprietary Web Share', status: 'partial' },
       bear: { text: 'Read-Only Web Link', status: 'partial' },
+    },
+    {
+      feature: 'Sandboxed Multi-Device Live Preview',
+      caffeine: 'Desktop, Tablet & Mobile HUD',
+      obsidian: { text: 'Not Supported', status: 'bad' },
+      notion: { text: 'Not Supported', status: 'bad' },
+      bear: { text: 'Not Supported', status: 'bad' },
     },
     {
       feature: 'Capacitor & Mobile Store Ready',

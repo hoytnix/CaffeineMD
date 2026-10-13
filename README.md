@@ -43,17 +43,30 @@ Modern knowledge management forced a false choice: **own raw files on disk (Obsi
 
 **CaffeineMD destroys this compromise.**
 
-Built on Next.js 15, React 19, and Dexie IndexedDB, CaffeineMD mounts real folders on local storage via the **Native File System Access API**, parses frontmatter losslessly on the fly, and supercharges personal notes with Notion-caliber Kanban boards, interactive tables, force-directed graph physics, dynamic wrapped line gutters, integrated diff management, and **vibe-coded PWA publishing powered by Gemini BYOK & Jinja templating**.
+Built on Next.js 15, React 19, and Dexie IndexedDB, CaffeineMD mounts real folders on local storage via the **Native File System Access API**, parses frontmatter losslessly on the fly, and supercharges personal notes with Notion-caliber Kanban boards, interactive tables, force-directed graph physics, dynamic wrapped line gutters, integrated diff management, and **vibe-coded PWA publishing & direct monolithic AI app synthesis powered by Gemini BYOK & Jinja templating**.
 
 ---
 
 ## 🚀 Key Features
 
-### 🎨 Vibe-Coded PWA Generator & Vault Jinja Template Engine
-- **Prompt-to-PWA with Gemini BYOK**: Turn any aesthetic vibe into a production-grade HTML5/CSS template in seconds using your own Google Gemini API key (`gemini-3.8-flash` cascading to `gemini-3.7-flash`, `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-3.5-flash-lite`, and `gemini-3.1-pro`). Choose from built-in presets (*Cyberpunk Glass*, *Japanese Minimalist*, *Nordic Clean Light*, *Obsidian High-Contrast*) or supply custom prompts.
-- **Zero-Dependency Client-Side Jinja Compiler**: High-performance browser-native template engine supporting variables (`{{ title }}`, `{{ content }}`), built-in filters (`escape`, `lower`, `upper`, `trim`), booleans and equality conditionals (`{% if is_pwa %}`), and collection loops (`{% for page in pages %}`) for offline navigation drawers.
-- **Editable Vault `_template.html` Files**: AI-generated templates live directly in IndexedDB alongside your markdown notes. Modify CSS or layout markup directly in CaffeineMD's editor—changes immediately compile on re-export.
+### 🎨 Vibe Coding Editor & Direct AI App Synthesis
+- **Direct Monolithic HTML Generation (One-Shot AI App Synthesis)**: Turn markdown notes or entire folders into production-grade, monolithic HTML applications in one shot with zero build tools. Employs a strict **Static DOM-First** architecture where note bodies are pre-compiled into clean HTML fragments with frontmatter stripped—embedding notes directly into `<div class="documents-container">` rather than serializing them into fragile JavaScript string arrays (`const docs = [...]`), completely preventing JS syntax and template string parsing crashes.
+- **AI Theme Studio & Client-Side Jinja Compiler**: High-performance browser-native template engine supporting variables (`{{ title }}`, `{{ content }}`), built-in filters (`escape`, `lower`, `upper`, `trim`), booleans and equality conditionals (`{% if is_pwa %}`), and collection loops (`{% for page in pages %}`) for offline navigation drawers. Prompt Gemini via BYOK (`gemini-3.8-flash` cascading through `gemini-3.7-flash`, `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-3.5-flash-lite`) to generate bespoke themes with constrained JSON design tokens.
+- **Editable Vault `_template.html` Files**: AI-generated templates live directly in IndexedDB alongside your markdown notes. Modify CSS or layout markup directly in CaffeineMD's editor—changes immediately compile on re-export. Built-in presets include *Cyberpunk Glass*, *Zen Minimalist*, *Nordic Clean Light*, and *Obsidian High-Contrast*.
+- **Sandboxed Multi-Device Live Preview Drawer**: Ephemeral sandboxed `<iframe>` preview drawer with responsive device toggles (Desktop, Tablet 768px, Mobile 375px) and debounced real-time compilation before downloading or deploying.
+- **100% Offline Portability & Local Asset Inlining**: Local images and attachments in IndexedDB are automatically converted to Base64 data URIs for Standalone HTML exports, or extracted into `/assets/` with Service Worker precaching for Production PWA ZIP bundles.
+- **Client-Side Knowledge Graph & Spotlight Search in Exports**: Bundled standalone exports feature an embedded 2D HTML5 Canvas knowledge graph simulator with spring physics and an inverted search index with `⌘K` / `Ctrl+K` spotlight modal.
 - **1-Click Edge Distribution & Native Packaging**: Export standalone HTML documents or production PWA bundles equipped with Cache-First Service Workers (`sw.js`), PWABuilder manifests (`manifest.webmanifest`), and Capacitor mobile configurations. Deploy to Netlify Edge CDN or GitHub Pages in 1 click with zero build servers.
+
+### 🧪 Client-Side WASM Code Sandbox & Math Scratchpad
+- **In-Document Python Execution via Pyodide**: Run data science simulations, numpy array transformations, and calculations inside code blocks via in-browser Pyodide WebAssembly.
+- **Isolated JS/TS Web Worker Runner**: Hijacks console streams (`stdout`, `stderr`, `result`) inside dedicated Web Workers with a strict 5000ms execution watchdog and 1-click note result injection.
+- **Instant Math Evaluator**: Evaluate inline arithmetic expressions directly from the context menu or editor shortcuts.
+
+### 🔍 Vault-Wide RegEx Engine with Snapshot Undo
+- **Batch Pattern Replacement**: Refactor tags, directory paths, and YAML properties across hundreds of IndexedDB documents in milliseconds (`⌘⇧H`).
+- **Atomic Commits & Per-File Checkboxes**: Review visual line diffs, toggle individual file targets, and commit replacements atomically.
+- **Instant Rollback**: Revert any batch operation with 1-click snapshot history.
 
 ### 🛡️ True Local-First Sovereignty
 - **Dual Ingestion**:
@@ -126,9 +139,11 @@ Turn markdown frontmatter into structured data views without cloud databases:
  │  • 4-Way Dockable Toolbox  │  • Filterable List Views    │  • Interactive link explorer                 │
  │  • Live Document Metrics   │  • Dynamic Tag Cloud        │  • Node filtering & search                   │
  ├────────────────────────────┴─────────────────────────────┴──────────────────────────────────────────────┤
- │                                      Engineered Tooling & Utilities                                     │
- │  • Unified & Split Diff Viewer           • Sub-pixel Wrapped Gutter Plaintext Editor                    │
- │  • Google Drive Resumable Sync           • Gemini AI-Powered Theme Studio                               │
+ │                              Vibe Coding & Engineered Tooling Pipeline                                  │
+ │  • One-Shot Monolithic HTML App Synthesis (Static DOM)   • Pyodide WASM & Web Worker Sandbox            │
+ │  • Gemini BYOK Jinja Theme Studio & Vault Templates      • Vault-Wide RegEx Engine & Snapshot Undo      │
+ │  • Sandboxed Multi-Device Live Preview Drawer            • 1-Click Netlify Edge & GitHub Pages Drops    │
+ │  • Unified & Split Diff Viewer                           • Sub-pixel Wrapped Gutter Plaintext Editor    │
  └─────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -139,12 +154,19 @@ Turn markdown frontmatter into structured data views without cloud databases:
 | Shortcut | Action | Scope |
 | :--- | :--- | :--- |
 | `⌘ K` / `Ctrl + K` | Global Quick Search & Command Palette | App-wide |
+| `⌘ P` / `Ctrl + P` | Instant Document Quick-Switcher | App-wide |
+| `⌘ E` / `Ctrl + E` | Open Quick-Export PWA & Vibe AI Drawer | App-wide |
+| `⌘ ⇧ H` / `Ctrl + Shift + H` | Vault-Wide RegEx Batch Find-and-Replace | App-wide |
+| `⌘ \` / `Ctrl + \` | Toggle Multi-Pane Split View | Editor |
+| `F11` / `⌘ ⇧ F` | Toggle Distraction-Free Focus Mode | Editor |
+| `Shift + Enter` | Execute Code Block in WASM Sandbox | Editor |
 | `/` | Open Slash Block Insertion Menu | Rich Editor |
 | `[[` | Trigger WikiLink Autocomplete | Rich Editor |
 | `Shift + Space` | Open Universal Emoji Drawer | Rich Editor |
 | `⌘ S` / `Ctrl + S` | Force Save Active Document | Editor |
 | `⌘ B` / `Ctrl + B` | Toggle Bold Formatting | Editor |
 | `⌘ I` / `Ctrl + I` | Toggle Italic Formatting | Editor |
+| `Right Click` | Open Glassmorphic Context Menu | Files, Tabs, Editor |
 | `Esc` | Close Active Popover / Dismiss Modal | Global |
 
 ---
