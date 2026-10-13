@@ -20,6 +20,9 @@ export interface TemplateContext {
   is_pwa?: boolean;
   frontmatter?: Record<string, any>;
   pages?: TemplatePage[];
+  notes?: Array<{ id: string; title: string; slug?: string; url?: string; [key: string]: any }>;
+  folderName?: string;
+  folder_name?: string;
   themeVars?: string;
   theme_vars?: string;
   [key: string]: any;

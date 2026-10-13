@@ -90,6 +90,14 @@
   - Enforced strict typography and layout guardrails in [geminiTemplateGenerator.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/geminiTemplateGenerator.ts) requiring clean sans-serif/monospace font stacks (`Inter`, system-ui, `JetBrains Mono`), `text-align: left`, and `line-height: 1.6`, while explicitly forbidding exotic serif typefaces (`Zen Old Mincho`, `Noto Serif JP`), `text-justify: inter-ideograph`, and line heights above 1.75.
   - Mandated `.wiki-link` badge styling and responsive `.editor-image` CSS across all generated themes and presets.
 
+- [x] **Multi-Note Folder Standalone HTML & SPA Export Pipeline Resolution**:
+  - Implemented folder path normalization in [exportBundleService.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/exportBundleService.ts), [ExportPwaModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportPwaModal.tsx), and [pwaExporter.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/pwaExporter.ts) removing breadcrumb spacing (e.g., `'Memories / 2FC' -> 'Memories/2FC'`) and trimming slashes.
+  - Replaced fallback dummy placeholder document with workspace note query via `getNotesByWorkspace` in [noteRepository.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/repositories/noteRepository.ts) and path-prefix matching.
+  - Implemented multi-note SPA architecture in [folderHtmlBuilder.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/folderHtmlBuilder.ts) with discrete note panes `<section id="note-${slug}" class="vault-note-pane">` and self-contained vanilla hash router in [folderHtmlStyles.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/folderHtmlStyles.ts).
+  - Populated `notes` and `pages` in `TemplateContext` in [jinjaCompiler.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/jinjaCompiler.ts) to render `<nav class="sidebar-nav">{% for note in notes %}<a href="#{{ note.id }}" class="sidebar-nav-link">{{ note.title }}</a>{% endfor %}</nav>`.
+  - Updated theme generation prompt in [geminiTemplateGenerator.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/geminiTemplateGenerator.ts) with `.sidebar-nav` and `.sidebar-nav-link` specifications and multi-note container support.
+  - Enabled Standalone HTML format for folder/vault scopes in [ExportPwaModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportPwaModal.tsx) and decomposed services strictly within tiered LOC limits (<400 LOC).
+
 ## Verification Status
 - Lint verification: Passing cleanly with 0 errors and 0 warnings (`pnpm run lint`).
 - TypeScript verification: Passing cleanly with 0 errors (`tsc --noEmit`).

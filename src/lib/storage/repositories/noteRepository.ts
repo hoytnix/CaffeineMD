@@ -33,6 +33,11 @@ export async function listNotes(vaultId?: string): Promise<VaultFile[]> {
 }
 
 /**
+ * Fetch all notes in the active workspace
+ */
+export const getNotesByWorkspace = listNotes;
+
+/**
  * Bulk upsert notes within an atomic Dexie transaction
  */
 export async function bulkUpsertNotes(notes: VaultFile[]): Promise<void> {

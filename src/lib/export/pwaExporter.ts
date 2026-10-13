@@ -77,8 +77,21 @@ export async function generatePwaZipBundle(
       return f.vaultId === options.workspaceId;
     });
 
-    notesToExport = options.folderPath
-      ? vaultFiltered.filter((n) => n.path.startsWith(options.folderPath!))
+    const normalizedFolderPath = (options.folderPath || '')
+      .split('/')
+      .map((segment) => segment.trim())
+      .filter(Boolean)
+      .join('/');
+
+    notesToExport = normalizedFolderPath
+      ? vaultFiltered.filter((n) => {
+          if (!n.path) return false;
+          const normalizedNotePath = n.path.replace(/^\/+/, '');
+          return (
+            normalizedNotePath.startsWith(normalizedFolderPath + '/') ||
+            normalizedNotePath === normalizedFolderPath
+          );
+        })
       : vaultFiltered;
 
     if (notesToExport.length === 0) {

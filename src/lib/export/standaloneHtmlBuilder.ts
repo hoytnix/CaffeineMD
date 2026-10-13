@@ -12,7 +12,14 @@ export interface ExportHtmlOptions {
   isPwa?: boolean;
   customTemplate?: string;
   pages?: TemplatePage[];
+  folderName?: string;
+  workspaceId?: string;
+  folderPath?: string;
 }
+
+import { buildFolderStandaloneHtml } from './folderHtmlBuilder';
+export { buildFolderStandaloneHtml };
+export type { ExportNoteItem, ExportFolderHtmlOptions } from './folderHtmlBuilder';
 
 export function escapeHtml(str: string): string {
   return (str || '').replace(/[&<>"']/g, (m) => ({
@@ -114,7 +121,14 @@ export function renderWithJinjaTemplate(
   return renderJinjaTemplate(normalizedTemplate, context);
 }
 
-export async function buildStandaloneHtml(note: Note, options: ExportHtmlOptions): Promise<string> {
+export async function buildStandaloneHtml(
+  noteOrNotes: Note | Note[],
+  options: ExportHtmlOptions
+): Promise<string> {
+  if (Array.isArray(noteOrNotes)) {
+    return buildFolderStandaloneHtml(noteOrNotes, options);
+  }
+  const note = noteOrNotes;
   let template = options.customTemplate;
   if (!template) {
     const folderPath = note.path.includes('/') ? note.path.slice(0, note.path.lastIndexOf('/')) : '';

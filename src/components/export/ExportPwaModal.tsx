@@ -4,8 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { db, VaultFile } from '@/src/lib/storage/db';
 import { THEME_PRESETS } from '@/src/lib/themes/themeDefinitions';
-import { buildStandaloneHtml } from '@/src/lib/export/standaloneHtmlBuilder';
-import { generatePwaZipBundle, slugify } from '@/src/lib/export/pwaExporter';
+import { slugify } from '@/src/lib/export/pwaExporter';
+import {
+  normalizeFolderPath,
+  createFallbackNote,
+  executeExportDownload,
+} from '@/src/lib/export/exportBundleService';
 import {
   Download,
   X,
@@ -18,25 +22,6 @@ import {
 } from 'lucide-react';
 import { DeploymentActionDrawer } from './DeploymentActionDrawer';
 import { AiThemePromptDrawer } from './AiThemePromptDrawer';
-
-function createFallbackNote(appName: string, workspaceId: string): VaultFile {
-  const timestamp = Date.now();
-  return {
-    id: 'export-note',
-    path: 'export.md',
-    name: 'export.md',
-    title: appName,
-    extension: 'md',
-    content: `# ${appName}\n\nExported from CaffeineMD.`,
-    frontmatter: {},
-    tags: [],
-    isBinary: false,
-    size: 100,
-    createdAt: timestamp,
-    updatedAt: timestamp,
-    vaultId: workspaceId || 'default-vault',
-  };
-}
 
 function ExportPwaDialog() {
   const {
@@ -58,9 +43,17 @@ function ExportPwaDialog() {
   const [selectedThemeId, setSelectedThemeId] = useState<string>(() => currentThemeId || 'dark');
   const [includeThemeSwitcher, setIncludeThemeSwitcher] = useState(true);
   const [customTemplateString, setCustomTemplateString] = useState<string | undefined>(undefined);
-  const [appName, setAppName] = useState(() => vaultName || 'CaffeineMD Export');
-  const [shortName, setShortName] = useState('CaffeineMD');
-  const [appId, setAppId] = useState('com.caffeinemd.export');
+  const defaultTitle = React.useMemo(() => {
+    if (exportModalTarget?.folderPath) {
+      const norm = normalizeFolderPath(exportModalTarget.folderPath);
+      return norm.split('/').pop() || 'CaffeineMD Vault';
+    }
+    return vaultName || 'CaffeineMD Export';
+  }, [exportModalTarget, vaultName]);
+
+  const [appName, setAppName] = useState(() => defaultTitle);
+  const [shortName, setShortName] = useState(() => defaultTitle.slice(0, 12));
+  const [appId, setAppId] = useState(() => `com.caffeinemd.${slugify(defaultTitle)}`);
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
@@ -69,10 +62,12 @@ function ExportPwaDialog() {
       db.files.get(notePath).then((note) => {
         if (note) {
           setActiveNote(note);
-          const title = note.title || note.name.replace(/\.[^/.]+$/, '');
-          setAppName(title);
-          setShortName(title.slice(0, 12));
-          setAppId(`com.caffeinemd.${slugify(title)}`);
+          if (!exportModalTarget?.folderPath) {
+            const title = note.title || note.name.replace(/\.[^/.]+$/, '');
+            setAppName(title);
+            setShortName(title.slice(0, 12));
+            setAppId(`com.caffeinemd.${slugify(title)}`);
+          }
         }
       }).catch(console.error);
     }
@@ -81,57 +76,30 @@ function ExportPwaDialog() {
   const handleDownload = async () => {
     setIsExporting(true);
     try {
-      const targetNote: VaultFile =
-        activeNote || createFallbackNote(appName, activeWorkspaceId || 'default-vault');
+      const success = await executeExportDownload({
+        scopeMode,
+        outputType,
+        folderPath: exportModalTarget?.folderPath,
+        activeNote,
+        activeWorkspaceId,
+        appName,
+        shortName,
+        appId,
+        selectedThemeId,
+        includeThemeSwitcher,
+        customTemplateString,
+        onToast: showToast,
+      });
 
-      if (outputType === 'html') {
-        const html = await buildStandaloneHtml(targetNote, {
-          themeId: selectedThemeId,
-          includeThemeSwitcher,
-          appTitle: appName,
-          isPwa: false,
-          customTemplate: customTemplateString,
-        });
-
-        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-        triggerBrowserDownload(blob, `${slugify(appName)}.html`);
-        showToast('Document exported as Standalone HTML');
-      } else {
-        const blob = await generatePwaZipBundle(targetNote, {
-          themeId: selectedThemeId,
-          includeThemeSwitcher,
-          appTitle: appName,
-          isPwa: true,
-          customTemplate: customTemplateString,
-          scopeMode,
-          folderPath: exportModalTarget?.folderPath,
-          workspaceId: activeWorkspaceId || 'default-vault',
-          appName,
-          shortName,
-          appId,
-        });
-
-        triggerBrowserDownload(blob, `${slugify(appName)}-pwa.zip`);
-        showToast('Production PWA bundle generated successfully');
+      if (success) {
+        closeExportModal();
       }
-      closeExportModal();
     } catch (err: any) {
       console.error('Export failed:', err);
       showToast(err?.message || 'Export generation failed');
     } finally {
       setIsExporting(false);
     }
-  };
-
-  const triggerBrowserDownload = (blob: Blob, filename: string) => {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   };
 
   return (
@@ -183,10 +151,7 @@ function ExportPwaDialog() {
             </button>
             <button
               type="button"
-              onClick={() => {
-                setScopeMode('directory');
-                setOutputType('pwa');
-              }}
+              onClick={() => setScopeMode('directory')}
               className={`p-2.5 rounded-xl border text-xs font-medium text-left transition-all cursor-pointer ${
                 scopeMode === 'directory'
                   ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]'
@@ -197,7 +162,7 @@ function ExportPwaDialog() {
                 {exportModalTarget?.folderPath ? 'Folder' : 'Entire Vault'}
               </div>
               <div className="text-[11px] opacity-75 truncate">
-                {exportModalTarget?.folderPath || 'All IndexedDB Notes'}
+                {exportModalTarget?.folderPath ? normalizeFolderPath(exportModalTarget.folderPath) : 'All IndexedDB Notes'}
               </div>
             </button>
           </div>
@@ -212,8 +177,7 @@ function ExportPwaDialog() {
             <button
               type="button"
               onClick={() => setOutputType('html')}
-              disabled={scopeMode === 'directory'}
-              className={`p-2.5 rounded-xl border text-xs font-medium text-left transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+              className={`p-2.5 rounded-xl border text-xs font-medium text-left transition-all cursor-pointer ${
                 outputType === 'html'
                   ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]'
                   : 'border-[var(--border)] bg-[var(--background)] text-neutral-400 hover:text-[var(--foreground)]'
@@ -222,7 +186,9 @@ function ExportPwaDialog() {
               <div className="flex items-center gap-1.5 font-semibold mb-0.5">
                 <FileCode className="w-3.5 h-3.5" /> Standalone HTML
               </div>
-              <div className="text-[11px] opacity-75">Single self-contained .html file</div>
+              <div className="text-[11px] opacity-75">
+                {scopeMode === 'directory' ? 'Single multi-note SPA file' : 'Single self-contained .html file'}
+              </div>
             </button>
             <button
               type="button"

@@ -28,8 +28,13 @@ export async function generateJinjaThemeWithGemini(
 Aesthetic Style: ${themeStyle}
 
 STRICT ARCHITECTURE & DOM RULES:
-1. Exactly ONE <main> container and ONE <article> container for the whole document:
+1. Document structure: Exactly ONE <main> container and ONE <article> container for the whole document:
    <main class="site-container">
+     <nav class="sidebar-nav">
+       {% for note in notes %}
+         <a href="#{{ note.id }}" class="sidebar-nav-link">{{ note.title }}</a>
+       {% endfor %}
+     </nav>
      <header class="doc-header">
        <h1>{{ title }}</h1>
        <div class="meta-pills">
@@ -41,13 +46,19 @@ STRICT ARCHITECTURE & DOM RULES:
        {{ content }}
      </article>
    </main>
-2. CRITICAL: The placeholder token "{{ content }}" MUST be the ONLY contents inside the <article class="article-content"> element. NEVER output dummy paragraphs, mock markdown, or sample article text. NEVER output multiple <main> elements or duplicate document bodies.
+2. CRITICAL: The placeholder token "{{ content }}" MUST be the ONLY contents inside the <article class="article-content"> element. NEVER output dummy paragraphs, mock markdown, or sample article text. When exporting folders or multi-note vaults, "{{ content }}" receives the compiled multi-note container. NEVER output multiple <main> elements or duplicate document bodies.
 3. Jinja Placeholders:
    - {{ title }} for document <title> and header <h1>
-   - {{ content }} for the markdown article HTML
+   - {{ content }} for the markdown article HTML or multi-note container
    - {{ date }} and {{ reading_time }} for metadata pills
    - {% if is_pwa %}<link rel="manifest" href="./manifest.webmanifest"><script>if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');</script>{% endif %}
-${isMultiPage ? '   - Navigation sidebar/drawer: {% for page in pages %}<a href="{{ page.url }}">{{ page.title }}</a>{% endfor %}' : ''}
+   - Navigation sidebar/drawer:
+     <nav class="sidebar-nav">
+       {% for note in notes %}
+         <a href="#{{ note.id }}" class="sidebar-nav-link">{{ note.title }}</a>
+       {% endfor %}
+     </nav>
+${isMultiPage ? '   - Multi-page PWA links fallback: {% for page in pages %}<a href="{{ page.url }}" class="sidebar-nav-link">{{ page.title }}</a>{% endfor %}' : ''}
 
 TYPOGRAPHY & LAYOUT GUARDRAILS (STRICT):
 1. Font Stacks: Use ONLY clean, modern sans-serif or technical monospace fonts:
@@ -61,12 +72,16 @@ TYPOGRAPHY & LAYOUT GUARDRAILS (STRICT):
 
 MANDATORY COMPONENT CSS:
 Include comprehensive styling inside an inlined <style> tag:
-1. .wiki-link:
+1. .sidebar-nav and .sidebar-nav-link:
+   - Clean sidebar navigation styling: .sidebar-nav { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1.5rem; }
+   - .sidebar-nav-link { display: block; padding: 0.4rem 0.75rem; border-radius: 6px; text-decoration: none; font-size: 0.88rem; transition: background 0.15s ease, color 0.15s ease; }
+   - .sidebar-nav-link:hover and .sidebar-nav-link.active { font-weight: 600; text-decoration: none; }
+2. .wiki-link:
    - Accent text color, subtle background pill (e.g., padding: 0.1em 0.4em; border-radius: 4px; background: rgba(99, 102, 241, 0.12); display: inline; text-decoration: none;)
    - hover: text-decoration: underline; background: rgba(99, 102, 241, 0.22);
-2. .editor-image:
+3. .editor-image:
    - max-width: 100%; height: auto; border-radius: 8px; margin: 1.5rem 0; display: block; border: 1px solid rgba(255, 255, 255, 0.1);
-3. Dark-mode glassmorphic surfaces with clean borders:
+4. Dark-mode glassmorphic surfaces with clean borders:
    - Pre/code blocks: Frosted glass background, rounded-lg, 1px border, scrollable.
    - Blockquotes: Accent left border (3px solid), soft card background, rounded-r.
    - Tables: Full-width, border-collapse, subtle border lines, alternating or styled header.
