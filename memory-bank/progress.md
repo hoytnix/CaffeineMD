@@ -82,6 +82,14 @@
   - Relocated Vault RegEx Find & Replace action button to the File Explorer search bar header in [FileTree.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/FileTree.tsx).
   - Maintained Export Document / PWA access in right-click context menus ([EditorContextMenu.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/EditorContextMenu.tsx) and [FileActionMenu.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/FileActionMenu.tsx)).
 
+- [x] **Corrupted PWA & Standalone HTML Export Pipeline Resolution**:
+  - Upgraded [frontmatter.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/markdown/frontmatter.ts) to export `ParsedFrontmatterResult` returning both properties and clean body content; eliminated frontmatter header leakage (`title:`, `tags:`, `status:`, `eisenhower:`) and raw `<hr>` lines from exported document bodies.
+  - Bound frontmatter metadata (`title`, `tags`, `author`, `status`) to HTML `<head>` meta tags (`author`, `keywords`, `description`) and responsive header `.meta-pills` badges.
+  - Eliminated DOM duplication: audited template interpolation in [standaloneHtmlBuilder.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/standaloneHtmlBuilder.ts) to guarantee exactly one `<main>` container, normalizing `<!-- CONTENT -->`, `<!--CONTENT-->`, and `{{ content | safe }}` to `{{ content }}` while replacing inner dummy content of existing `<article>` or `<main>` elements instead of appending secondary `<main class="content">` containers.
+  - Transformed WikiLinks from raw bracketed text `<span data-wikilink="...">[[Note]]</span>` into styled interactive badges `<a class="wiki-link" data-wikilink="...">` with hover underlines and background accents; added scope-aware relative remapping in [pwaExporter.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/pwaExporter.ts).
+  - Enforced strict typography and layout guardrails in [geminiTemplateGenerator.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/geminiTemplateGenerator.ts) requiring clean sans-serif/monospace font stacks (`Inter`, system-ui, `JetBrains Mono`), `text-align: left`, and `line-height: 1.6`, while explicitly forbidding exotic serif typefaces (`Zen Old Mincho`, `Noto Serif JP`), `text-justify: inter-ideograph`, and line heights above 1.75.
+  - Mandated `.wiki-link` badge styling and responsive `.editor-image` CSS across all generated themes and presets.
+
 ## Verification Status
 - Lint verification: Passing cleanly with 0 errors and 0 warnings (`pnpm run lint`).
 - TypeScript verification: Passing cleanly with 0 errors (`tsc --noEmit`).

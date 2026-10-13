@@ -1,5 +1,6 @@
 import { Note } from '@/src/lib/storage/schema';
 import { markdownToHtml } from '@/src/lib/markdown/markdownToHtml';
+import { parseFrontmatter } from '@/src/lib/markdown/frontmatter';
 import { themeDefinitions, ThemeDefinition } from '@/src/lib/themes/themeDefinitions';
 import { findVaultTemplate } from '@/src/lib/storage/repositories/noteRepository';
 import { renderJinjaTemplate, TemplateContext, TemplatePage } from './jinjaCompiler';
@@ -27,16 +28,51 @@ function resolveTheme(themeId: string): ThemeDefinition {
   return themeDefinitions.find((t) => t.id === themeId) || themeDefinitions[0];
 }
 
+/**
+ * Transforms wikilink spans and syntax into clean HTML links/anchors.
+ * Strips raw [[...]] brackets and produces styled, accessible badges.
+ */
+export function cleanWikiLinks(html: string): string {
+  // Transform span-wrapped wikilinks (<span data-wikilink="...">[[Label]]</span>)
+  let cleaned = html.replace(
+    /<span data-wikilink="([^"]+)" class="wiki-link">\[\[([\s\S]*?)\]\]<\/span>/g,
+    (_match, target, label) => {
+      const display = label || target;
+      return `<a href="#${encodeURIComponent(target)}" class="wiki-link" data-wikilink="${target}">${display}</a>`;
+    }
+  );
+
+  // Transform any remaining raw bracketed wikilinks outside spans: [[Target]] or [[Target|Alias]]
+  cleaned = cleaned.replace(
+    /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g,
+    (_match, target, alias) => {
+      const display = (alias || target).trim();
+      const targetTrimmed = target.trim();
+      return `<a href="#${encodeURIComponent(targetTrimmed)}" class="wiki-link" data-wikilink="${escapeHtml(targetTrimmed)}">${escapeHtml(display)}</a>`;
+    }
+  );
+
+  return cleaned;
+}
+
 export function renderWithJinjaTemplate(
   note: Note,
   template: string,
   options: ExportHtmlOptions
 ): string {
-  const renderedContent = markdownToHtml(note.content || '');
-  const title = options.appTitle || note.title || note.name?.replace(/\.[^/.]+$/, '') || 'Untitled Document';
-  const wordCount = (note.content || '').trim().split(/\s+/).filter(Boolean).length;
+  const rawContent = note.content || '';
+  const { data: frontmatter, content: cleanMarkdown } = parseFrontmatter(rawContent);
+  const renderedContent = cleanWikiLinks(markdownToHtml(cleanMarkdown));
+
+  const title = options.appTitle || frontmatter.title || note.title || note.name?.replace(/\.[^/.]+$/, '') || 'Untitled Document';
+  const wordCount = cleanMarkdown.trim().split(/\s+/).filter(Boolean).length;
   const readingTimeVal = `${Math.max(1, Math.ceil(wordCount / 200))} min read`;
-  const dateVal = new Date(note.updatedAt || Date.now()).toLocaleDateString();
+  const dateVal = new Date(frontmatter.updatedAt || note.updatedAt || Date.now()).toLocaleDateString();
+
+  const mergedFrontmatter = {
+    ...(note.frontmatter || {}),
+    ...frontmatter,
+  };
 
   const context: TemplateContext = {
     title,
@@ -49,12 +85,33 @@ export function renderWithJinjaTemplate(
     word_count: wordCount,
     isPwa: Boolean(options.isPwa),
     is_pwa: Boolean(options.isPwa),
-    frontmatter: note.frontmatter || {},
+    frontmatter: mergedFrontmatter,
+    author: frontmatter.author || (note.frontmatter?.author as string) || '',
+    tags: frontmatter.tags?.length ? frontmatter.tags : (note.tags || []),
     pages: options.pages,
     themeVars: `/* custom theme */`,
   };
 
-  return renderJinjaTemplate(template, context);
+  // Normalize single-token insertion markers without appending duplicate containers
+  let normalizedTemplate = template
+    .replace(/<!--\s*CONTENT\s*-->/gi, '{{ content }}')
+    .replace(/{{\s*content\s*\|\s*safe\s*}}/gi, '{{ content }}');
+
+  if (!normalizedTemplate.includes('{{ content }}') && !normalizedTemplate.includes('{{content}}')) {
+    if (/<article[^>]*>[\s\S]*?<\/article>/i.test(normalizedTemplate)) {
+      normalizedTemplate = normalizedTemplate.replace(
+        /(<article[^>]*>)[\s\S]*?(<\/article>)/i,
+        '$1{{ content }}$2'
+      );
+    } else if (/<main[^>]*>[\s\S]*?<\/main>/i.test(normalizedTemplate)) {
+      normalizedTemplate = normalizedTemplate.replace(
+        /(<main[^>]*>)[\s\S]*?(<\/main>)/i,
+        '$1{{ content }}$2'
+      );
+    }
+  }
+
+  return renderJinjaTemplate(normalizedTemplate, context);
 }
 
 export async function buildStandaloneHtml(note: Note, options: ExportHtmlOptions): Promise<string> {
@@ -72,14 +129,20 @@ export async function buildStandaloneHtml(note: Note, options: ExportHtmlOptions
   }
 
   const selectedTheme = resolveTheme(options.themeId);
-  const renderedContent = markdownToHtml(note.content || '');
-  const title = options.appTitle || note.title || note.name?.replace(/\.[^/.]+$/, '') || 'Untitled Document';
+  const rawContent = note.content || '';
+  const { data: frontmatter, content: cleanMarkdown } = parseFrontmatter(rawContent);
+  const renderedContent = cleanWikiLinks(markdownToHtml(cleanMarkdown));
+  const title = options.appTitle || frontmatter.title || note.title || note.name?.replace(/\.[^/.]+$/, '') || 'Untitled Document';
 
   const bg = selectedTheme.background || '#121212';
   const fg = selectedTheme.foreground || '#e0e0e0';
   const card = selectedTheme.card || '#1e1e1e';
   const border = selectedTheme.border || '#333333';
   const accent = selectedTheme.accent || '#6366f1';
+
+  const hasMeta = Boolean(
+    frontmatter.author || (frontmatter.tags && frontmatter.tags.length > 0) || (frontmatter.status && frontmatter.status !== 'Draft')
+  );
 
   return `<!DOCTYPE html>
 <html lang="en" data-theme="${selectedTheme.id}">
@@ -88,7 +151,7 @@ export async function buildStandaloneHtml(note: Note, options: ExportHtmlOptions
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>${escapeHtml(title)}</title>
   <meta name="description" content="${escapeHtml(title)} - Offline Standalone Document">
-  ${options.isPwa ? `<link rel="manifest" href="./manifest.webmanifest">
+  ${frontmatter.author ? `<meta name="author" content="${escapeHtml(frontmatter.author)}">\n  ` : ''}${frontmatter.tags && frontmatter.tags.length > 0 ? `<meta name="keywords" content="${escapeHtml(frontmatter.tags.join(', '))}">\n  ` : ''}${options.isPwa ? `<link rel="manifest" href="./manifest.webmanifest">
   <meta name="theme-color" content="${bg}">` : ''}
   <style>
     :root {
@@ -105,7 +168,8 @@ export async function buildStandaloneHtml(note: Note, options: ExportHtmlOptions
       background-color: var(--bgPrimary, #121212);
       color: var(--textPrimary, #e0e0e0);
       font-family: var(--font-sans);
-      line-height: 1.65;
+      line-height: 1.6;
+      text-align: left;
       padding: 2.5rem 1.25rem;
       min-height: 100vh;
       display: flex;
@@ -122,10 +186,27 @@ export async function buildStandaloneHtml(note: Note, options: ExportHtmlOptions
       padding-bottom: 1.5rem;
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       gap: 1rem;
     }
+    .header-main { flex: 1; min-width: 0; }
     .doc-header h1 { font-size: 2.25rem; font-weight: 700; color: var(--textPrimary); line-height: 1.25; }
+    .meta-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+    .meta-pill {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 9999px;
+      background: var(--bgSecondary, #1e1e1e);
+      border: 1px solid var(--borderColor, #333);
+      color: var(--textPrimary, #e0e0e0);
+      font-weight: 500;
+    }
+    .meta-pill.meta-tag { color: var(--accent, #6366f1); }
     .theme-toggle-btn {
       background: var(--bgSecondary, #1e1e1e);
       color: var(--textPrimary);
@@ -139,7 +220,7 @@ export async function buildStandaloneHtml(note: Note, options: ExportHtmlOptions
       transition: opacity 0.2s;
     }
     .theme-toggle-btn:hover { opacity: 0.85; }
-    article.content { font-size: 1.05rem; }
+    article.content { font-size: 1.05rem; text-align: left; line-height: 1.6; }
     article.content h1, article.content h2, article.content h3, article.content h4 {
       margin-top: 1.8rem;
       margin-bottom: 0.8rem;
@@ -184,6 +265,28 @@ export async function buildStandaloneHtml(note: Note, options: ExportHtmlOptions
     article.content th { background: var(--bgSecondary, #222); font-weight: 600; }
     article.content a { color: var(--accent, #6366f1); text-decoration: none; }
     article.content a:hover { text-decoration: underline; }
+    .wiki-link {
+      color: var(--accent, #6366f1);
+      background: rgba(99, 102, 241, 0.12);
+      padding: 0.12em 0.45em;
+      border-radius: 4px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background-color 0.15s ease, opacity 0.15s ease;
+      display: inline;
+    }
+    .wiki-link:hover {
+      background: rgba(99, 102, 241, 0.22);
+      text-decoration: underline;
+    }
+    .editor-image {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+      display: block;
+      border: 1px solid var(--borderColor, #333);
+    }
     @media print {
       body { background: #fff !important; color: #000 !important; }
       .theme-toggle-btn { display: none; }
@@ -193,7 +296,15 @@ export async function buildStandaloneHtml(note: Note, options: ExportHtmlOptions
 <body>
   <main class="container">
     <header class="doc-header">
-      <h1>${escapeHtml(title)}</h1>
+      <div class="header-main">
+        <h1>${escapeHtml(title)}</h1>
+        ${hasMeta ? `
+        <div class="meta-pills">
+          ${frontmatter.author ? `<span class="meta-pill meta-author">${escapeHtml(frontmatter.author)}</span>` : ''}
+          ${frontmatter.status ? `<span class="meta-pill meta-status">${escapeHtml(frontmatter.status)}</span>` : ''}
+          ${(frontmatter.tags || []).map((t) => `<span class="meta-pill meta-tag">#${escapeHtml(t)}</span>`).join(' ')}
+        </div>` : ''}
+      </div>
       ${options.includeThemeSwitcher ? '<button class="theme-toggle-btn" id="theme-toggle">Invert Theme</button>' : ''}
     </header>
     <article class="content">

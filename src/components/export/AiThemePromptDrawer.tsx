@@ -35,9 +35,9 @@ const PRESETS = [
       'Ultra-dark frosted glassmorphism with glowing cyan and neon magenta accents, futuristic monospace headings, and sleek backlit code cards.',
   },
   {
-    title: 'Japanese Minimalist',
+    title: 'Zen Minimalist',
     prompt:
-      'Warm off-white and charcoal ink tones, traditional Japanese wabi-sabi editorial layout, elegant serif typography, and generous calm whitespace.',
+      'Warm off-white background and deep charcoal ink tones, calm zen editorial layout, clean modern sans-serif typography, and generous focused whitespace.',
   },
   {
     title: 'Nordic Clean Light',

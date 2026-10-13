@@ -33,6 +33,11 @@ export interface ParsedMarkdownNote {
 
 export const FRONTMATTER_REGEX = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
 
+export interface ParsedFrontmatterResult extends NoteProperties {
+  data: NoteProperties;
+  content: string;
+}
+
 /**
  * Normalizes an Eisenhower quadrant string to one of the canonical display names if possible
  */
@@ -54,7 +59,7 @@ export function normalizeEisenhower(raw?: any): 'Urgent & Immediate' | 'Urgent &
 /**
  * Extracts and parses YAML frontmatter, automatically merging missing keys with DEFAULT_NOTE_PROPERTIES
  */
-export function parseFrontmatter(rawTextOrYaml: string): NoteProperties {
+export function parseFrontmatter(rawTextOrYaml: string): ParsedFrontmatterResult {
   let parsed: any = {};
   const match = rawTextOrYaml.match(FRONTMATTER_REGEX);
   const yamlContent = match
@@ -85,7 +90,9 @@ export function parseFrontmatter(rawTextOrYaml: string): NoteProperties {
     });
   }
 
-  return {
+  const cleanBody = match ? rawTextOrYaml.slice(match[0].length) : rawTextOrYaml;
+
+  const result: NoteProperties = {
     ...DEFAULT_NOTE_PROPERTIES,
     ...parsed,
     title: parsed.title !== undefined && parsed.title !== null ? String(parsed.title).trim() : DEFAULT_NOTE_PROPERTIES.title,
@@ -93,6 +100,12 @@ export function parseFrontmatter(rawTextOrYaml: string): NoteProperties {
     status: parsed.status ? String(parsed.status).trim() : DEFAULT_NOTE_PROPERTIES.status,
     author: parsed.author !== undefined && parsed.author !== null ? String(parsed.author) : DEFAULT_NOTE_PROPERTIES.author,
     eisenhower: normalizeEisenhower(parsed.eisenhower),
+  };
+
+  return {
+    ...result,
+    data: result,
+    content: cleanBody,
   };
 }
 
