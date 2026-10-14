@@ -1,0 +1,139 @@
+# Database Views, Force Graph & PWA/HTML Exporter
+
+This document details CaffeineMD's frontmatter relational database engine, 2D force-directed knowledge graph simulation, and static PWA / monolithic HTML export pipeline.
+
+---
+
+## 1. Frontmatter Database Engine
+
+CaffeineMD transforms standard Markdown notes into relational database records without requiring external database servers or cloud silos.
+
+```
+          Folder Markdown Notes (with YAML Frontmatter Headers)
+                                    │
+                                    ▼
+       useDatabaseSchema.ts (Extracts dynamic properties & types)
+                                    │
+      ┌─────────────────────────────┼─────────────────────────────┐
+      ▼                             ▼                             ▼
+┌───────────────┐           ┌───────────────┐           ┌───────────────┐
+│  Table View   │           │  Kanban View  │           │   List View   │
+│ TableView.tsx │           │ KanbanView.tsx│           │  ListView.tsx │
+│ • Columns     │           │ • Lanes       │           │ • Compact     │
+│ • Resizing    │           │ • Eisenhower  │           │ • Fast filter │
+│ • Multi-sort  │           │ • Drag & Drop │           │ • Property tag│
+└───────────────┘           └───────────────┘           └───────────────┘
+```
+
+### 1.1 Dynamic Schema Extraction (`useDatabaseSchema.ts`)
+- Inspects all notes within the selected folder (e.g., `/Projects` or vault root).
+- Parses each note's `frontmatter` dictionary to synthesize column definitions:
+  - **Property Types**: Text, Number, Select/Tag, Multi-Select, Checkbox, Date, URL, and Eisenhower Quadrant.
+- Dynamically assigns column renderers and editor popovers without requiring fixed database schemas.
+
+### 1.2 Table View (`TableView.tsx`)
+- High-density spreadsheet interface modeled after Notion.
+- **Interactive Capabilities**:
+  - Resizable column widths via `useColumnResize.ts` with stored pixel widths.
+  - Multi-property sorting (ascending/descending) and text/tag filters.
+  - Inline property edits directly modifying the note's frontmatter in IndexedDB and triggering debounced sync.
+  - Quick-add row button creating a new note with pre-populated frontmatter properties.
+
+### 1.3 Kanban Board & Eisenhower Matrix (`KanbanView.tsx`)
+- Visual card board categorizing notes into lanes:
+  - **Status Lanes**: Configurable status values (e.g., `Backlog`, `In Progress`, `Review`, `Done`).
+  - **Eisenhower Priority Quadrants**: `Urgent & Immediate` (Do First), `Urgent & Not Immediate` (Schedule), `Not Urgent & Immediate` (Delegate), and `Not Urgent & Not Immediate` (Don't / Backlog).
+- **Drag-and-Drop (`useKanbanDragAndDrop.ts`)**:
+  - Dragging a card between columns updates the note's frontmatter `status` or `eisenhower` attribute instantly with optimistic UI feedback.
+
+### 1.4 List View (`ListView.tsx`)
+- Minimalist, distraction-free document feed displaying title, snippet, tag pills, and modification dates.
+- Ideal for daily journals, meeting notes, and quick item scanning.
+
+---
+
+## 2. 2D Force-Directed Knowledge Graph
+
+Located in [`src/components/graph/`](file:///home/oloty/Dev/CaffeineMD/src/components/graph/) and [`src/lib/graph/`](file:///home/oloty/Dev/CaffeineMD/src/lib/graph/):
+
+```
+       IndexedDB (files & backlinks) ──► useGraphData.ts
+                                              │ (Nodes & Links)
+                                              ▼
+                                 physicsSimulation.ts (d3-force)
+                                              │ (Velocity-Verlet)
+                                              ▼
+                             graphCanvasRenderer.ts (HTML5 Canvas)
+                                              │
+                      ┌───────────────────────┴───────────────────────┐
+                      ▼                                               ▼
+            Node Shaders & Halos                            Interactive Pan / Zoom
+            (Theme Palette Aware)                           (Wheel & Drag Gestures)
+```
+
+### 2.1 Physics Simulation Engine (`physicsSimulation.ts`)
+- Powered by `d3-force` running velocity-Verlet numerical integration:
+  - **Link Force (`forceLink`)**: Keeps connected WikiLink nodes at target spring lengths.
+  - **Many-Body Repulsion (`forceManyBody`)**: Prevents node overlap with customizable charge strength.
+  - **Centering Force (`forceCenter`)**: Keeps the topology balanced around canvas center.
+  - **Collision Force (`forceCollide`)**: Ensures nodes have radial boundaries preventing text label collisions.
+
+### 2.2 High-Performance Canvas Renderer (`graphCanvasRenderer.ts`)
+- Renders directly to HTML5 Canvas rather than SVG to sustain 60 FPS performance on vaults with 1,000+ nodes.
+- **Node & Edge Styling**:
+  - Automatically pulls `--theme-accent`, `--theme-text-primary`, and `--theme-border` tokens to match the active theme.
+  - Connected nodes glow with soft radial halos.
+  - Active hovered nodes highlight connected incoming and outgoing link edges while dimming unrelated nodes.
+
+### 2.3 Graph HUD Controls
+- Floating viewport HUD allowing users to:
+  - Adjust repulsion charge and link distance dynamically.
+  - Toggle orphan nodes (nodes with 0 connections).
+  - Search and spotlight specific nodes with automatic camera zoom.
+
+---
+
+## 3. Production PWA & Standalone HTML Exporter
+
+CaffeineMD features a static publishing pipeline in [`src/lib/export/`](file:///home/oloty/Dev/CaffeineMD/src/lib/export/) and [`src/components/export/`](file:///home/oloty/Dev/CaffeineMD/src/components/export/):
+
+```
+       Markdown Vault Notes ──► Standalone HTML Builder (Direct Monolithic HTML)
+                                             │
+                       ┌─────────────────────┴─────────────────────┐
+                       ▼                                           ▼
+          Standalone Single/Folder HTML                  Production PWA Bundle (ZIP)
+          • Inlined Base64 Assets                        • Service Worker (sw.js)
+          • Client-Side Jinja2 Compiler                  • PWA Manifest (manifest.webmanifest)
+          • Embedded 2D Canvas Graph                     • Inverted Spotlight Search Index
+          • Embedded Spotlight Search                    • Offline Cache Precaching
+                       │                                           │
+                       └─────────────────────┬─────────────────────┘
+                                             │
+                                             ▼
+                             1-Click Edge Deployment Modules
+                             • Netlify Edge (netlifyDeployer.ts)
+                             • GitHub Pages (githubDeployer.ts)
+```
+
+### 3.1 One-Shot Monolithic HTML App Synthesis (Static DOM-First)
+- **Direct Monolithic HTML Generation**:
+  - Turns markdown notes or entire folders into production-grade HTML applications in one shot with zero external build tools.
+  - **Static DOM-First Architecture**: Note bodies are pre-compiled into clean HTML fragments with frontmatter stripped and embedded directly into `<div class="documents-container">`, rather than serializing them into fragile JavaScript string arrays (`const docs = [...]`). This completely eliminates template string parsing errors and runtime JS syntax crashes.
+
+### 3.2 Client-Side Jinja2 Template Compiler (`jinjaCompiler.ts`)
+- High-performance browser-native template engine.
+- Supports variables (`{{ title }}`, `{{ content }}`), built-in filters (`escape`, `lower`, `upper`, `trim`), booleans and equality conditionals (`{% if is_pwa %}`), and collection loops (`{% for page in pages %}`) for offline navigation drawers.
+- Uses editable vault `_template.html` files stored directly in IndexedDB, allowing users to tweak CSS and layouts directly in CaffeineMD.
+
+### 3.3 Asset Inlining & Bundling (`assetBundler.ts`)
+- **Standalone HTML Exports**: Inlines local images, fonts, and media attachments as Base64 data URIs for 100% offline self-contained files.
+- **Production PWA ZIPs**: Extracts assets into an `/assets/` directory with explicit Cache-First Service Worker precaching (`sw.js`).
+
+### 3.4 Standalone Canvas Graph & Inverted Search
+- **Canvas Graph HUD (`canvasGraphHud.ts`)**: Exports bundle a self-contained 2D HTML5 canvas knowledge graph with interactive pan, zoom, and spring physics.
+- **Vault Search Index (`vaultSearchIndex.ts`)**: Generates an inverted token index with a built-in `⌘K` spotlight modal in every standalone export.
+
+### 3.5 1-Click Edge Distribution
+- **Netlify Edge Deployer ([`netlifyDeployer.ts`](file:///home/oloty/Dev/CaffeineMD/src/lib/export/deployers/netlifyDeployer.ts))**: Deploys exported static sites or PWA ZIP bundles directly to Netlify edge using personal access tokens.
+- **GitHub Pages Deployer ([`githubDeployer.ts`](file:///home/oloty/Dev/CaffeineMD/src/lib/export/deployers/githubDeployer.ts))**: Pushes static site bundles directly to a user's `gh-pages` repository branch via GitHub REST API with zero CI/CD build servers required.

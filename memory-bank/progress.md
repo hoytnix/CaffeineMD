@@ -38,6 +38,7 @@
 - [x] **Adjustable Theme Opacity**: Added 10%–100% theme background opacity slider in Theme Settings Section, dynamically tuning ambient background image opacity across all views.
 - [x] **Ambient Theme Background Image Layer Isolation**: Rendered backdrop image layers across Workspace, Settings, Split Pane, Editor, Diff, Plaintext, Database, Graph, and Tags views, with mobile-safe `background-attachment: scroll`, keeping cards, buttons, modals, and toolbars completely solid.
 - [x] **External Link Tap/Click Preview**: Configured `@tiptap/extension-link` with `openOnClick: false` and `target: null` to suppress native iOS WebKit link navigation. Intercepted `click` and `touchend` events in capture phase (`{ capture: true }`) with touch scroll rejection, pinned previews opened via click/tap against mouseout, provided 280ms hover preview on desktop, and kept the "Open" button navigating in a new tab (`target="_blank"`).
+- [x] **Production Maintainer Documentation Suite**: Authored 8 production-grade maintainer documentation files inside `/docs` covering Quick-Start, Architecture & State, Storage & Sync, Editor & Markdown, WASM Sandbox, Themes & Opacity Isolation, Databases & Graph, and Maintenance Playbooks.
 - [x] **Branding & Responsive UX**: "A TehWiz Production." link in settings footer, touch/mobile close file tab accessibility, and root welcome note seeding.
 - [x] **Customizable Keyboard Shortcuts**: Key combo recorder, conflict detection, and global accelerator dispatch.
 

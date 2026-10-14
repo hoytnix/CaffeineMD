@@ -1,6 +1,9 @@
 # Active Context: CaffeineMD
 
 ## Current Focus
+- **Production-Grade Maintainer Documentation Suite (`/docs`)**:
+  - Authored a comprehensive 8-document technical documentation suite covering architecture, state, storage, indexing, Tiptap extensions, WASM sandbox, themes, databases, 2D force graph, and maintainer playbooks.
+  - Linked documentation suite in [docs/README.md](file:///home/oloty/Dev/CaffeineMD/docs/README.md).
 - **External Link Preview on Tap/Click (iOS/Mobile & Desktop)**:
   - Eliminated native browser link navigation on iOS Safari and desktop within `contenteditable` by setting `target: null` in `@tiptap/extension-link`.
   - Registered `click` and `touchend` listeners in the capture phase (`{ capture: true }`) on the editor container in [IosLinkPreviewCard.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/components/IosLinkPreviewCard.tsx) to intercept taps before ProseMirror or native navigation.
