@@ -4,7 +4,7 @@ import { useRef, useEffect, useMemo } from 'react';
 import { useEditor, Editor } from '@tiptap/react';
 import { VaultFile } from '@/src/lib/storage/db';
 import {
-  parseMarkdownContent,
+  parseFrontmatter,
   markdownToEditorHtml,
   editorHtmlToMarkdown,
 } from '@/src/lib/markdown/serializer';
@@ -44,9 +44,16 @@ export function useTiptapInit({
 
   const extensions = useMemo(() => getEditorExtensions(callbacks), [callbacks]);
 
+  const initialContent = useMemo(() => {
+    if (!file || file.isBinary || !file.content) return '';
+    const { content: cleanBody } = parseFrontmatter(file.content);
+    return markdownToEditorHtml(cleanBody);
+  }, [file]);
+
   const editor = useEditor(
     {
       immediatelyRender: false,
+      content: initialContent,
       extensions,
       editorProps: {
         attributes: {
@@ -87,9 +94,9 @@ export function useTiptapInit({
     if (isFileSwitch) {
       const rafId = requestAnimationFrame(() => {
         try {
-          const parsed = parseMarkdownContent(file.content || '', file.title);
-          const editorHtml = markdownToEditorHtml(parsed.body);
-          editor.commands.setContent(editorHtml, { emitUpdate: false });
+          const { content: cleanBody } = parseFrontmatter(file.content || '');
+          const targetHtml = markdownToEditorHtml(cleanBody);
+          editor.commands.setContent(targetHtml, { emitUpdate: false });
           loadedPathRef.current = file.path;
         } catch (err) {
           console.warn('Failed to parse note markdown for editor:', err);
@@ -107,11 +114,11 @@ export function useTiptapInit({
 
     // Only update unfocused editor if significant external change occurred (e.g. sync reconciliation)
     try {
-      const parsed = parseMarkdownContent(file.content || '', file.title);
-      const editorHtml = markdownToEditorHtml(parsed.body);
+      const { content: cleanBody } = parseFrontmatter(file.content || '');
+      const targetHtml = markdownToEditorHtml(cleanBody);
       const currentHtml = editor.getHTML();
-      if (currentHtml === '<p></p>' || Math.abs(currentHtml.length - editorHtml.length) > 10) {
-        editor.commands.setContent(editorHtml, { emitUpdate: false });
+      if (currentHtml === '<p></p>' || Math.abs(currentHtml.length - targetHtml.length) > 10) {
+        editor.commands.setContent(targetHtml, { emitUpdate: false });
       }
     } catch (err) {
       console.warn('Failed to parse note markdown for editor:', err);

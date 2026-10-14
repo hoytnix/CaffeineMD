@@ -1,5 +1,5 @@
 import * as yaml from 'js-yaml';
-import { EisenhowerQuadrant } from '../storage/db';
+import type { EisenhowerQuadrant } from '../storage/db';
 
 export interface NoteProperties {
   title: string;
@@ -32,9 +32,13 @@ export interface ParsedMarkdownNote {
 }
 
 export const FRONTMATTER_REGEX = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
+export const CORRUPTED_FRONTMATTER_REGEX = /^---\r?\n\r?\n(title:\s[\s\S]*?)\r?\n\r?\n---\r?\n+/;
+
+export type FrontmatterData = NoteProperties | Record<string, any>;
 
 export interface ParsedFrontmatterResult extends NoteProperties {
   data: NoteProperties;
+  meta: NoteProperties;
   content: string;
 }
 
@@ -57,55 +61,132 @@ export function normalizeEisenhower(raw?: any): 'Urgent & Immediate' | 'Urgent &
 }
 
 /**
- * Extracts and parses YAML frontmatter, automatically merging missing keys with DEFAULT_NOTE_PROPERTIES
+ * Sanitizes frontmatter meta so it contains only flat primitives or string arrays,
+ * eliminating nested meta/frontmatter objects.
+ */
+function sanitizeMetaRecord(meta: Record<string, any>): Record<string, any> {
+  const sanitized: Record<string, any> = {};
+  for (const [key, val] of Object.entries(meta || {})) {
+    if (key === 'meta' || key === 'frontmatter' || key === 'content' || key === 'data') {
+      continue;
+    }
+    if (val === null || val === undefined) {
+      continue;
+    }
+    if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {
+      sanitized[key] = val;
+    } else if (Array.isArray(val)) {
+      sanitized[key] = val
+        .filter((item) => item !== null && item !== undefined && typeof item !== 'object')
+        .map((item) => String(item).trim());
+    }
+  }
+  delete sanitized.meta;
+  delete sanitized.frontmatter;
+  return sanitized;
+}
+
+/**
+ * Extracts and parses YAML frontmatter in an idempotent, self-healing loop.
+ * Strips all stacked duplicate and corrupted frontmatter headers, merging
+ * extracted key-value pairs (oldest to newest) and sanitizing meta properties.
  */
 export function parseFrontmatter(rawTextOrYaml: string): ParsedFrontmatterResult {
-  let parsed: any = {};
-  const match = rawTextOrYaml.match(FRONTMATTER_REGEX);
-  const yamlContent = match
-    ? match[1]
-    : rawTextOrYaml.startsWith('---')
-    ? rawTextOrYaml.replace(/^---\r?\n?/, '').replace(/\r?\n?---[\s\S]*$/, '')
-    : rawTextOrYaml;
+  let content = rawTextOrYaml || '';
+  const extractedBlocks: Record<string, any>[] = [];
 
-  try {
-    const loaded = yaml.load(yamlContent);
-    if (loaded && typeof loaded === 'object' && !Array.isArray(loaded)) {
-      parsed = loaded;
+  let matched = true;
+  while (matched) {
+    matched = false;
+
+    // 1. Check corrupted Tiptap-serialized frontmatter block
+    const corruptedMatch = content.match(CORRUPTED_FRONTMATTER_REGEX);
+    if (corruptedMatch) {
+      try {
+        const rawYaml = corruptedMatch[1].replace(/\r/g, '').replace(/\n\s*\n/g, '\n');
+        const loaded = yaml.load(rawYaml);
+        if (loaded && typeof loaded === 'object' && !Array.isArray(loaded)) {
+          extractedBlocks.push(loaded as Record<string, any>);
+        }
+      } catch (err) {
+        console.warn('Failed to parse corrupted YAML block:', err);
+      }
+      content = content.slice(corruptedMatch[0].length);
+      matched = true;
+      continue;
     }
-  } catch (err) {
-    console.warn('Failed to parse YAML frontmatter:', err);
+
+    // 2. Check standard YAML frontmatter block
+    const standardMatch = content.match(FRONTMATTER_REGEX);
+    if (standardMatch) {
+      try {
+        const loaded = yaml.load(standardMatch[1]);
+        if (loaded && typeof loaded === 'object' && !Array.isArray(loaded)) {
+          extractedBlocks.push(loaded as Record<string, any>);
+        }
+      } catch (err) {
+        console.warn('Failed to parse YAML frontmatter block:', err);
+      }
+      content = content.slice(standardMatch[0].length);
+      matched = true;
+      continue;
+    }
   }
 
+  // Fallback for standalone YAML content without ending delimiter
+  if (extractedBlocks.length === 0 && rawTextOrYaml && rawTextOrYaml.trim().startsWith('---')) {
+    try {
+      const yamlContent = rawTextOrYaml.replace(/^---\r?\n?/, '').replace(/\r?\n?---[\s\S]*$/, '');
+      const loaded = yaml.load(yamlContent);
+      if (loaded && typeof loaded === 'object' && !Array.isArray(loaded)) {
+        extractedBlocks.push(loaded as Record<string, any>);
+        content = '';
+      }
+    } catch {}
+  }
+
+  // Merge extracted key-value pairs oldest to newest (bottom-most to top-most)
+  let mergedParsed: Record<string, any> = {};
+  for (let i = extractedBlocks.length - 1; i >= 0; i--) {
+    mergedParsed = { ...mergedParsed, ...extractedBlocks[i] };
+  }
+
+  const sanitized = sanitizeMetaRecord(mergedParsed);
+
   const tags: string[] = [];
-  if (Array.isArray(parsed.tags)) {
-    parsed.tags.forEach((t: any) => {
+  if (Array.isArray(sanitized.tags)) {
+    sanitized.tags.forEach((t: any) => {
       if (typeof t === 'string' && t.trim()) {
         tags.push(t.trim().replace(/^#/, ''));
       }
     });
-  } else if (typeof parsed.tags === 'string' && parsed.tags.trim()) {
-    parsed.tags.split(',').forEach((t: string) => {
+  } else if (typeof sanitized.tags === 'string' && sanitized.tags.trim()) {
+    sanitized.tags.split(',').forEach((t: string) => {
       if (t.trim()) tags.push(t.trim().replace(/^#/, ''));
     });
   }
 
-  const cleanBody = match ? rawTextOrYaml.slice(match[0].length) : rawTextOrYaml;
-
   const result: NoteProperties = {
     ...DEFAULT_NOTE_PROPERTIES,
-    ...parsed,
-    title: parsed.title !== undefined && parsed.title !== null ? String(parsed.title).trim() : DEFAULT_NOTE_PROPERTIES.title,
+    ...sanitized,
+    title:
+      sanitized.title !== undefined && sanitized.title !== null
+        ? String(sanitized.title).trim()
+        : DEFAULT_NOTE_PROPERTIES.title,
     tags,
-    status: parsed.status ? String(parsed.status).trim() : DEFAULT_NOTE_PROPERTIES.status,
-    author: parsed.author !== undefined && parsed.author !== null ? String(parsed.author) : DEFAULT_NOTE_PROPERTIES.author,
-    eisenhower: normalizeEisenhower(parsed.eisenhower),
+    status: sanitized.status ? String(sanitized.status).trim() : DEFAULT_NOTE_PROPERTIES.status,
+    author:
+      sanitized.author !== undefined && sanitized.author !== null
+        ? String(sanitized.author)
+        : DEFAULT_NOTE_PROPERTIES.author,
+    eisenhower: normalizeEisenhower(sanitized.eisenhower),
   };
 
   return {
     ...result,
     data: result,
-    content: cleanBody,
+    meta: result,
+    content,
   };
 }
 
@@ -113,18 +194,12 @@ export function parseFrontmatter(rawTextOrYaml: string): ParsedFrontmatterResult
  * Parses raw markdown text, extracting YAML frontmatter, tags, and WikiLinks
  */
 export function parseMarkdownContent(rawText: string, fallbackTitle = 'Untitled'): ParsedMarkdownNote {
-  let body = rawText;
-  let frontmatter: NoteProperties = { ...DEFAULT_NOTE_PROPERTIES };
+  const parsedFm = parseFrontmatter(rawText || '');
+  let body = parsedFm.content;
+  let frontmatter: NoteProperties = parsedFm.data;
   const tagsSet = new Set<string>();
 
-  // 1. Extract YAML frontmatter
-  const match = rawText.match(FRONTMATTER_REGEX);
-  if (match) {
-    frontmatter = parseFrontmatter(match[0]);
-    body = rawText.slice(match[0].length);
-  }
-
-  // 2. Extract tags from frontmatter
+  // 1. Extract tags from frontmatter
   frontmatter.tags.forEach((t) => tagsSet.add(t));
 
   // Exclude code blocks and inline code when extracting tags and WikiLinks
@@ -140,7 +215,7 @@ export function parseMarkdownContent(rawText: string, fallbackTitle = 'Untitled'
     }
   }
 
-  // 3. Extract WikiLinks: [[Target]] or [[Target|Alias]]
+  // 2. Extract WikiLinks: [[Target]] or [[Target|Alias]]
   const wikiLinks: Array<{ target: string; alias?: string; raw: string }> = [];
   const wikiLinkMatches = bodyWithoutCode.matchAll(/\[\[(.*?)\]\]/g);
   for (const wlMatch of wikiLinkMatches) {
@@ -155,7 +230,7 @@ export function parseMarkdownContent(rawText: string, fallbackTitle = 'Untitled'
     }
   }
 
-  // 4. Determine title
+  // 3. Determine title
   let title = fallbackTitle;
   if (frontmatter.title && typeof frontmatter.title === 'string' && frontmatter.title.trim()) {
     title = frontmatter.title.trim();
@@ -188,34 +263,54 @@ export function parseMarkdownContent(rawText: string, fallbackTitle = 'Untitled'
 }
 
 /**
- * Re-serializes frontmatter and markdown body into standard raw file content
+ * Idempotently serializes frontmatter and markdown body into standard raw file content.
+ * Guarantees that any existing frontmatter on body is stripped first, preventing duplicate headers.
  */
-export function serializeMarkdownWithFrontmatter(
-  body: string,
-  frontmatter: Record<string, any>
+export function serializeFrontmatter(
+  meta: FrontmatterData,
+  body: string
 ): string {
-  const cleanFrontmatter: Record<string, any> = {
+  // Always strip any existing frontmatter from body first!
+  const { content: cleanBody } = parseFrontmatter(body || '');
+  const sanitized = sanitizeMetaRecord(meta || {});
+
+  const cleanFrontmatter: NoteProperties = {
     ...DEFAULT_NOTE_PROPERTIES,
+    ...sanitized,
+    title:
+      sanitized.title !== undefined && sanitized.title !== null
+        ? String(sanitized.title).trim()
+        : DEFAULT_NOTE_PROPERTIES.title,
+    tags: Array.isArray(sanitized.tags) ? sanitized.tags : [],
+    status: sanitized.status ? String(sanitized.status).trim() : DEFAULT_NOTE_PROPERTIES.status,
+    author:
+      sanitized.author !== undefined && sanitized.author !== null
+        ? String(sanitized.author)
+        : DEFAULT_NOTE_PROPERTIES.author,
+    eisenhower: normalizeEisenhower(sanitized.eisenhower),
   };
-
-  for (const [key, value] of Object.entries(frontmatter)) {
-    if (value !== undefined && value !== null) {
-      cleanFrontmatter[key] = value;
-    }
-  }
-
-  // Standardize title and eisenhower
-  if (cleanFrontmatter.eisenhower) {
-    cleanFrontmatter.eisenhower = normalizeEisenhower(cleanFrontmatter.eisenhower);
-  }
 
   try {
     const yamlString = yaml.dump(cleanFrontmatter, {
       lineWidth: -1,
       forceQuotes: false,
     });
-    return `---\n${yamlString.trim()}\n---\n\n${body.replace(/^\n+/, '')}`;
+    const trimmedBody = cleanBody.replace(/^\n+/, '');
+    return trimmedBody.length > 0
+      ? `---\n${yamlString.trim()}\n---\n\n${trimmedBody}`
+      : `---\n${yamlString.trim()}\n---\n`;
   } catch (e) {
-    return body;
+    return cleanBody;
   }
+}
+
+/**
+ * Re-serializes frontmatter and markdown body into standard raw file content.
+ * Delegates to serializeFrontmatter for idempotent, self-healing frontmatter handling.
+ */
+export function serializeMarkdownWithFrontmatter(
+  body: string,
+  frontmatter: Record<string, any>
+): string {
+  return serializeFrontmatter(frontmatter, body);
 }

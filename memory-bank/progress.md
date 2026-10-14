@@ -206,6 +206,14 @@
   - Defined `AI_THEME_CANDIDATE_MODELS` (`gemini-3.5-flash-lite`, `gemini-3.8-flash`, `gemini-3.7-flash`, `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-3.1-pro`) in [aiThemeService.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/themes/aiThemeService.ts) and shared with [route.ts](file:///home/oloty/Dev/CaffeineMD/app/api/theme/generate/route.ts).
   - Iterates through the cascading sequence client-side via `@google/genai` before falling back to `/api/theme/generate`.
   - Updated AI Theme Studio description and badge copy in [CustomThemeBuilder.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/settings/sections/CustomThemeBuilder.tsx) to "Gemini 3.5 Flash-Lite".
+- [x] **Infinite YAML Frontmatter Nesting & Self-Healing Pipeline Resolution**:
+  - Made `parseFrontmatter` self-healing by looping through stacked standard and corrupted Tiptap frontmatter blocks, merging extracted key-value pairs (oldest to newest), and stripping all duplicate headers from note content on load in [frontmatter.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/markdown/frontmatter.ts).
+  - Sanitized meta records to strictly contain flat primitives (`string | number | boolean`) and string arrays (`string[]`), eliminating nested `meta` / `frontmatter` properties.
+  - Made `serializeFrontmatter(meta, body)` 100% idempotent by always stripping existing frontmatter from `body` before serializing; re-exported in [serializer.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/markdown/serializer.ts) and delegated legacy `serializeMarkdownWithFrontmatter` to it.
+  - Isolated Tiptap editor body by extracting `cleanBody` with `parseFrontmatter` in [useTiptapInit.ts](file:///home/oloty/Dev/CaffeineMD/src/components/editor/hooks/useTiptapInit.ts) on editor initialization and reactive note syncing.
+  - Sanitized transitions in [useEditorModeSwitch.ts](file:///home/oloty/Dev/CaffeineMD/src/components/editor/hooks/useEditorModeSwitch.ts) ensuring raw frontmatter is stripped before converting to rich text HTML.
+  - Implemented `performSave` in [useEditorAutosave.ts](file:///home/oloty/Dev/CaffeineMD/src/components/editor/hooks/useEditorAutosave.ts) parsing input markdown, merging explicit plaintext frontmatter with stored meta, and serializing clean bodies.
+  - Implemented `handleUpdateProperties` in [TiptapEditor.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/TiptapEditor.tsx) extracting `cleanBody` before serialization and bound it to `<EditorHeader />` and `<BacklinksPanel />` (`<NotePropertiesCard />`).
 
 ## Verification Status
 - Lint verification: Passing cleanly with 0 errors and 0 warnings (`pnpm run lint`).

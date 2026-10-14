@@ -1,9 +1,15 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { EditorContent } from '@tiptap/react';
-import { db } from '@/src/lib/storage/db';
-import { parseMarkdownContent, serializeMarkdownWithFrontmatter } from '@/src/lib/markdown/serializer';
+import { db, VaultFile } from '@/src/lib/storage/db';
+import {
+  parseFrontmatter,
+  serializeFrontmatter,
+  editorHtmlToMarkdown,
+  NoteProperties,
+  DEFAULT_NOTE_PROPERTIES,
+} from '@/src/lib/markdown/serializer';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { BlockHandle } from './extensions/BlockHandle';
 import { BacklinksPanel } from './BacklinksPanel';
@@ -74,6 +80,47 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
     handlePaste,
     onAutoSave: handleSave,
   });
+
+  const handleUpdateProperties = useCallback(
+    async (newPropsOrFile: Partial<NoteProperties> | VaultFile) => {
+      if (!file) return;
+
+      const isVaultFile = 'frontmatter' in newPropsOrFile && Boolean(newPropsOrFile.frontmatter);
+      const incomingMeta = isVaultFile
+        ? (newPropsOrFile as VaultFile).frontmatter || {}
+        : (newPropsOrFile as Partial<NoteProperties>);
+
+      const newMeta: NoteProperties = {
+        ...DEFAULT_NOTE_PROPERTIES,
+        ...(file.frontmatter || {}),
+        ...incomingMeta,
+      };
+
+      const cleanBody =
+        editorMode === 'richtext' && editor && !editor.isDestroyed
+          ? parseFrontmatter(editorHtmlToMarkdown(editor.getHTML())).content
+          : parseFrontmatter(file.content || rawMarkdown || '').content;
+
+      const fullContent = serializeFrontmatter(newMeta, cleanBody);
+
+      const updatedFile: VaultFile = {
+        ...file,
+        ...(isVaultFile ? (newPropsOrFile as VaultFile) : {}),
+        content: fullContent,
+        frontmatter: newMeta,
+        title: newMeta.title || file.title,
+        tags: Array.isArray(newMeta.tags) ? newMeta.tags : file.tags,
+        eisenhower: newMeta.eisenhower || file.eisenhower,
+        updatedAt: Date.now(),
+      };
+
+      setFile(updatedFile);
+      setRawMarkdown(fullContent);
+      await db.files.put(updatedFile);
+      return updatedFile;
+    },
+    [file, editorMode, editor, rawMarkdown, setFile, setRawMarkdown]
+  );
 
   // Typewriter Scrolling: Keep current cursor vertically centered
   useEffect(() => {
@@ -168,7 +215,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
         saveSuccess={saveSuccess}
         onManualSave={() => handleManualSave(editor)}
         isSaveDisabled={isSaving || (editorMode === 'richtext' && (!editor || editor.isDestroyed))}
-        onUpdateProperties={updateProperties}
+        onUpdateProperties={handleUpdateProperties}
         onTitleChange={setTitle}
         isDirty={isDirty}
       />
@@ -242,14 +289,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
               editor={editor}
               rawMarkdown={rawMarkdown}
               editorMode={editorMode}
-              onUpdateFile={(updated) => {
-                setFile(updated);
-                db.files.put(updated);
-                if (editorMode === 'plaintext' || editorMode === 'diff') {
-                  const parsed = parseMarkdownContent(rawMarkdown, updated.title);
-                  setRawMarkdown(serializeMarkdownWithFrontmatter(parsed.body, updated.frontmatter || {}));
-                }
-              }}
+              onUpdateFile={handleUpdateProperties}
             />
           </div>
 

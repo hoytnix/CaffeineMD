@@ -190,9 +190,10 @@ export function useNotePersistence({ filePath }: UseNotePersistenceOptions) {
   const handleSaveRaw = useCallback(
     async (newRawContent: string, currentFile: VaultFile) => {
       const parsed = parseMarkdownContent(newRawContent, currentFile.title);
+      const fullSerialized = serializeMarkdownWithFrontmatter(parsed.body, parsed.frontmatter);
       return commitFileUpdate(
         currentFile,
-        newRawContent,
+        fullSerialized,
         parsed.title || title,
         parsed.frontmatter,
         parsed.tags

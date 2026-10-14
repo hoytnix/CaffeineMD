@@ -4,13 +4,14 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { Editor } from '@tiptap/react';
 import { useNotePersistence } from '@/src/hooks/useNotePersistence';
 import {
-  parseMarkdownContent,
-  serializeMarkdownWithFrontmatter,
+  parseFrontmatter,
+  serializeFrontmatter,
   markdownToEditorHtml,
   editorHtmlToMarkdown,
 } from '@/src/lib/markdown/serializer';
 import { useEditorModeSwitch } from './useEditorModeSwitch';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
+import { VaultFile } from '@/src/lib/storage/db';
 
 export interface UseEditorAutosaveProps {
   filePath: string;
@@ -59,6 +60,31 @@ export function useEditorAutosave({ filePath, editor }: UseEditorAutosaveProps) 
   const dirtyStartTimeRef = useRef<number | null>(null);
   const autosaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  /**
+   * Idempotent saver: strips existing frontmatter from input, merges meta, and persists.
+   */
+  const performSave = useCallback(
+    async (inputMarkdown: string, targetFile?: VaultFile | null) => {
+      const currentFile = targetFile || fileRef.current;
+      if (!currentFile) return;
+
+      const currentMeta = currentFile.frontmatter || {};
+      const parsed = parseFrontmatter(inputMarkdown);
+      const mergedMeta =
+        Object.keys(parsed.meta).length > 0
+          ? { ...currentMeta, ...parsed.meta }
+          : currentMeta;
+
+      const fullRaw = serializeFrontmatter(mergedMeta, parsed.content);
+      const updated = await persistRawMarkdown(fullRaw, currentFile);
+      if (updated?.content) {
+        lastSavedContentRef.current = updated.content;
+      }
+      return updated;
+    },
+    [persistRawMarkdown]
+  );
+
   // Synchronous flush helper for unmount, note switch, and tab close
   const flushImmediateDirty = useCallback(() => {
     if (autosaveTimerRef.current) {
@@ -71,13 +97,9 @@ export function useEditorAutosave({ filePath, editor }: UseEditorAutosaveProps) 
       isDirtyRef.current = false;
       dirtyContentRef.current = null;
       dirtyStartTimeRef.current = null;
-      if (pending.mode === 'rich') {
-        persistRichMarkdown(pending.content, currentFile);
-      } else {
-        persistRawMarkdown(pending.content, currentFile);
-      }
+      performSave(pending.content, currentFile);
     }
-  }, [persistRichMarkdown, persistRawMarkdown]);
+  }, [performSave]);
 
   // Background timer flush helper
   const flushPendingSave = useCallback(async () => {
@@ -99,19 +121,11 @@ export function useEditorAutosave({ filePath, editor }: UseEditorAutosaveProps) 
     setIsDirty(false);
 
     try {
-      let updated: any;
-      if (pending.mode === 'rich') {
-        updated = await persistRichMarkdown(pending.content, currentFile);
-      } else {
-        updated = await persistRawMarkdown(pending.content, currentFile);
-      }
-      if (updated?.content) {
-        lastSavedContentRef.current = updated.content;
-      }
+      await performSave(pending.content, currentFile);
     } catch (err) {
       console.warn('Flush autosave failed:', err);
     }
-  }, [persistRichMarkdown, persistRawMarkdown]);
+  }, [performSave]);
 
   // Unified scheduler for rich and plain text autosaves
   const triggerAutosave = useCallback(
@@ -119,10 +133,35 @@ export function useEditorAutosave({ filePath, editor }: UseEditorAutosaveProps) 
       const targetFile = currentFile || file;
       if (!targetFile) return;
 
-      const fullRaw =
-        mode === 'rich'
-          ? serializeMarkdownWithFrontmatter(content, targetFile.frontmatter || {})
-          : content;
+      const currentMeta = targetFile.frontmatter || {};
+      const parsed = parseFrontmatter(content);
+      const mergedMeta =
+        Object.keys(parsed.meta).length > 0
+          ? { ...currentMeta, ...parsed.meta }
+          : currentMeta;
+
+      const fullRaw = serializeFrontmatter(mergedMeta, parsed.content);
+      const baseline = lastSavedContentRef.current || targetFile.content || '';
+
+      // If content matches saved baseline, reset dirty status and clear pending timer
+      if (isContentEqual(fullRaw, baseline)) {
+        isDirtyRef.current = false;
+        dirtyContentRef.current = null;
+        dirtyStartTimeRef.current = null;
+        if (autosaveTimerRef.current) {
+          clearTimeout(autosaveTimerRef.current);
+          autosaveTimerRef.current = null;
+        }
+        setIsDirty(false);
+        setRawMarkdown(baseline);
+        return;
+      }
+
+      // Legitimate unsaved changes detected
+      isDirtyRef.current = true;
+      setIsDirty(true);
+      dirtyContentRef.current = { mode, content: fullRaw };
+      setRawMarkdown(fullRaw);
 
       const baseline = lastSavedContentRef.current || targetFile.content || '';
 
@@ -216,8 +255,8 @@ export function useEditorAutosave({ filePath, editor }: UseEditorAutosaveProps) 
       setTitle(file.title);
       if (editor && !editor.isDestroyed && editor.schema) {
         try {
-          const parsed = parseMarkdownContent(baseline, file.title);
-          editor.commands.setContent(markdownToEditorHtml(parsed.body), { emitUpdate: false });
+          const { content: cleanBody } = parseFrontmatter(baseline);
+          editor.commands.setContent(markdownToEditorHtml(cleanBody), { emitUpdate: false });
         } catch (err) {
           console.warn('Error reverting editor:', err);
         }
@@ -237,15 +276,13 @@ export function useEditorAutosave({ filePath, editor }: UseEditorAutosaveProps) 
 
       if (editorMode === 'plaintext' || editorMode === 'diff') {
         if (file) {
-          const updated = await persistRawMarkdown(rawMarkdown, file);
-          if (updated?.content) lastSavedContentRef.current = updated.content;
+          await performSave(rawMarkdown, file);
         }
       } else if (editor && !editor.isDestroyed && editor.schema && file) {
-        const updated = await persistRichMarkdown(editorHtmlToMarkdown(editor.getHTML()), file);
-        if (updated?.content) lastSavedContentRef.current = updated.content;
+        await performSave(editorHtmlToMarkdown(editor.getHTML()), file);
       }
     },
-    [editorMode, file, persistRichMarkdown, persistRawMarkdown, rawMarkdown]
+    [editorMode, file, performSave, rawMarkdown]
   );
 
   // Setup Cmd+S / Ctrl+S global save shortcut listener
@@ -266,7 +303,7 @@ export function useEditorAutosave({ filePath, editor }: UseEditorAutosaveProps) 
     file, setFile, title, setTitle, isSaving, saveSuccess, loading,
     rawMarkdown, setRawMarkdown, editorMode, setEditorMode,
     handleSave: scheduleAutosave, handleSaveRaw: scheduleAutosaveRaw,
-    scheduleAutosave, scheduleAutosaveRaw, flushPendingSave,
+    scheduleAutosave, scheduleAutosaveRaw, flushPendingSave, performSave,
     isDirty, autosaveInterval, updateProperties, saveTimeoutRef: autosaveTimerRef,
     switchToPlaintext, switchToRichText, switchToDiff, handleRevert, handleManualSave,
   };

@@ -4,8 +4,8 @@ import { useEffect, useRef, useCallback } from 'react';
 import { Editor } from '@tiptap/react';
 import { VaultFile } from '@/src/lib/storage/db';
 import {
-  parseMarkdownContent,
-  serializeMarkdownWithFrontmatter,
+  parseFrontmatter,
+  serializeFrontmatter,
   markdownToEditorHtml,
   editorHtmlToMarkdown,
 } from '@/src/lib/markdown/serializer';
@@ -50,7 +50,7 @@ export function useEditorModeSwitch({
       if (editor && !editor.isDestroyed && editor.schema) {
         try {
           const markdownBody = editorHtmlToMarkdown(editor.getHTML());
-          const fullRaw = serializeMarkdownWithFrontmatter(markdownBody, file?.frontmatter || {});
+          const fullRaw = serializeFrontmatter(file?.frontmatter || {}, markdownBody);
           setRawMarkdown(fullRaw);
         } catch {
           if (file && file.content) setRawMarkdown(file.content);
@@ -63,8 +63,8 @@ export function useEditorModeSwitch({
       const currentRaw = rawMarkdownRef.current || file?.content || '';
       if (file) {
         try {
-          const parsed = parseMarkdownContent(currentRaw, file.title);
-          const html = markdownToEditorHtml(parsed.body);
+          const { content: cleanBody } = parseFrontmatter(currentRaw);
+          const html = markdownToEditorHtml(cleanBody);
           if (editor && !editor.isDestroyed && editor.schema) {
             editor.commands.setContent(html, { emitUpdate: false });
           }
@@ -84,7 +84,7 @@ export function useEditorModeSwitch({
       if (editorMode === 'richtext' && activeEditor && !activeEditor.isDestroyed && activeEditor.schema) {
         try {
           const markdownBody = editorHtmlToMarkdown(activeEditor.getHTML());
-          const fullRaw = serializeMarkdownWithFrontmatter(markdownBody, file?.frontmatter || {});
+          const fullRaw = serializeFrontmatter(file?.frontmatter || {}, markdownBody);
           setRawMarkdown(fullRaw);
         } catch {
           if (file) setRawMarkdown(file.content || '');
@@ -103,8 +103,8 @@ export function useEditorModeSwitch({
       const currentRaw = rawMarkdownRef.current || file?.content || '';
       if (file) {
         try {
-          const parsed = parseMarkdownContent(currentRaw, file.title);
-          const html = markdownToEditorHtml(parsed.body);
+          const { content: cleanBody } = parseFrontmatter(currentRaw);
+          const html = markdownToEditorHtml(cleanBody);
           if (activeEditor && !activeEditor.isDestroyed && activeEditor.schema) {
             activeEditor.commands.setContent(html, { emitUpdate: false });
           }
@@ -126,7 +126,7 @@ export function useEditorModeSwitch({
       if (editorMode === 'richtext' && activeEditor && !activeEditor.isDestroyed && activeEditor.schema) {
         try {
           const markdownBody = editorHtmlToMarkdown(activeEditor.getHTML());
-          const fullRaw = serializeMarkdownWithFrontmatter(markdownBody, file?.frontmatter || {});
+          const fullRaw = serializeFrontmatter(file?.frontmatter || {}, markdownBody);
           setRawMarkdown(fullRaw);
         } catch {
           if (file) setRawMarkdown(file.content || '');
