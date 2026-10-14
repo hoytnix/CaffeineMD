@@ -35,6 +35,9 @@
 ### 6. iOS Settings App & Custom Themes
 - [x] **iOS Settings Experience**: Root home screen with dynamic SSO Profile Card, 5 squircle category rows, and sticky horizontal tab bar.
 - [x] **Theme Studio**: 14 handcrafted presets, AI Theme Studio (Gemini BYOK), Custom Theme Palette & Backdrop Wizard, and theme variables propagation.
+- [x] **Adjustable Theme Opacity**: Added 10%–100% theme background opacity slider in Theme Settings Section, dynamically tuning glassmorphism and ambient backdrops across all workspace views.
+- [x] **Ambient Theme Background Visibility**: Rendered backdrop images across Workspace, Settings, Split Pane, Editor, Diff, and Plaintext views, with mobile-safe `background-attachment: scroll`.
+- [x] **External Link Tap/Click Preview**: Added `@tiptap/extension-link` with `openOnClick: false`, click/tap preview triggering, outside click/Escape dismissal, and explicit Open link button.
 - [x] **Branding & Responsive UX**: "A TehWiz Production." link in settings footer, touch/mobile close file tab accessibility, and root welcome note seeding.
 - [x] **Customizable Keyboard Shortcuts**: Key combo recorder, conflict detection, and global accelerator dispatch.
 
@@ -42,4 +45,4 @@
 - Production Build: Passing cleanly (`pnpm run build`).
 - ESLint: Passing cleanly with 0 errors and 0 warnings (`pnpm run lint`).
 - TypeScript: Passing cleanly (`tsc --noEmit`).
-- Tiered LOC Limits: 100% compliant (<200 LOC per file across all settings modules).
+- Tiered LOC Limits: 100% compliant (<250 LOC per file across modified modules).

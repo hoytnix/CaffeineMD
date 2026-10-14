@@ -197,7 +197,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
       }}
       onDrop={() => setIsDraggingOver(false)}
       style={{ backgroundColor: 'var(--theme-bg-primary-glass, var(--theme-bg-primary))' }}
-      className="flex-1 flex flex-col h-full overflow-hidden min-w-0 bg-[var(--background)] text-[var(--foreground)] relative"
+      className="flex-1 flex flex-col h-full overflow-hidden min-w-0 text-[var(--foreground)] relative"
     >
       <EditorDragOverlay
         isDraggingOver={isDraggingOver}

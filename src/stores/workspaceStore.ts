@@ -129,6 +129,8 @@ export interface WorkspaceState {
   theme: string;
   customTheme: ThemeDefinition;
   customThemeColors: Partial<ThemeDefinition>;
+  themeOpacity: number;
+  setThemeOpacity: (opacity: number) => void;
   setTheme: (themeId: string) => void;
   setCustomThemeColors: (colors: Partial<ThemeDefinition>) => void;
   updateCustomTheme: (tokens: Partial<ThemeDefinition>) => void;
@@ -229,6 +231,20 @@ const getInitialStoredTheme = (): string => {
     localStorage.getItem('kite-theme-id') ||
     'dark'
   );
+};
+
+const getInitialStoredThemeOpacity = (): number => {
+  if (typeof window === 'undefined') return 0.85;
+  const raw =
+    localStorage.getItem('caffeinemd-theme-opacity') ||
+    localStorage.getItem('kite-theme-opacity');
+  if (raw !== null) {
+    const parsed = parseFloat(raw);
+    if (!isNaN(parsed) && parsed >= 0.05 && parsed <= 1.0) {
+      return parsed;
+    }
+  }
+  return 0.85;
 };
 
 const getInitialStoredCustomColors = (): ThemeDefinition => {
@@ -431,6 +447,23 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   theme: getInitialStoredTheme(),
   customTheme: getInitialStoredCustomColors(),
   customThemeColors: getInitialStoredCustomColors(),
+  themeOpacity: getInitialStoredThemeOpacity(),
+  setThemeOpacity: (opacity: number) => {
+    const clamped = Math.max(0.1, Math.min(1.0, Number(opacity.toFixed(2))));
+    set({ themeOpacity: clamped });
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('caffeinemd-theme-opacity', String(clamped));
+        localStorage.setItem('kite-theme-opacity', String(clamped));
+      } catch {}
+      document.documentElement.style.setProperty('--theme-opacity', String(clamped));
+      document.documentElement.style.setProperty('--bg-image-opacity', String(clamped));
+    }
+    const currentCustom = get().customThemeColors || get().customTheme;
+    const currentThemeId = get().themeId;
+    const target = { ...currentCustom, bgOpacity: clamped };
+    applyThemeId(currentThemeId, target);
+  },
   setTheme: (themeId) => {
     set({ themeId, theme: themeId });
     if (typeof window !== 'undefined') {
@@ -440,7 +473,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       } catch {}
     }
     const currentCustom = get().customThemeColors || get().customTheme;
-    applyThemeId(themeId, currentCustom);
+    const currentOpacity = get().themeOpacity;
+    applyThemeId(themeId, { ...currentCustom, bgOpacity: currentOpacity });
   },
   setCustomThemeColors: (colors) => {
     const updated: ThemeDefinition = {
@@ -499,16 +533,30 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         } catch {}
       }
 
+      const rawOpacity =
+        localStorage.getItem('caffeinemd-theme-opacity') ||
+        localStorage.getItem('kite-theme-opacity');
+      let savedOpacity = get().themeOpacity;
+      if (rawOpacity !== null) {
+        const parsed = parseFloat(rawOpacity);
+        if (!isNaN(parsed) && parsed >= 0.05 && parsed <= 1.0) {
+          savedOpacity = parsed;
+        }
+      }
+
       set({
         themeId: savedTheme,
         theme: savedTheme,
         customTheme: savedCustomColors,
         customThemeColors: savedCustomColors,
+        themeOpacity: savedOpacity,
         editorFontFamily: savedFont,
         keyboardShortcuts: savedShortcuts,
       });
 
-      applyThemeId(savedTheme, savedCustomColors);
+      document.documentElement.style.setProperty('--theme-opacity', String(savedOpacity));
+      document.documentElement.style.setProperty('--bg-image-opacity', String(savedOpacity));
+      applyThemeId(savedTheme, { ...savedCustomColors, bgOpacity: savedOpacity });
     } catch (err) {
       console.warn('Theme hydration error:', err);
     }

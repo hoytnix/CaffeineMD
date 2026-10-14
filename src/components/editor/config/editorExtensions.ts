@@ -13,6 +13,7 @@ import { TableHeader } from '@tiptap/extension-table-header';
 import Image from '@tiptap/extension-image';
 import Underline from '@tiptap/extension-underline';
 import { createLowlight, all } from 'lowlight';
+import Link from '@tiptap/extension-link';
 import { SlashCommands } from '../extensions/SlashCommand';
 import { WikiLinkNode } from '../extensions/WikiLink';
 
@@ -49,6 +50,15 @@ export function getEditorExtensions(callbacks: EditorExtensionCallbacks): AnyExt
       placeholder: 'Type "/" for commands, "[[" to link notes...',
     }),
     Underline,
+    Link.configure({
+      openOnClick: false,
+      autolink: true,
+      defaultProtocol: 'https',
+      HTMLAttributes: {
+        rel: 'noopener noreferrer',
+        target: '_blank',
+      },
+    }),
     TaskList,
     TaskItem.configure({ nested: true }),
     Table.configure({ resizable: true }),

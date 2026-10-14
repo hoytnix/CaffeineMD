@@ -239,12 +239,16 @@ export function PlaintextMarkdownEditor({
       </div>
 
       {/* Line Numbered Raw Markdown Editor */}
-      <div className="relative flex rounded-xl border border-[var(--border)] bg-[var(--card)]/60 overflow-hidden shadow-2xs focus-within:border-[var(--accent)] transition-colors h-[550px] sm:h-[680px] max-h-[calc(100vh-220px)] min-h-[350px] sm:min-h-[480px]">
+      <div
+        style={{ backgroundColor: 'var(--theme-bg-card-glass, var(--theme-bg-card))' }}
+        className="relative flex rounded-xl border border-[var(--border)] overflow-hidden shadow-2xs backdrop-blur-md focus-within:border-[var(--accent)] transition-colors h-[550px] sm:h-[680px] max-h-[calc(100vh-220px)] min-h-[350px] sm:min-h-[480px]"
+      >
         {/* Line Numbers Gutter */}
         <div
           ref={gutterRef}
           onWheel={handleGutterWheel}
-          className="w-10 sm:w-11 select-none py-2.5 sm:py-4 pr-2 sm:pr-2.5 text-right font-mono text-[13px] leading-7 text-neutral-400 border-r border-[var(--border)] bg-[var(--card)] overflow-hidden shrink-0 h-full"
+          style={{ backgroundColor: 'var(--theme-bg-sidebar-glass, var(--theme-bg-sidebar))' }}
+          className="w-10 sm:w-11 select-none py-2.5 sm:py-4 pr-2 sm:pr-2.5 text-right font-mono text-[13px] leading-7 text-neutral-400 border-r border-[var(--border)] overflow-hidden shrink-0 h-full backdrop-blur-sm"
         >
           {lines.map((_, i) => (
             <div

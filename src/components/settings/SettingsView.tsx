@@ -44,6 +44,7 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
     showToast,
     setCreateWorkspaceModalOpen,
     editorFontSize,
+    themeOpacity,
   } = useWorkspaceStore();
 
   useEffect(() => {
@@ -99,12 +100,28 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
 
   const activeThemePreset = THEME_PRESETS.find((t) => t.id === themeId);
   const themeName = activeThemePreset?.name || (themeId === 'custom' ? customTheme?.name || 'Custom' : themeId);
+  const bgImageUrl =
+    (themeId === 'custom'
+      ? customTheme?.backgroundImageUrl || customTheme?.bgImageUrl
+      : activeThemePreset?.backgroundImageUrl || activeThemePreset?.bgImageUrl) || '';
 
   return (
     <div
       style={{ backgroundColor: 'var(--theme-bg-primary-glass, var(--theme-bg-primary))' }}
-      className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col transition-colors duration-200"
+      className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col transition-colors duration-200 relative"
     >
+      {/* Ambient Theme Background Image Layer (Adjustable Opacity) */}
+      {bgImageUrl && (
+        <div
+          aria-hidden="true"
+          style={{
+            backgroundImage: `url("${bgImageUrl}")`,
+            opacity: Math.max(0.08, 1 - (themeOpacity * 0.75)),
+          }}
+          className="fixed inset-0 pointer-events-none bg-cover bg-center bg-no-repeat z-0"
+        />
+      )}
+
       <SettingsHeader
         activeScreen={activeScreen}
         setActiveScreen={setActiveScreen}

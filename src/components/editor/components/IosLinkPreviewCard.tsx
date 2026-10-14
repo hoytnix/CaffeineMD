@@ -179,16 +179,20 @@ function ExternalCardContent({
         )}
         <p className="text-[10px] text-neutral-400 truncate font-mono mb-2">{data.href}</p>
         <div className="flex items-center justify-between border-t border-[var(--theme-border)]/60 pt-2">
-          <span className="text-[9px] uppercase tracking-wider text-neutral-500 font-semibold">{data.hostname}</span>
+          <a
+            href={data.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--theme-accent,#6366f1)] text-white hover:brightness-110 transition-all shadow-xs cursor-pointer"
+            title="Open Link in new tab"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            <span>Open</span>
+          </a>
           <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => window.open(data.href, '_blank', 'noopener,noreferrer')}
-              className="p-1 rounded-md hover:bg-white/10 text-neutral-400 hover:text-[var(--theme-accent,#6366f1)] transition-colors cursor-pointer"
-              title="Open Link"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-            </button>
             <button
               type="button"
               onClick={() => {
@@ -196,7 +200,7 @@ function ExternalCardContent({
                 setCopied(true);
                 setTimeout(() => setCopied(false), 1400);
               }}
-              className="p-1 rounded-md hover:bg-white/10 text-neutral-400 hover:text-emerald-400 transition-colors cursor-pointer"
+              className="p-1.5 rounded-md hover:bg-white/10 text-neutral-400 hover:text-emerald-400 transition-colors cursor-pointer"
               title="Copy URL"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -207,7 +211,7 @@ function ExternalCardContent({
                 editor?.chain().focus().extendMarkRange('link').unsetLink().run();
                 onClose();
               }}
-              className="p-1 rounded-md hover:bg-red-500/20 text-neutral-400 hover:text-red-400 transition-colors cursor-pointer"
+              className="p-1.5 rounded-md hover:bg-red-500/20 text-neutral-400 hover:text-red-400 transition-colors cursor-pointer"
               title="Remove Link"
             >
               <Unlink className="w-3.5 h-3.5" />
@@ -234,6 +238,29 @@ export function IosLinkPreviewCard({ editor }: { editor?: Editor | null }) {
     timerRef.current = setTimeout(() => setData(null), ms);
   }, [clearTimer]);
 
+  const resolvePreviewData = useCallback((target: HTMLElement): PreviewData | null => {
+    const wikiTarget = target.getAttribute('data-wikilink') || (target.classList.contains('wiki-link') ? target.textContent?.replace(/[\[\]]/g, '').trim() : null);
+    const href = target.getAttribute('href');
+    const rect = target.getBoundingClientRect();
+
+    if (wikiTarget) {
+      const cleanName = wikiTarget.trim();
+      const found = notes.find((n) => n.title?.toLowerCase() === cleanName.toLowerCase() || n.name.replace(/\.[^/.]+$/, '').toLowerCase() === cleanName.toLowerCase());
+      return { type: 'wikilink', href: `#${cleanName}`, title: cleanName, targetTitle: cleanName, targetNote: found, rect };
+    } else if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
+      try {
+        const u = new URL(href);
+        const yt = href.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/)?.[1] || null;
+        const isImg = /\.(png|jpe?g|webp|gif|svg)(\?.*)?$/i.test(href);
+        const slug = u.pathname.split('/').filter(Boolean).pop();
+        const text = target.textContent?.trim();
+        const title = text && text !== href ? text : slug ? decodeURIComponent(slug).replace(/[-_]/g, ' ') : u.hostname;
+        return { type: 'external', href, title, hostname: u.hostname, videoId: yt, isImage: isImg, rect };
+      } catch {}
+    }
+    return null;
+  }, [notes]);
+
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
     const dom = editor.view.dom;
@@ -242,27 +269,10 @@ export function IosLinkPreviewCard({ editor }: { editor?: Editor | null }) {
       const target = (e.target as HTMLElement).closest('a[href], [data-wikilink], .wiki-link') as HTMLElement;
       if (!target || !dom.contains(target)) return;
 
-      const wikiTarget = target.getAttribute('data-wikilink') || (target.classList.contains('wiki-link') ? target.textContent?.replace(/[\[\]]/g, '').trim() : null);
-      const href = target.getAttribute('href');
-
       clearTimer();
       timerRef.current = setTimeout(() => {
-        const rect = target.getBoundingClientRect();
-        if (wikiTarget) {
-          const cleanName = wikiTarget.trim();
-          const found = notes.find((n) => n.title?.toLowerCase() === cleanName.toLowerCase() || n.name.replace(/\.[^/.]+$/, '').toLowerCase() === cleanName.toLowerCase());
-          setData({ type: 'wikilink', href: `#${cleanName}`, title: cleanName, targetTitle: cleanName, targetNote: found, rect });
-        } else if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
-          try {
-            const u = new URL(href);
-            const yt = href.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/)?.[1] || null;
-            const isImg = /\.(png|jpe?g|webp|gif|svg)(\?.*)?$/i.test(href);
-            const slug = u.pathname.split('/').filter(Boolean).pop();
-            const text = target.textContent?.trim();
-            const title = text && text !== href ? text : slug ? decodeURIComponent(slug).replace(/[-_]/g, ' ') : u.hostname;
-            setData({ type: 'external', href, title, hostname: u.hostname, videoId: yt, isImage: isImg, rect });
-          } catch {}
-        }
+        const preview = resolvePreviewData(target);
+        if (preview) setData(preview);
       }, 140);
     };
 
@@ -271,14 +281,54 @@ export function IosLinkPreviewCard({ editor }: { editor?: Editor | null }) {
       if (target) closeWithDelay();
     };
 
+    const handleClick = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest('a[href]:not([data-wikilink])') as HTMLElement;
+      if (!target || !dom.contains(target)) return;
+      const href = target.getAttribute('href');
+      if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
+        e.preventDefault();
+        e.stopPropagation();
+        clearTimer();
+        const preview = resolvePreviewData(target);
+        if (preview) {
+          setData(preview);
+        }
+      }
+    };
+
     dom.addEventListener('mouseover', handleMouseOver);
     dom.addEventListener('mouseout', handleMouseOut);
+    dom.addEventListener('click', handleClick, true);
     return () => {
       dom.removeEventListener('mouseover', handleMouseOver);
       dom.removeEventListener('mouseout', handleMouseOut);
+      dom.removeEventListener('click', handleClick, true);
       clearTimer();
     };
-  }, [editor, notes, closeWithDelay, clearTimer]);
+  }, [editor, resolvePreviewData, closeWithDelay, clearTimer]);
+
+  useEffect(() => {
+    if (!data) return;
+
+    const handleGlobalClick = (e: MouseEvent | TouchEvent) => {
+      if (cardRef.current && !cardRef.current.contains(e.target as Node)) {
+        setData(null);
+      }
+    };
+
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setData(null);
+      }
+    };
+
+    document.addEventListener('pointerdown', handleGlobalClick);
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handleGlobalClick);
+      document.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, [data]);
 
   if (!data || typeof document === 'undefined') return null;
 

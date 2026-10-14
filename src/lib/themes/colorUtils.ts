@@ -192,10 +192,15 @@ export function applyThemeToDocument(colors: ThemeColors | ThemeDefinition): voi
     : (colors.backgroundGradient || 'none');
   root.style.setProperty('--theme-bg-image', bgImageValue);
 
+  // Opacity settings
+  const themeOpacity = typeof colors.bgOpacity === 'number' ? colors.bgOpacity : 0.85;
+  root.style.setProperty('--theme-opacity', String(themeOpacity));
+  root.style.setProperty('--bg-image-opacity', String(themeOpacity));
+
   // Set translucent glassmorphic CSS variables
-  root.style.setProperty('--theme-bg-primary-glass', hexToRgba(bgPrimary, 0.78));
-  root.style.setProperty('--theme-bg-sidebar-glass', hexToRgba(bgSidebar, 0.82));
-  root.style.setProperty('--theme-bg-card-glass', hexToRgba(bgCard, 0.85));
+  root.style.setProperty('--theme-bg-primary-glass', hexToRgba(bgPrimary, themeOpacity));
+  root.style.setProperty('--theme-bg-sidebar-glass', hexToRgba(bgSidebar, Math.min(1, themeOpacity + 0.05)));
+  root.style.setProperty('--theme-bg-card-glass', hexToRgba(bgCard, Math.min(1, themeOpacity + 0.08)));
 
   // Guarantee universal color emoji font fallback across all themes
   const withEmojiFallback = (font: string): string => {

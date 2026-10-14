@@ -1,6 +1,21 @@
 import { db, VaultFile } from '@/src/lib/storage/db';
 import { detectCodeLanguage } from '@/src/lib/markdown/markdownToHtml';
 
+export function handleExternalLinkDomClick(event: MouseEvent): boolean {
+  const target = event.target as HTMLElement;
+  if (!target) return false;
+  const linkEl = target.closest('a[href]:not([data-wikilink])') as HTMLAnchorElement | null;
+  if (!linkEl) return false;
+
+  const href = linkEl.getAttribute('href');
+  if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
+    event.preventDefault();
+    event.stopPropagation();
+    return true;
+  }
+  return false;
+}
+
 export function handleWikiLinkDomClick(
   event: MouseEvent,
   openFileTab: (path: string, title?: string) => void,

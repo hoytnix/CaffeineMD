@@ -610,3 +610,10 @@ html[data-has-bg-image="true"] .bg-slate-800\/60 {
   background-color: var(--theme-bg-card-glass) !important;
 }
 
+@media (max-width: 768px) {
+  body {
+    background-attachment: scroll !important;
+  }
+}
+
+

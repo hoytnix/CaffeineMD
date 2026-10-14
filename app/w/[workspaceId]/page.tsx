@@ -49,6 +49,9 @@ export default function WorkspacePage() {
     toggleSplitPane,
     keyboardShortcuts,
     setTheme,
+    themeId,
+    customTheme,
+    themeOpacity,
     hydrateThemeFromStorage,
     toastMessage,
     isFocusMode,
@@ -130,11 +133,29 @@ export default function WorkspacePage() {
     hydrateThemeFromStorage();
   }, [hydrateThemeFromStorage]);
 
+  const activeThemePreset = THEME_PRESETS.find((t) => t.id === themeId);
+  const bgImageUrl =
+    (themeId === 'custom'
+      ? customTheme?.backgroundImageUrl || customTheme?.bgImageUrl
+      : activeThemePreset?.backgroundImageUrl || activeThemePreset?.bgImageUrl) || '';
+
   return (
     <div
       style={{ backgroundColor: 'var(--theme-bg-primary-glass, var(--theme-bg-primary))' }}
       className="flex flex-col h-[100dvh] w-screen overflow-hidden bg-[var(--background)] text-[var(--foreground)] relative"
     >
+      {/* Ambient Theme Background Image Layer (Mobile and Desktop) */}
+      {bgImageUrl && (
+        <div
+          aria-hidden="true"
+          style={{
+            backgroundImage: `url("${bgImageUrl}")`,
+            opacity: Math.max(0.08, 1 - (themeOpacity * 0.75)),
+          }}
+          className="fixed inset-0 pointer-events-none bg-cover bg-center bg-no-repeat z-0"
+        />
+      )}
+
       {/* 1. Top Navigation Bar (Hidden in Focus Mode) */}
       {!isFocusMode && <WorkspaceHeader />}
 

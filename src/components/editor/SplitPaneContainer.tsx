@@ -66,7 +66,7 @@ export function SplitPaneContainer({ primaryFilePath }: SplitPaneContainerProps)
       </div>
 
       {/* Pane 2 (Secondary) */}
-      <div className="flex-1 flex flex-col h-full w-full overflow-hidden min-w-0 min-h-0 relative bg-[var(--background)]">
+      <div className="flex-1 flex flex-col h-full w-full overflow-hidden min-w-0 min-h-0 relative bg-transparent">
         {/* Pane 2 Document Selector Bar */}
         <div className="flex items-center justify-between px-3 py-1 bg-[var(--card)]/40 border-b border-[var(--border)] text-[11px] text-neutral-400 select-none">
           <div className="flex items-center gap-1.5 min-w-0">

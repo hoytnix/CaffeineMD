@@ -119,7 +119,10 @@ export function DiffViewer({
       </div>
 
       {/* Main Diff Display Container */}
-      <div className="relative flex flex-col rounded-xl border border-[var(--border)] bg-[var(--card)]/60 overflow-hidden shadow-2xs h-[550px] sm:h-[680px] max-h-[calc(100vh-220px)] min-h-[350px] sm:min-h-[480px]">
+      <div
+        style={{ backgroundColor: 'var(--theme-bg-card-glass, var(--theme-bg-card))' }}
+        className="relative flex flex-col rounded-xl border border-[var(--border)] overflow-hidden shadow-2xs backdrop-blur-md h-[550px] sm:h-[680px] max-h-[calc(100vh-220px)] min-h-[350px] sm:min-h-[480px]"
+      >
         {viewMode === 'unified' ? (
           /* Unified View */
           <div className="flex-1 overflow-auto font-mono text-[13px] leading-7 divide-y divide-[var(--border)]/30">
@@ -157,7 +160,10 @@ export function DiffViewer({
           /* Split View */
           <div className="flex-1 flex flex-col min-h-0">
             {/* Split Headers */}
-            <div className="grid grid-cols-2 border-b border-[var(--border)] bg-[var(--card)] text-[11px] font-mono text-neutral-400 shrink-0 select-none">
+            <div
+              style={{ backgroundColor: 'var(--theme-bg-sidebar-glass, var(--theme-bg-sidebar))' }}
+              className="grid grid-cols-2 border-b border-[var(--border)] text-[11px] font-mono text-neutral-400 shrink-0 select-none backdrop-blur-sm"
+            >
               <div className="px-3 py-1.5 border-r border-[var(--border)] font-semibold flex items-center justify-between">
                 <span>Saved Baseline</span>
                 <span className="text-[10px] text-neutral-500">Persistent</span>

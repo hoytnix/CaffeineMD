@@ -10,7 +10,11 @@ import {
 } from '@/src/lib/markdown/serializer';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { getEditorExtensions, EditorExtensionCallbacks } from '../config/editorExtensions';
-import { handleWikiLinkDomClick, autoDetectUnlabeledCodeBlocks } from '../config/editorDomHandlers';
+import {
+  handleWikiLinkDomClick,
+  handleExternalLinkDomClick,
+  autoDetectUnlabeledCodeBlocks,
+} from '../config/editorDomHandlers';
 
 export interface UseTiptapInitProps {
   filePath: string;
@@ -61,8 +65,10 @@ export function useTiptapInit({
             'focus:outline-none min-h-[280px] sm:min-h-[500px] text-[15px] leading-[1.8] text-neutral-800 dark:text-neutral-200 first:mt-0 [&>*:first-child]:mt-0',
         },
         handleDOMEvents: {
-          click: (_view, event) =>
-            handleWikiLinkDomClick(event, openFileTab, activeWorkspaceId || 'default-vault'),
+          click: (_view, event) => {
+            if (handleExternalLinkDomClick(event)) return true;
+            return handleWikiLinkDomClick(event, openFileTab, activeWorkspaceId || 'default-vault');
+          },
           drop: handleDrop,
           paste: handlePaste,
         },
