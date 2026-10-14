@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Editor } from '@tiptap/react';
-import { Table as TableIcon, Columns, Rows, Plus, Trash2, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutGrid, FileSpreadsheet } from 'lucide-react';
+import { Table as TableIcon, Columns, Rows, Plus, Trash2, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, LayoutGrid } from 'lucide-react';
 
 export interface TableControlsGroupProps {
   editor: Editor;
@@ -23,38 +23,6 @@ export function TableControlsGroup({
     onActionNotice?.('Table inserted');
   };
 
-  const handlePasteCsv = async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      if (!text || !text.trim()) {
-        onActionNotice?.('Clipboard is empty');
-        return;
-      }
-      const lines = text.trim().split(/\r?\n/).filter(Boolean);
-      if (lines.length === 0) return;
-
-      const delimiter = lines[0].includes('\t') ? '\t' : ',';
-      const rows = lines.map((line) => line.split(delimiter).map((c) => c.trim().replace(/^["']|["']$/g, '')));
-      const colsCount = Math.max(...rows.map((r) => r.length), 1);
-
-      let tableHtml = '<table class="border-collapse table-auto w-full"><tbody>';
-      rows.forEach((row, rIdx) => {
-        tableHtml += '<tr>';
-        for (let c = 0; c < colsCount; c++) {
-          const val = row[c] || '';
-          const tag = rIdx === 0 ? 'th' : 'td';
-          tableHtml += `<${tag}><p>${val}</p></${tag}>`;
-        }
-        tableHtml += '</tr>';
-      });
-      tableHtml += '</tbody></table>';
-
-      editor.chain().focus().insertContent(tableHtml).run();
-      onActionNotice?.(`Inserted ${rows.length}x${colsCount} table from clipboard`);
-    } catch {
-      onActionNotice?.('Unable to read clipboard for CSV');
-    }
-  };
 
   return (
     <div className={`flex ${isVertical ? 'flex-col' : 'items-center'} gap-0.5 shrink-0`}>
@@ -164,15 +132,7 @@ export function TableControlsGroup({
         </>
       )}
 
-      {/* Paste CSV as Table */}
-      <button
-        type="button"
-        onClick={handlePasteCsv}
-        title="Paste Clipboard CSV/TSV as Table"
-        className="p-1 px-1.5 rounded-lg text-neutral-400 hover:text-[var(--accent)] hover:bg-[var(--border)]/60 cursor-pointer transition-colors"
-      >
-        <FileSpreadsheet className="w-3.5 h-3.5" />
-      </button>
+
     </div>
   );
 }

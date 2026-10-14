@@ -2,8 +2,9 @@
 
 import React, { useRef, useState } from 'react';
 import { Editor } from '@tiptap/react';
-import { Copy, Check, Minus } from 'lucide-react';
+import { Copy, Check, Minus, ClipboardPaste } from 'lucide-react';
 import { editorHtmlToMarkdown } from '@/src/lib/markdown/serializer';
+import { executeSmartPaste } from '@/src/lib/markdown/smartPaste';
 import { useWorkspaceStore, ToolboxPosition } from '@/src/stores/workspaceStore';
 import { StyleSelectorPopover } from './toolbar/StyleSelectorPopover';
 import { HeadingSelectorPopover } from './toolbar/HeadingSelectorPopover';
@@ -22,6 +23,7 @@ export function EditorBottomToolbar({ editor, position }: EditorBottomToolbarPro
   const resolvedPosition = position || toolboxPosition;
   const isVertical = resolvedPosition === 'left' || resolvedPosition === 'right';
   const [copiedRecently, setCopiedRecently] = useState(false);
+  const [pastedLabel, setPastedLabel] = useState<string | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const isMouseDownRef = useRef(false);
@@ -40,6 +42,24 @@ export function EditorBottomToolbar({ editor, position }: EditorBottomToolbarPro
       showToast('Copied note to clipboard');
     } catch (err) {
       console.warn('Failed to copy note:', err);
+    }
+  };
+
+  const handleSmartPaste = async () => {
+    if (!editor || hasDraggedDistRef.current) return;
+    try {
+      const res = await executeSmartPaste(editor);
+      if (res.type !== 'empty') {
+        setPastedLabel(res.label);
+        showToast(`Pasted ${res.label}`);
+        setTimeout(() => setPastedLabel(null), 1800);
+      } else {
+        showToast('Clipboard is empty');
+      }
+      editor.commands.focus();
+    } catch (err) {
+      console.warn('Failed to smart paste:', err);
+      showToast('Clipboard access denied');
     }
   };
 
@@ -93,6 +113,13 @@ export function EditorBottomToolbar({ editor, position }: EditorBottomToolbarPro
     ? 'mx-auto w-fit max-w-[calc(100%-2rem)] sm:max-w-2xl overflow-x-auto scrollbar-none no-scrollbar py-1 px-3 rounded-2xl bg-[var(--card)]/95 backdrop-blur-xl border border-[var(--border)] shadow-xl flex items-center gap-1.5 select-none transition-all cursor-grab active:cursor-grabbing shrink-0'
     : 'sticky bottom-6 z-30 mx-auto w-fit max-w-[calc(100%-2rem)] sm:max-w-2xl overflow-x-auto scrollbar-none no-scrollbar py-1 px-3 rounded-2xl bg-[var(--card)]/95 backdrop-blur-xl border border-[var(--border)] shadow-xl flex items-center gap-1.5 select-none transition-all cursor-grab active:cursor-grabbing shrink-0';
 
+  const btnClass = (active: boolean) =>
+    `p-1 px-2 rounded-lg transition-all flex items-center justify-center cursor-pointer min-w-[26px] h-[26px] shrink-0 ${
+      active
+        ? 'bg-emerald-500/20 text-emerald-400 font-medium'
+        : 'text-neutral-400 hover:text-[var(--foreground)] hover:bg-[var(--border)]/60'
+    }`;
+
   return (
     <div
       ref={containerRef}
@@ -110,11 +137,7 @@ export function EditorBottomToolbar({ editor, position }: EditorBottomToolbarPro
         onClick={handleCopyAll}
         onMouseDown={(e) => e.stopPropagation()}
         title="Copy All as Markdown"
-        className={`p-1 px-2 rounded-lg transition-all flex items-center justify-center cursor-pointer min-w-[26px] h-[26px] shrink-0 ${
-          copiedRecently
-            ? 'bg-emerald-500/20 text-emerald-400 font-medium'
-            : 'text-neutral-400 hover:text-[var(--foreground)] hover:bg-[var(--border)]/60'
-        }`}
+        className={btnClass(copiedRecently)}
       >
         {copiedRecently ? (
           <Check className="w-4 h-4 shrink-0 stroke-[2]" />
@@ -122,6 +145,18 @@ export function EditorBottomToolbar({ editor, position }: EditorBottomToolbarPro
           <Copy className="w-4 h-4 shrink-0 stroke-[2]" />
         )}
       </button>
+
+      <button
+        type="button"
+        onClick={handleSmartPaste}
+        onMouseDown={(e) => e.stopPropagation()}
+        className={btnClass(!!pastedLabel)}
+        title={pastedLabel ? `Pasted ${pastedLabel}!` : 'Smart Paste (Auto-detect CSV, JSON, Markdown, Code, Link, or Image)'}
+      >
+        {pastedLabel ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <ClipboardPaste className="w-3.5 h-3.5" />}
+      </button>
+
+      <div className="w-px h-4 bg-slate-800 mx-0.5 shrink-0" />
 
       <StyleSelectorPopover
         editor={editor}

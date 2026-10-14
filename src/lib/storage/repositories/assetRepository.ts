@@ -68,6 +68,20 @@ export async function storeAsset(
 }
 
 /**
+ * Convenience helper to save an asset file/blob in the active or default vault
+ */
+export async function saveAsset(
+  fileOrBlob: File | Blob,
+  customPath?: string,
+  vaultId = 'default-vault'
+): Promise<VaultFile> {
+  const name = (fileOrBlob as File).name || `pasted-image-${Date.now()}.png`;
+  const ext = name.split('.').pop()?.toLowerCase() || 'png';
+  const path = customPath || `assets/${Date.now()}-${name}`;
+  return storeAsset(vaultId, path, fileOrBlob, fileOrBlob.type || `image/${ext}`);
+}
+
+/**
  * Retrieve an asset by path
  */
 export async function getAsset(

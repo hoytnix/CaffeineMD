@@ -128,11 +128,25 @@
         - **Pull Anti-Resurrection Guardrail**: Added double-check in `pullRemoteNote` and `executeDownloadBatch` in [syncExecutor.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sync/syncExecutor.ts) to verify `existing?.isDeleted || existing?.isTrash`, immediately aborting any download overwrite for soft-deleted notes.
         - **Permanent Deletion Remote Trash**: Added best-effort Google Drive trashing to `deleteVaultFile`, `emptyTrash`, and `permanentlyDeleteNote` in [noteRepository.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/repositories/noteRepository.ts) and [fileOperations.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/repositories/fileOperations.ts) whenever `driveFileId` and an active Drive session exist.
 
+      34. **Smart Paste Engine & Bottom Toolbar Integration (Live & Verified)**:
+         - **Smart Paste Engine**: Built [smartPaste.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/markdown/smartPaste.ts) (169 LOC, <180 LOC limit) with 7 auto-detection priority tiers:
+           1. Direct clipboard image extraction (`navigator.clipboard.read`) saved to IndexedDB via `saveAsset` in [assetRepository.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/repositories/assetRepository.ts) and inserted as `<img src="..." data-asset-id="..." />`.
+           2. Single URL routing: image URL -> `<img>`, existing text selection -> link mark (`setLink`), standalone -> `<a>` tag.
+           3. JSON parsing: flat object array -> native Tiptap `<table>`, complex object/array -> `<pre><code class="language-json">`.
+           4. Markdown tables: converted to HTML table via `markdownToHtml`.
+           5. CSV/TSV tabular data (2+ lines): parsed into native Tiptap `<table>` with header row support.
+           6. Structured markdown (headings, task lists, code fences, blockquotes, bold/links): converted via `markdownToHtml`.
+           7. Source code: detected via `detectCodeLanguage` and formatted into `<pre><code class="language-${lang}">`.
+           8. Plain text fallback: inserted cleanly at cursor.
+         - **Bottom Toolbar Button**: Added 1-click Smart Paste `<button>` with `<ClipboardPaste>` / `<Check>` icons immediately to the right of "Copy All" in [EditorBottomToolbar.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/EditorBottomToolbar.tsx) with 1800ms transient feedback state (`pastedLabel`).
+         - **Legacy Paste Cleanup & Context Menu Wiring**: Removed redundant CSV table paste button and handler from [TableControlsGroup.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/toolbar/TableControlsGroup.tsx); wired rich-text editor right-click "Paste" action in [EditorContextMenu.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/EditorContextMenu.tsx) to execute `executeSmartPaste`.
+
 - **Architecture & Tiered LOC Compliance**: All modules decomposed strictly within tiered LOC boundaries (<100 LOC sweet spot, <250 LOC soft limit, strictly <400 LOC).
 - **Verification Rule**: ESLint passing with 0 errors and 0 warnings (`pnpm run lint`). TypeScript check passing with 0 errors (`tsc --noEmit`).
 
 ## Next Steps
 - Maintain modular <100-250 LOC boundaries across all components.
 - Run `pnpm run lint` verification on every turn without building.
+
 
 

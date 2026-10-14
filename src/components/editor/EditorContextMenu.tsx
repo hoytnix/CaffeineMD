@@ -5,6 +5,7 @@ import { Editor } from '@tiptap/react';
 import { ContextMenu, ContextMenuElement } from '@/src/components/common/ContextMenu';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { wasmSandbox } from '@/src/lib/sandbox/wasmSandbox';
+import { executeSmartPaste } from '@/src/lib/markdown/smartPaste';
 import {
   Scissors,
   Copy,
@@ -71,9 +72,9 @@ export function EditorContextMenu({
 
   const handlePaste = async () => {
     try {
-      const text = await navigator.clipboard.readText();
-      if (text) {
-        editor.chain().focus().insertContent(text).run();
+      const res = await executeSmartPaste(editor);
+      if (res.type !== 'empty') {
+        showToast(`Pasted ${res.label}`);
       }
     } catch {
       showToast('Clipboard access denied');

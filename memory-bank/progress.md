@@ -154,6 +154,12 @@
   - Added anti-resurrection guards in `pullRemoteNote` and [syncExecutor.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sync/syncExecutor.ts) `executeDownloadBatch` preventing overwrite of soft-deleted records.
   - Linked remote file trashing to `deleteVaultFile`, `emptyTrash`, and `permanentlyDeleteNote` in [noteRepository.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/repositories/noteRepository.ts) and [fileOperations.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/repositories/fileOperations.ts) when active Drive credentials and `driveFileId` exist.
 
+- [x] **Smart Paste Engine & Bottom Toolbar Integration**:
+  - Implemented [smartPaste.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/markdown/smartPaste.ts) (169 LOC, <180 LOC limit) with 7 priority detection tiers: clipboard images (`saveAsset` IndexedDB staging), URLs (image / link mark / anchor), JSON (flat array `<table>` or `<pre><code>`), Markdown tables, CSV/TSV (`<table>`), Markdown AST (`markdownToHtml`), Source code (`detectCodeLanguage`), and plain text.
+  - Added 1-click Smart Paste `<button>` with `<ClipboardPaste>` / `<Check>` icons directly right of "Copy All" in [EditorBottomToolbar.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/EditorBottomToolbar.tsx) with 1800ms transient feedback state (`pastedLabel`).
+  - Removed legacy CSV table paste button from [TableControlsGroup.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/toolbar/TableControlsGroup.tsx).
+  - Wired rich-text editor right-click context menu "Paste" action in [EditorContextMenu.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/EditorContextMenu.tsx) to execute `executeSmartPaste`.
+
 ## Verification Status
 - Lint verification: Passing cleanly with 0 errors and 0 warnings (`pnpm run lint`).
 - TypeScript verification: Passing cleanly with 0 errors (`tsc --noEmit`).
