@@ -8,6 +8,7 @@
 - [x] **Google Drive Sync Engine**: 5MB resumable multipart chunking, delta reconciliation, remote file trashing & anti-resurrection guards.
 - [x] **Google Drive Persistence & Auto-Sync**: Offline consent token issuance, persistent localStorage rehydration, and automatic debounced sync on note save.
 - [x] **Comprehensive CRUD Auto-Sync**: Immediate debounced sync triggering across Create, Update, Move, Rename, and Trash/Delete operations for both notes and folders.
+- [x] **Nested Sub-Directory Movement & Isolated Drag-and-Drop**: Recursively aggregated folder path collection, breadcrumb path selection, isolated folder header drop targeting with bubbling cancellation, multi-segment path normalization, and automatic ancestor folder expansion on move.
 
 ### 2. Editor Core & UX Suite
 - [x] **Tiptap v2 Rich Text**: Slash commands (`/`), WikiLinks (`[[`), task lists, tables, drag handles, callouts, and code blocks.
@@ -62,4 +63,4 @@
 - Production Build: Passing cleanly.
 - ESLint: Passing cleanly with 0 errors and 0 warnings (`pnpm run lint`).
 - TypeScript: Passing cleanly with 0 errors (`tsc --noEmit`).
-- Tiered LOC Limits: 100% compliant (<250 LOC per file across all touched modules).
+- Tiered LOC Limits: 100% compliant (<250 LOC per file across all touched modules, <400 hard limit).

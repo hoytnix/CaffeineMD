@@ -16,13 +16,16 @@ export interface FileNodeRowProps {
   activeFilePath: string | null;
   onOpenFile: (path: string, title?: string) => void;
   onOpenActionMenu: (e: React.MouseEvent, node: TreeNode) => void;
+  draggedNodePath?: string | null;
+  onNodeDragStart?: (e: React.DragEvent, nodePath: string) => void;
+  onNodeDragEnd?: () => void;
 }
 
 /**
  * FileNodeRow
  * Renders individual leaf note and file items within the sidebar file tree.
  * Displays Eisenhower quadrant priority indicators, file type icons, active selection state,
- * and vertical ellipsis action menu trigger with mobile-friendly tap targets.
+ * draggable relocation support, and vertical ellipsis action menu trigger with mobile-friendly tap targets.
  */
 export const FileNodeRow = React.memo(function FileNodeRow({
   node,
@@ -30,8 +33,12 @@ export const FileNodeRow = React.memo(function FileNodeRow({
   activeFilePath,
   onOpenFile,
   onOpenActionMenu,
+  draggedNodePath,
+  onNodeDragStart,
+  onNodeDragEnd,
 }: FileNodeRowProps) {
   const isActive = activeFilePath === node.path;
+  const isDragging = draggedNodePath === node.path;
 
   const isImage =
     node.file?.mimeType?.startsWith('image/') ||
@@ -72,6 +79,9 @@ export const FileNodeRow = React.memo(function FileNodeRow({
       role="treeitem"
       aria-selected={isActive}
       tabIndex={0}
+      draggable={true}
+      onDragStart={(e) => onNodeDragStart?.(e, node.path)}
+      onDragEnd={onNodeDragEnd}
       onClick={() => onOpenFile(node.path, node.file?.title)}
       onContextMenu={(e) => {
         e.preventDefault();
@@ -84,6 +94,8 @@ export const FileNodeRow = React.memo(function FileNodeRow({
       }}
       style={{ paddingLeft: `${depth * 12 + 18}px` }}
       className={`flex items-center justify-between py-1 px-2 rounded-md cursor-pointer text-xs transition-colors group select-none focus:outline-none focus:ring-1 focus:ring-indigo-500 ${
+        isDragging ? 'opacity-50' : ''
+      } ${
         isActive
           ? 'bg-neutral-200 dark:bg-neutral-800 font-semibold text-neutral-900 dark:text-neutral-100'
           : 'hover:bg-neutral-100 dark:hover:bg-neutral-800/40 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
@@ -104,7 +116,10 @@ export const FileNodeRow = React.memo(function FileNodeRow({
 
       <button
         type="button"
-        onClick={(e) => onOpenActionMenu(e, node)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpenActionMenu(e, node);
+        }}
         className="opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 min-h-[28px] min-w-[28px] flex items-center justify-center p-1 rounded text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-200/60 dark:hover:bg-neutral-700/60 transition-all cursor-pointer"
         title={`More actions for ${displayName}`}
         aria-label={`Actions for file ${displayName}`}

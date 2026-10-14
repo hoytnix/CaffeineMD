@@ -164,6 +164,7 @@ export async function moveVaultFile(
     ...file,
     id: newPath,
     path: newPath,
+    folder: cleanFolder,
     updatedAt: Date.now(),
   };
 
@@ -321,14 +322,18 @@ export async function moveFolder(
   sourceFolderPath: string,
   targetParentFolder: string,
   workspaceId?: string
-): Promise<void> {
+): Promise<{ success: boolean; newPath?: string }> {
   const cleanSource = sourceFolderPath.replace(/^folder:/, '').trim().replace(/^\/+|\/+$/g, '');
   const cleanTargetParent = targetParentFolder.replace(/^folder:/, '').trim().replace(/^\/+|\/+$/g, '');
-  if (!cleanSource) return;
+  if (!cleanSource) return { success: false };
 
   const folderBaseName = cleanSource.split('/').pop() || cleanSource;
   const newFolderPath = cleanTargetParent ? `${cleanTargetParent}/${folderBaseName}` : folderBaseName;
-  if (cleanSource === newFolderPath) return;
+  if (cleanSource === newFolderPath) return { success: true, newPath: cleanSource };
+
+  if (cleanTargetParent === cleanSource || cleanTargetParent.startsWith(cleanSource + '/')) {
+    return { success: false };
+  }
 
   const allNotes = await db.notes.toArray();
   const matchingNotes = allNotes.filter((n) => {
@@ -370,6 +375,7 @@ export async function moveFolder(
   });
 
   triggerBackgroundAutoSync();
+  return { success: true, newPath: newFolderPath };
 }
 
 export { permanentlyDeleteNote, emptyTrash } from './noteRepository';

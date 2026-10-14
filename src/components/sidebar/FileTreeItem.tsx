@@ -13,6 +13,14 @@ export interface FileTreeItemProps {
   onToggleFolder: (path: string) => void;
   onOpenFile: (path: string, title?: string) => void;
   onOpenActionMenu: (e: React.MouseEvent, node: TreeNode) => void;
+  dropTargetFolderPath?: string | null;
+  draggedNodePath?: string | null;
+  onFolderDragOver?: (e: React.DragEvent, folderPath: string) => void;
+  onFolderDragEnter?: (e: React.DragEvent, folderPath: string) => void;
+  onFolderDragLeave?: (e: React.DragEvent, folderPath: string) => void;
+  onFolderDrop?: (e: React.DragEvent, folderPath: string) => void;
+  onNodeDragStart?: (e: React.DragEvent, nodePath: string) => void;
+  onNodeDragEnd?: () => void;
 }
 
 /**

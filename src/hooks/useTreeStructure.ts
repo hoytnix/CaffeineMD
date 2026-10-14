@@ -88,3 +88,68 @@ export function useTreeStructure(files: VaultFile[], filterQuery: string, custom
     return root.children || [];
   }, [files, filterQuery, customFolders]);
 }
+
+/**
+ * Recursively collect all full relative folder paths at every depth
+ * from the tree hierarchy, active files, and custom folders.
+ */
+export function collectAllFolderPaths(
+  treeNodes: TreeNode[] = [],
+  files: VaultFile[] = [],
+  customFolders: string[] = []
+): string[] {
+  const folderSet = new Set<string>();
+
+  const traverse = (nodes: TreeNode[]) => {
+    for (const node of nodes) {
+      if (node.isFolder && node.path) {
+        const cleanPath = node.path.replace(/^folder:/, '').trim().replace(/^\/+|\/+$/g, '');
+        if (cleanPath) {
+          folderSet.add(cleanPath);
+          const segments = cleanPath.split('/');
+          for (let i = 1; i < segments.length; i++) {
+            folderSet.add(segments.slice(0, i).join('/'));
+          }
+        }
+      }
+      if (node.children && node.children.length > 0) {
+        traverse(node.children);
+      }
+    }
+  };
+  traverse(treeNodes);
+
+  for (const file of files) {
+    if (file.isTrash || file.isDeleted) continue;
+    if (file.path && file.path.includes('/')) {
+      const parts = file.path.trim().replace(/^\/+|\/+$/g, '').split('/');
+      for (let i = 1; i < parts.length; i++) {
+        folderSet.add(parts.slice(0, i).join('/'));
+      }
+    }
+    if (file.folder) {
+      const cleanFolder = file.folder.trim().replace(/^\/+|\/+$/g, '');
+      if (cleanFolder) {
+        const parts = cleanFolder.split('/');
+        for (let i = 1; i <= parts.length; i++) {
+          folderSet.add(parts.slice(0, i).join('/'));
+        }
+      }
+    }
+  }
+
+  for (const cf of customFolders) {
+    const cleanCf = cf.replace(/^folder:/, '').trim().replace(/^\/+|\/+$/g, '');
+    if (cleanCf) {
+      const parts = cleanCf.split('/');
+      for (let i = 1; i <= parts.length; i++) {
+        folderSet.add(parts.slice(0, i).join('/'));
+      }
+    }
+  }
+
+  return Array.from(folderSet).sort((a, b) =>
+    a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+  );
+}
+

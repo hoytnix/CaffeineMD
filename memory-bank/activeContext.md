@@ -1,33 +1,27 @@
 # Active Context: CaffeineMD
 
 ## Current Focus
-- **Architectural Consolidation & 7-Vector Next.js DRY Audit (Phases 1 & 3)**:
-  - **Leaf Type, Hook & Storage Consolidation (`DRY-07`, `DRY-08`, `DRY-09`)**:
-    - Created canonical [utils.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/utils.ts) and [use-mobile.ts](file:///home/oloty/Dev/CaffeineMD/src/hooks/use-mobile.ts) with root re-exports to eliminate alias mismatch and duplicate mobile breakpoint checks.
-    - Unified sandbox runner types (`EmitFn`, `ProgressFn`, `RunnerContext`, `RunnerResult`) in canonical [types.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sandbox/types.ts) and re-exported from [runners/types.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sandbox/runners/types.ts).
-    - Introduced canonical typed, SSR-guarded [storageRegistry.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/config/storageRegistry.ts) with `STORAGE_KEYS` registry and migrated [themeStorageUtils.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/slices/themeStorageUtils.ts), [firebase/client.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/firebase/client.ts), [geminiTemplateGenerator.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/geminiTemplateGenerator.ts), and [trashSlice.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/slices/trashSlice.ts).
-  - **Client Interaction Hooks (`DRY-03`, `DRY-06`)**:
-    - Extracted canonical zero-allocation [usePointerResize.ts](file:///home/oloty/Dev/CaffeineMD/src/hooks/usePointerResize.ts) hook handling mouse and touch pointer events, cursor styling, and cleanup. Consumed in [useSidebarResize.ts](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/hooks/useSidebarResize.ts) and enhanced [useColumnResize.ts](file:///home/oloty/Dev/CaffeineMD/src/hooks/useColumnResize.ts).
-    - Upgraded [useContextMenu.ts](file:///home/oloty/Dev/CaffeineMD/src/hooks/useContextMenu.ts) to provide shared `useFloatingDismiss` with viewport boundary clamping, outside click dismissal, and Escape-key handling; wired into [ContextMenu.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/common/ContextMenu.tsx).
-  - **UI Shell Primitives (`DRY-01`)**:
-    - Created accessible, composable [ModalShell.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/common/ModalShell.tsx) with `cva` sizing (`sm`, `md`, `lg`, `xl`), backdrop overlay, escape key dismissal, and header/footer chrome.
-    - Migrated [RenameModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/RenameModal.tsx), [MoveModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/MoveModal.tsx), [NewNoteModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/NewNoteModal.tsx), [DeleteConfirmModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/common/DeleteConfirmModal.tsx), [CreateWorkspaceModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/workspace/CreateWorkspaceModal.tsx), [InstallModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/landing/InstallModal.tsx), [TemplateSelectorModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/TemplateSelectorModal.tsx), [VaultFindReplaceModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/search/VaultFindReplaceModal.tsx), and [ExportPwaModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportPwaModal.tsx).
-    - Removed redundant wrapper `FileModals.tsx` in favor of direct imports in [FileTreeModals.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/tree/FileTreeModals.tsx).
-  - **Gemini AI Service & Route Handler Unification (`DRY-04`)**:
-    - Built isomorphic [geminiClient.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/ai/geminiClient.ts) (`generateStructuredGeminiOutput`) with model cascade fallback, markdown fence stripping, JSON parsing, and Zod validator integration.
-    - Refactored [route.ts](file:///home/oloty/Dev/CaffeineMD/app/api/theme/generate/route.ts), [aiThemeService.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/themes/aiThemeService.ts), and [geminiTemplateGenerator.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/geminiTemplateGenerator.ts).
-  - **Export Pre-Compiler & Vault Mutation DAL (`DRY-02`, `DRY-05`)**:
-    - Added `compileVaultExportContext()` to [exportBundleService.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/exportBundleService.ts) unifying frontmatter parsing, markdown-to-HTML compilation, search indexing, and graph payload generation.
-    - Created [vaultMutationService.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/vaultMutationService.ts) with `executeVaultMutation()` unifying Dexie IndexedDB writes, disk folder synchronization, and debounced Google Drive auto-sync across [useNotePersistence.ts](file:///home/oloty/Dev/CaffeineMD/src/hooks/useNotePersistence.ts), [trashSlice.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/slices/trashSlice.ts), [DatabaseView.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/database/DatabaseView.tsx), and [useFileTreeActions.ts](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/useFileTreeActions.ts).
+- **Nested Sub-Directory File Movement & Isolated Drag-and-Drop Targeting**:
+  - **Recursive Sub-Directory Collection (`MoveModal`, `useTreeStructure`)**:
+    - Implemented `collectAllFolderPaths()` in [useTreeStructure.ts](file:///home/oloty/Dev/CaffeineMD/src/hooks/useTreeStructure.ts) recursively aggregating all full relative paths at every depth across TreeNode hierarchies, active/keep notes' `folder` and `path` fields, and `customFolders`.
+    - Revamped [MoveModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/MoveModal.tsx) with depth-based visual indentation (`depth * 14 + 10px`), folder breadcrumb formatting (`Memories / 2026 / October`), and an integrated filter/custom path input preserving internal `/` separators.
+  - **Drag-and-Drop Event Isolation (`FolderNode`, `useTreeDragAndDrop`)**:
+    - Attached `onDragOver`, `onDragEnter`, `onDragLeave`, and `onDrop` directly to the folder row header element in [FolderNode.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/tree/FolderNode.tsx) rather than the outer recursive wrapper.
+    - Added `e.stopPropagation()` and `e.preventDefault()` inside all folder drag handlers in [useTreeDragAndDrop.ts](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/hooks/useTreeDragAndDrop.ts) and guarded the canvas drop zone in [FileTree.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/FileTree.tsx) (`if (e.defaultPrevented) return;`), preventing drop event bubbling to parent folders.
+    - Wired draggable relocation attributes (`draggable`, `onNodeDragStart`, `onNodeDragEnd`) through [FileNodeRow.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/tree/FileNodeRow.tsx) and [FileTreeItem.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/FileTreeItem.tsx).
+  - **Multi-Segment Normalization & Auto-Expansion (`useFileTreeActions`, `fileOperations`)**:
+    - Normalized target destinations in [useFileTreeActions.ts](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/useFileTreeActions.ts) and [fileOperations.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/repositories/fileOperations.ts) via `targetFolder.trim().replace(/^\/+|\/+$/g, '')`, preserving internal slashes.
+    - Added `expandFolders`, `toggleExpandedFolder`, and `setExpandedFolders` in [workspaceStore.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/workspaceStore.ts); auto-expanding all ancestor segments upon note or folder move so newly moved files are immediately visible.
+    - Enforced transactional execution in [vaultMutationService.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/vaultMutationService.ts) ensuring IndexedDB updates, disk handle syncing for Live Disk Folder mode, note store cache refresh for search indexing, and auto-sync triggering.
 
 ## Architecture & Recent Changes
-1. **Unified Storage & Env Registry**:
-   - `storageRegistry.ts` centralizes string/JSON localStorage reads/writes with SSR protection and Zod schema safety.
-2. **Canonical Modal Shell Architecture**:
-   - `ModalShell.tsx` centralizes backdrop overlay, Escape listener, card sizing, and click-outside dismissal across 9 modals.
-3. **Transactional Mutation Service**:
-   - `vaultMutationService.ts` ensures all note/folder mutations propagate to local disk and background cloud sync without duplicate dynamic imports.
+1. **Isolated Drop Target Routing**:
+   - Header-level drag event binding with stopPropagation prevents recursive DOM bubbling from overriding child folder drop destinations.
+2. **Canonical Folder Path Aggregation**:
+   - `collectAllFolderPaths` guarantees all leaf and intermediate subdirectories are selectable in modals and drag zones.
+3. **Synchronized Folder Expansion State**:
+   - Ancestor expansion in Zustand ensures deep move targets expand automatically in the sidebar tree.
 
 ## Next Steps
-- Maintain strict <250 LOC per file across all modules.
+- Maintain strict <250 LOC per file across all modules (strict hard limit: 400 LOC).
 - Verification: Run `pnpm run lint` on every prompt cycle.

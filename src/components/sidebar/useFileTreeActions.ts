@@ -11,7 +11,7 @@ import {
 } from '@/src/lib/storage/db';
 import { TreeNode } from '@/src/hooks/useTreeStructure';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
-import { triggerBackgroundAutoSync } from '@/src/lib/sync/syncAutoTrigger';
+import { executeVaultMutation } from '@/src/lib/storage/vaultMutationService';
 
 interface FileTreeActionsProps {
   activeFiles: VaultFile[];
@@ -34,15 +34,15 @@ export function useFileTreeActions({
     closeFileTab,
     removeCustomFolder,
     renameCustomFolder,
+    expandFolders,
   } = useWorkspaceStore();
 
   const duplicateNode = useCallback(async (node: TreeNode) => {
     if (node.isFolder) return;
-    const res = await duplicateVaultFile(node.path);
+    const res = await executeVaultMutation(() => duplicateVaultFile(node.path));
     if (res.success && res.newPath) {
       showToast(`Duplicated note as ${res.newPath}`);
       openFileTab(res.newPath);
-      triggerBackgroundAutoSync();
     } else {
       showToast(res.error || 'Failed to duplicate note');
     }
@@ -53,7 +53,7 @@ export function useFileTreeActions({
     if (node.isFolder || node.id?.startsWith('folder:')) {
       const parentDir = oldPath.includes('/') ? oldPath.substring(0, oldPath.lastIndexOf('/')) : '';
       const newPath = parentDir ? `${parentDir}/${newName}` : newName;
-      await renameFolder(oldPath, newName, activeWorkspaceId);
+      await executeVaultMutation(() => renameFolder(oldPath, newName, activeWorkspaceId));
       renameCustomFolder(oldPath, newPath);
 
       const prefix = `${oldPath}/`;
@@ -64,17 +64,17 @@ export function useFileTreeActions({
         renameFileTab(f.path, renamedSubPath);
       }
       showToast(`Renamed folder to ${newName}`);
-      triggerBackgroundAutoSync();
     } else {
       const dir = oldPath.includes('/') ? oldPath.substring(0, oldPath.lastIndexOf('/')) : '';
       let targetName = newName;
       if (!targetName.endsWith('.md')) targetName += '.md';
       const newPath = dir ? `${dir}/${targetName}` : targetName;
-      const res = await renameVaultFile(oldPath, newPath, newName.replace(/\.[^/.]+$/, ''));
+      const res = await executeVaultMutation(() =>
+        renameVaultFile(oldPath, newPath, newName.replace(/\.[^/.]+$/, ''))
+      );
       if (res.success) {
         renameFileTab(oldPath, newPath, newName.replace(/\.[^/.]+$/, ''));
         showToast(`Renamed note to ${newName}`);
-        triggerBackgroundAutoSync();
       } else {
         showToast(res.error || 'Failed to rename note');
       }
@@ -82,27 +82,56 @@ export function useFileTreeActions({
   }, [activeFiles, activeWorkspaceId, renameCustomFolder, renameFileTab, showToast]);
 
   const moveNode = useCallback(async (node: TreeNode, targetFolder: string) => {
+    const cleanTarget = targetFolder.trim().replace(/^\/+|\/+$/g, '');
+
+    // Auto-expand all ancestor folder segments for destination
+    const expandAncestors = (folderPath: string) => {
+      if (!folderPath) return;
+      const segments = folderPath.split('/');
+      const pathsToExpand: string[] = [];
+      for (let i = 1; i <= segments.length; i++) {
+        pathsToExpand.push(segments.slice(0, i).join('/'));
+      }
+      expandFolders(pathsToExpand);
+    };
+
     if (node.isFolder || node.id?.startsWith('folder:')) {
-      await moveFolder(node.path, targetFolder, activeWorkspaceId);
-      showToast(`Moved folder to ${targetFolder || 'root'}`);
-      triggerBackgroundAutoSync();
+      const cleanSource = node.path.replace(/^folder:/, '').trim().replace(/^\/+|\/+$/g, '');
+      const folderBaseName = cleanSource.split('/').pop() || cleanSource;
+      const newFolderPath = cleanTarget ? `${cleanTarget}/${folderBaseName}` : folderBaseName;
+
+      await executeVaultMutation(() => moveFolder(cleanSource, cleanTarget, activeWorkspaceId));
+      renameCustomFolder(cleanSource, newFolderPath);
+
+      const prefix = `${cleanSource}/`;
+      const filesToRename = activeFiles.filter((f) => f.path.startsWith(prefix));
+      for (const f of filesToRename) {
+        const rest = f.path.substring(prefix.length);
+        const renamedSubPath = `${newFolderPath}/${rest}`;
+        renameFileTab(f.path, renamedSubPath);
+      }
+
+      expandAncestors(newFolderPath);
+      showToast(`Moved folder to ${cleanTarget || 'root'}`);
     } else {
-      const res = await moveVaultFile(node.path, targetFolder);
+      const res = await executeVaultMutation(() => moveVaultFile(node.path, cleanTarget));
       if (res.success && res.newPath) {
         renameFileTab(node.path, res.newPath);
-        showToast(`Moved note to ${targetFolder || 'root'}`);
-        triggerBackgroundAutoSync();
+        expandAncestors(cleanTarget);
+        showToast(`Moved note to ${cleanTarget || 'root'}`);
       } else {
         showToast(res.error || 'Failed to move note');
       }
     }
-  }, [activeWorkspaceId, renameFileTab, showToast]);
+  }, [activeFiles, activeWorkspaceId, expandFolders, renameCustomFolder, renameFileTab, showToast]);
 
   const handleDelete = useCallback(async (id: string) => {
     try {
       if (id.startsWith('folder:')) {
         const folderPath = id.slice('folder:'.length);
-        const deletedIds = await softDeleteFolder(folderPath, activeWorkspaceId);
+        const deletedIds = await executeVaultMutation(() =>
+          softDeleteFolder(folderPath, activeWorkspaceId)
+        );
         removeCustomFolder(folderPath);
 
         const prefix = `${folderPath}/`;
@@ -111,15 +140,13 @@ export function useFileTreeActions({
           setActiveFilePath(null);
         }
         showToast('Folder moved to Trash');
-        triggerBackgroundAutoSync();
       } else {
-        await softDeleteNote(id, activeWorkspaceId);
+        await executeVaultMutation(() => softDeleteNote(id, activeWorkspaceId));
         closeFileTab(id);
         if (activeFilePath === id) {
           setActiveFilePath(null);
         }
         showToast('Note moved to Trash');
-        triggerBackgroundAutoSync();
       }
     } catch (err) {
       console.error('Failed to move item to trash:', err);

@@ -68,6 +68,9 @@ export interface WorkspaceState extends ThemeSlice, TrashSlice, TabsSlice, UiOve
   addCustomFolder: (folderPath: string) => void;
   removeCustomFolder: (folderPath: string) => void;
   renameCustomFolder: (oldPrefix: string, newPrefix: string) => void;
+  expandFolders: (folderPaths: string[]) => void;
+  toggleExpandedFolder: (folderPath: string) => void;
+  setExpandedFolders: (folders: string[]) => void;
 
   // Workspace Notes List
   notes: VaultFile[];
@@ -162,7 +165,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   setDatabaseViewMode: (mode) => set({ databaseViewMode: mode }),
 
   customFolders: [],
-  expandedFolders: [],
+  expandedFolders: ['Projects', 'Engineering'],
   addCustomFolder: (folderPath) => {
     const clean = folderPath.replace(/^folder:/, '').trim().replace(/^\/+|\/+$/g, '');
     if (!clean) return;
@@ -194,4 +197,30 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       }),
     }));
   },
+  expandFolders: (folderPaths) => {
+    set((state) => {
+      const setFolders = new Set(state.expandedFolders);
+      let changed = false;
+      folderPaths.forEach((f) => {
+        const clean = f.replace(/^folder:/, '').trim().replace(/^\/+|\/+$/g, '');
+        if (clean && !setFolders.has(clean)) {
+          setFolders.add(clean);
+          changed = true;
+        }
+      });
+      return changed ? { expandedFolders: Array.from(setFolders) } : state;
+    });
+  },
+  toggleExpandedFolder: (folderPath) => {
+    const clean = folderPath.replace(/^folder:/, '').trim().replace(/^\/+|\/+$/g, '');
+    set((state) => {
+      const exists = state.expandedFolders.includes(clean);
+      return {
+        expandedFolders: exists
+          ? state.expandedFolders.filter((f) => f !== clean)
+          : [...state.expandedFolders, clean],
+      };
+    });
+  },
+  setExpandedFolders: (folders) => set({ expandedFolders: folders }),
 }));

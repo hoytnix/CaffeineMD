@@ -42,14 +42,15 @@ export function useTreeDragAndDrop({
 
   const handleDrop = useCallback(
     async (e: React.DragEvent) => {
+      if (e.defaultPrevented) return;
       e.preventDefault();
       setIsDragOverTree(false);
       setDropTargetFolderPath(null);
 
-      // 1. Check for internal note/folder relocation drag
+      // 1. Check for internal note/folder relocation to root
       const internalDragPath = e.dataTransfer.getData('application/kite-node-path');
       if (internalDragPath && onRelocateNode) {
-        await onRelocateNode(internalDragPath, dropTargetFolderPath || '');
+        await onRelocateNode(internalDragPath, '');
         setDraggedNodePath(null);
         return;
       }
@@ -71,13 +72,14 @@ export function useTreeDragAndDrop({
         );
       }
     },
-    [activeWorkspaceId, dropTargetFolderPath, onRelocateNode, openFileTab, setImportProgress]
+    [activeWorkspaceId, onRelocateNode, openFileTab, setImportProgress]
   );
 
   const handleNodeDragStart = useCallback((e: React.DragEvent, nodePath: string) => {
     setDraggedNodePath(nodePath);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('application/kite-node-path', nodePath);
+    e.dataTransfer.setData('text/plain', nodePath);
   }, []);
 
   const handleNodeDragEnd = useCallback(() => {
@@ -88,8 +90,72 @@ export function useTreeDragAndDrop({
   const handleFolderDragOver = useCallback((e: React.DragEvent, folderPath: string) => {
     e.preventDefault();
     e.stopPropagation();
-    setDropTargetFolderPath(folderPath);
+    e.dataTransfer.dropEffect = 'move';
+    const clean = folderPath.replace(/^folder:/, '').trim().replace(/^\/+|\/+$/g, '');
+    if (dropTargetFolderPath !== clean) {
+      setDropTargetFolderPath(clean);
+    }
+  }, [dropTargetFolderPath]);
+
+  const handleFolderDragEnter = useCallback((e: React.DragEvent, folderPath: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const clean = folderPath.replace(/^folder:/, '').trim().replace(/^\/+|\/+$/g, '');
+    setDropTargetFolderPath(clean);
   }, []);
+
+  const handleFolderDragLeave = useCallback((e: React.DragEvent, folderPath: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.currentTarget.contains(e.relatedTarget as Node)) {
+      return;
+    }
+    const clean = folderPath.replace(/^folder:/, '').trim().replace(/^\/+|\/+$/g, '');
+    setDropTargetFolderPath((prev) => (prev === clean ? null : prev));
+  }, []);
+
+  const handleFolderDrop = useCallback(
+    async (e: React.DragEvent, targetFolderPath: string) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDropTargetFolderPath(null);
+      setIsDragOverTree(false);
+
+      const cleanTarget = targetFolderPath.replace(/^folder:/, '').trim().replace(/^\/+|\/+$/g, '');
+
+      // 1. Internal note/folder relocation drag
+      const internalDragPath = e.dataTransfer.getData('application/kite-node-path');
+      if (internalDragPath && onRelocateNode) {
+        if (internalDragPath !== cleanTarget) {
+          await onRelocateNode(internalDragPath, cleanTarget);
+        }
+        setDraggedNodePath(null);
+        return;
+      }
+
+      // 2. Handle external filesystem drops into this folder via import pipeline
+      const items = e.dataTransfer.items;
+      if (!items || items.length === 0) return;
+
+      const droppedFiles = await scanDroppedItems(items);
+      if (droppedFiles.length > 0) {
+        const adjustedFiles = droppedFiles.map((f) => ({
+          ...f,
+          relativePath: cleanTarget ? `${cleanTarget}/${f.relativePath}` : f.relativePath,
+        }));
+        await runIngestionPipeline(
+          adjustedFiles,
+          activeWorkspaceId || 'default-vault',
+          (p) => setImportProgress(p)
+        );
+        openFileTab(
+          adjustedFiles[0].relativePath,
+          adjustedFiles[0].name.replace(/\.[^/.]+$/, '')
+        );
+      }
+    },
+    [activeWorkspaceId, onRelocateNode, openFileTab, setImportProgress]
+  );
 
   return {
     isDragOverTree,
@@ -101,5 +167,8 @@ export function useTreeDragAndDrop({
     handleNodeDragStart,
     handleNodeDragEnd,
     handleFolderDragOver,
+    handleFolderDragEnter,
+    handleFolderDragLeave,
+    handleFolderDrop,
   };
 }

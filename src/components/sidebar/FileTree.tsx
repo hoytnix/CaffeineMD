@@ -4,7 +4,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { db } from '@/src/lib/storage/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
-import { useTreeStructure, TreeNode } from '@/src/hooks/useTreeStructure';
+import { useTreeStructure, TreeNode, collectAllFolderPaths } from '@/src/hooks/useTreeStructure';
 import { FolderNode } from './tree/FolderNode';
 import { FileNodeRow } from './tree/FileNodeRow';
 import { FileTreeModals } from './tree/FileTreeModals';
@@ -23,7 +23,6 @@ import { formatShortcutForDisplay } from '@/src/lib/shortcuts/shortcutManager';
 export function FileTree() {
   const rawFiles = useLiveQuery(() => db.files.toArray());
   const files = useMemo(() => rawFiles ?? [], [rawFiles]);
-  const [openFolders, setOpenFolders] = useState<Set<string>>(new Set(['Projects', 'Engineering']));
 
   // File action drawer/menu and modal targets
   const [activeMenuNode, setActiveMenuNode] = useState<TreeNode | null>(null);
@@ -53,7 +52,12 @@ export function FileTree() {
     setNewNoteModalOpen,
     customFolders,
     keyboardShortcuts,
+    expandedFolders,
+    toggleExpandedFolder,
+    setExpandedFolders,
   } = useWorkspaceStore();
+
+  const openFolders = useMemo(() => new Set(expandedFolders), [expandedFolders]);
 
   const {
     sidebarWidth,
@@ -90,17 +94,8 @@ export function FileTree() {
   const treeData = useTreeStructure(activeFiles, '', customFolders);
 
   const folderSuggestions = useMemo(() => {
-    const set = new Set<string>();
-    activeFiles.forEach((f) => {
-      if (f.path.includes('/')) {
-        const parts = f.path.split('/');
-        for (let i = 1; i < parts.length; i++) {
-          set.add(parts.slice(0, i).join('/'));
-        }
-      }
-    });
-    return Array.from(set).sort();
-  }, [activeFiles]);
+    return collectAllFolderPaths(treeData, activeFiles, customFolders);
+  }, [treeData, activeFiles, customFolders]);
 
   const { duplicateNode, renameNode, moveNode } = useFileTreeActions({
     activeFiles,
@@ -109,20 +104,44 @@ export function FileTree() {
     renameFileTab,
   });
 
-  const { isDragOverTree, handleDragOver, handleDragLeave, handleDrop } = useTreeDragAndDrop({
+  const handleRelocateNode = useCallback(
+    async (sourcePath: string, destFolder: string) => {
+      const file = activeFiles.find((f) => f.path === sourcePath);
+      const node: TreeNode = {
+        id: file ? (file.id || sourcePath) : `folder:${sourcePath}`,
+        name: sourcePath.split('/').pop() || sourcePath,
+        path: sourcePath,
+        isFolder: !file,
+        file,
+      };
+      await moveNode(node, destFolder);
+    },
+    [activeFiles, moveNode]
+  );
+
+  const {
+    isDragOverTree,
+    draggedNodePath,
+    dropTargetFolderPath,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    handleNodeDragStart,
+    handleNodeDragEnd,
+    handleFolderDragOver,
+    handleFolderDragEnter,
+    handleFolderDragLeave,
+    handleFolderDrop,
+  } = useTreeDragAndDrop({
     activeWorkspaceId: activeWorkspaceId || 'default-vault',
     setImportProgress,
     openFileTab,
+    onRelocateNode: handleRelocateNode,
   });
 
   const toggleFolder = useCallback((path: string) => {
-    setOpenFolders((prev) => {
-      const next = new Set(prev);
-      if (next.has(path)) next.delete(path);
-      else next.add(path);
-      return next;
-    });
-  }, []);
+    toggleExpandedFolder(path);
+  }, [toggleExpandedFolder]);
 
   const handleOpenActionMenu = useCallback((e: React.MouseEvent, node: TreeNode) => {
     e.preventDefault();
@@ -147,7 +166,10 @@ export function FileTree() {
       style={{ width: `${sidebarWidth}px` }}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
+      onDrop={(e) => {
+        if (e.defaultPrevented) return;
+        handleDrop(e);
+      }}
       className={`relative shrink-0 h-full flex flex-col bg-[var(--card)] border-r border-[var(--border)] text-[var(--foreground)] select-none ${
         isResizing ? '' : 'transition-[background-color,border-color]'
       } ${
@@ -208,6 +230,14 @@ export function FileTree() {
                 onToggleFolder={toggleFolder}
                 onOpenFile={openFileTab}
                 onOpenActionMenu={handleOpenActionMenu}
+                dropTargetFolderPath={dropTargetFolderPath}
+                draggedNodePath={draggedNodePath}
+                onFolderDragOver={handleFolderDragOver}
+                onFolderDragEnter={handleFolderDragEnter}
+                onFolderDragLeave={handleFolderDragLeave}
+                onFolderDrop={handleFolderDrop}
+                onNodeDragStart={handleNodeDragStart}
+                onNodeDragEnd={handleNodeDragEnd}
               />
             ) : (
               <FileNodeRow
@@ -217,6 +247,9 @@ export function FileTree() {
                 activeFilePath={activeFilePath}
                 onOpenFile={openFileTab}
                 onOpenActionMenu={handleOpenActionMenu}
+                draggedNodePath={draggedNodePath}
+                onNodeDragStart={handleNodeDragStart}
+                onNodeDragEnd={handleNodeDragEnd}
               />
             )
           )
@@ -268,7 +301,7 @@ export function FileTree() {
         isOpen={isCanvasMenuOpen}
         position={canvasMenuPosition}
         onClose={closeCanvasMenu}
-        onCollapseAll={() => setOpenFolders(new Set())}
+        onCollapseAll={() => setExpandedFolders([])}
       />
 
       {/* Draggable Sidebar Resizer Handle */}
