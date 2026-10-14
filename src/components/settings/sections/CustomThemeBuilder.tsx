@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sliders, Sparkles } from 'lucide-react';
 import { ThemeDefinition } from '@/src/lib/themes/themeDefinitions';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
+import { getGeminiApiKey } from '@/src/lib/export/geminiTemplateGenerator';
+import { generateAiThemePalette } from '@/src/lib/themes/aiThemeService';
 
 export interface CustomThemeBuilderProps {
   customTheme: ThemeDefinition;
@@ -31,27 +33,38 @@ export function CustomThemeBuilder({
   const [vibePrompt, setVibePrompt] = useState('');
   const [isGeneratingTheme, setIsGeneratingTheme] = useState(false);
   const [aiThemeError, setAiThemeError] = useState<string | null>(null);
+  const [geminiApiKey, setGeminiApiKey] = useState(() => getGeminiApiKey());
 
-  const handleGenerateAiTheme = async (e: React.FormEvent) => {
+  useEffect(() => {
+    const handleKeyUpdate = () => {
+      setGeminiApiKey(getGeminiApiKey());
+    };
+    window.addEventListener('caffeinemd-gemini-key-updated', handleKeyUpdate);
+    window.addEventListener('storage', handleKeyUpdate);
+    return () => {
+      window.removeEventListener('caffeinemd-gemini-key-updated', handleKeyUpdate);
+      window.removeEventListener('storage', handleKeyUpdate);
+    };
+  }, []);
+
+  const hasGeminiKey = Boolean(geminiApiKey?.trim());
+
+  const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!vibePrompt.trim()) return;
+
+    const apiKey = getGeminiApiKey()?.trim();
+    if (!apiKey) {
+      setAiThemeError('Gemini BYOK API key is required.');
+      return;
+    }
 
     setIsGeneratingTheme(true);
     setAiThemeError(null);
 
     try {
-      const res = await fetch('/api/theme/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: vibePrompt }),
-      });
+      const generated = await generateAiThemePalette(vibePrompt, apiKey);
 
-      if (!res.ok) {
-        const errJson = await res.json();
-        throw new Error(errJson.error || 'Failed to generate theme');
-      }
-
-      const generated = await res.json();
       const newCustom: Partial<ThemeDefinition> = {
         name: generated.name || 'AI Generated Theme',
         description: `Theme generated for vibe: "${vibePrompt}"`,
@@ -86,53 +99,59 @@ export function CustomThemeBuilder({
     }
   };
 
+  if (!hasGeminiKey && !showCustomWizard) {
+    return null;
+  }
+
   return (
     <div className="space-y-6">
-      {/* AI Theme Studio Generator */}
-      <div>
-        <div className="px-3 mb-2 flex items-center justify-between">
-          <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-              AI Theme Studio
+      {/* AI Theme Studio Generator - Only rendered when a Gemini BYOK key is set */}
+      {hasGeminiKey && (
+        <div>
+          <div className="px-3 mb-2 flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                AI Theme Studio
+              </span>
+              <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">
+                Generate tailored high-contrast color palettes powered by Gemini 3.5 Flash-Lite
+              </p>
+            </div>
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/50 px-2 py-0.5 rounded-full">
+              <Sparkles className="w-3 h-3" />
+              Gemini 3.5 Flash-Lite
             </span>
-            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">
-              Generate tailored high-contrast color palettes powered by Gemini 3.5 Flash-Lite
-            </p>
           </div>
-          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/50 px-2 py-0.5 rounded-full">
-            <Sparkles className="w-3 h-3" />
-            Gemini 3.5 Flash-Lite
-          </span>
+
+          <form
+            onSubmit={handleGenerate}
+            className="rounded-2xl bg-white dark:bg-neutral-900/80 border border-neutral-200/80 dark:border-neutral-800/80 p-4 shadow-xs space-y-3"
+          >
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Describe your theme vibe (e.g. 'Cyberpunk neon rain', 'Cozy 80s parchment library', 'Tokyo midnight synthwave')..."
+                value={vibePrompt}
+                onChange={(e) => setVibePrompt(e.target.value)}
+                disabled={isGeneratingTheme}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800/80 border border-neutral-200 dark:border-neutral-700/80 text-xs text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 outline-none focus:ring-2 focus:ring-indigo-500 transition-all pr-32"
+              />
+              <button
+                type="submit"
+                disabled={isGeneratingTheme || !vibePrompt.trim()}
+                className="absolute right-1.5 top-1.5 bottom-1.5 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-medium transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+              >
+                <Sparkles className={`w-3.5 h-3.5 ${isGeneratingTheme ? 'animate-spin' : ''}`} />
+                <span>{isGeneratingTheme ? 'Designing...' : 'Generate'}</span>
+              </button>
+            </div>
+
+            {aiThemeError && (
+              <p className="text-xs text-red-500 dark:text-red-400">{aiThemeError}</p>
+            )}
+          </form>
         </div>
-
-        <form
-          onSubmit={handleGenerateAiTheme}
-          className="rounded-2xl bg-white dark:bg-neutral-900/80 border border-neutral-200/80 dark:border-neutral-800/80 p-4 shadow-xs space-y-3"
-        >
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Describe your theme vibe (e.g. 'Cyberpunk neon rain', 'Cozy 80s parchment library', 'Tokyo midnight synthwave')..."
-              value={vibePrompt}
-              onChange={(e) => setVibePrompt(e.target.value)}
-              disabled={isGeneratingTheme}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800/80 border border-neutral-200 dark:border-neutral-700/80 text-xs text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 outline-none focus:ring-2 focus:ring-indigo-500 transition-all pr-32"
-            />
-            <button
-              type="submit"
-              disabled={isGeneratingTheme || !vibePrompt.trim()}
-              className="absolute right-1.5 top-1.5 bottom-1.5 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-medium transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
-            >
-              <Sparkles className={`w-3.5 h-3.5 ${isGeneratingTheme ? 'animate-spin' : ''}`} />
-              <span>{isGeneratingTheme ? 'Designing...' : 'Generate'}</span>
-            </button>
-          </div>
-
-          {aiThemeError && (
-            <p className="text-xs text-red-500 dark:text-red-400">{aiThemeError}</p>
-          )}
-        </form>
-      </div>
+      )}
 
       {/* Custom Theme Inline Color & Backdrop Wizard */}
       {showCustomWizard && (

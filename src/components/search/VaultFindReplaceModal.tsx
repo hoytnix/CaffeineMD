@@ -40,14 +40,10 @@ export function VaultFindReplaceModal() {
   const { showToast, openFileTab } = useWorkspaceStore();
   const queryInputRef = useRef<HTMLInputElement>(null);
 
-  // Global Hotkey (Cmd+Shift+H / Ctrl+Shift+H)
+  // Escape key handler to close modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'H' || e.key === 'h')) {
-        e.preventDefault();
-        e.stopPropagation();
-        setOpen(!isOpen);
-      } else if (isOpen && e.key === 'Escape') {
+      if (isOpen && e.key === 'Escape') {
         e.preventDefault();
         setOpen(false);
       }

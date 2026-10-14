@@ -8,10 +8,12 @@ import { db } from '@/src/lib/storage/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { GoogleDriveSyncSection } from './sections/GoogleDriveSyncSection';
+import { GeminiSettingsCard } from './sections/GeminiSettingsCard';
 import { ThemeSettingsSection } from './sections/ThemeSettingsSection';
 import { CustomThemeBuilder } from './sections/CustomThemeBuilder';
 import { StorageSettingsSection } from './sections/StorageSettingsSection';
 import { EditorSettingsSection } from './sections/EditorSettingsSection';
+import { KeyboardShortcutsSection } from './sections/KeyboardShortcutsSection';
 
 export function SettingsView({ onBack }: { onBack?: () => void }) {
   const router = useRouter();
@@ -56,7 +58,11 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
 
   const rawFiles = useLiveQuery(() => db.files.toArray());
   const trashCount = rawFiles?.filter((f) => f.isTrash).length || 0;
-  const [showCustomWizard, setShowCustomWizard] = useState(false);
+  const [wizardOverride, setWizardOverride] = useState<boolean | null>(null);
+  const showCustomWizard = wizardOverride !== null ? wizardOverride : themeId === 'custom';
+  const setShowCustomWizard = (show: boolean | ((prev: boolean) => boolean)) => {
+    setWizardOverride(typeof show === 'function' ? show(showCustomWizard) : show);
+  };
 
   return (
     <div
@@ -94,6 +100,9 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
           setCreateWorkspaceModalOpen={setCreateWorkspaceModalOpen}
         />
 
+        {/* AI & Gemini BYOK API Key Settings */}
+        <GeminiSettingsCard />
+
         {/* AI Theme Generator & Inline Custom Theme Wizard */}
         <CustomThemeBuilder
           customTheme={customTheme}
@@ -121,7 +130,10 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
           showToast={showToast}
         />
 
-        {/* Storage, Ephemeral Retention & Keyboard Shortcuts */}
+        {/* Customizable Keyboard Shortcuts */}
+        <KeyboardShortcutsSection />
+
+        {/* Storage & Ephemeral Trash Retention */}
         <StorageSettingsSection
           trashRetentionDays={trashRetentionDays}
           setTrashRetentionDays={setTrashRetentionDays}

@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trash2, HardDrive } from 'lucide-react';
 import { DeploymentSettingsCard } from './DeploymentSettingsCard';
-import { GeminiSettingsCard } from './GeminiSettingsCard';
 
 export interface StorageSettingsSectionProps {
   trashRetentionDays: number;
@@ -11,55 +10,6 @@ export interface StorageSettingsSectionProps {
   emptyTrashAll: () => void;
   trashCount: number;
 }
-
-interface ShortcutItem {
-  keys: string[];
-  action: string;
-  scope: string;
-}
-
-const SHORTCUTS: ShortcutItem[] = [
-  {
-    keys: ['⌘ K', 'Ctrl + K'],
-    action: 'Global Quick Search & Command Palette',
-    scope: 'App-wide',
-  },
-  {
-    keys: ['/'],
-    action: 'Open Slash Block Insertion Menu',
-    scope: 'Rich Editor',
-  },
-  {
-    keys: ['[['],
-    action: 'Trigger WikiLink Autocomplete',
-    scope: 'Rich Editor',
-  },
-  {
-    keys: ['Shift + Space', '⌘⇧Space'],
-    action: 'Open Universal Emoji Drawer',
-    scope: 'Rich Editor',
-  },
-  {
-    keys: ['⌘ S', 'Ctrl + S'],
-    action: 'Force Save Active Document',
-    scope: 'Editor',
-  },
-  {
-    keys: ['⌘ B', 'Ctrl + B'],
-    action: 'Toggle Bold Formatting',
-    scope: 'Editor',
-  },
-  {
-    keys: ['⌘ I', 'Ctrl + I'],
-    action: 'Toggle Italic Formatting',
-    scope: 'Editor',
-  },
-  {
-    keys: ['Esc'],
-    action: 'Close Active Popover / Dismiss Modal',
-    scope: 'Global',
-  },
-];
 
 export function StorageSettingsSection({
   trashRetentionDays,
@@ -136,8 +86,7 @@ export function StorageSettingsSection({
       {/* 1-Click Cloud Deployment Integrations */}
       <DeploymentSettingsCard />
 
-      {/* AI Theme Studio (Gemini BYOK) Settings */}
-      <GeminiSettingsCard />
+
 
       {/* Trash & Ephemeral Retention Settings */}
       <div>
@@ -191,49 +140,7 @@ export function StorageSettingsSection({
         </div>
       </div>
 
-      {/* Universal Shortcuts & Controls */}
-      <div>
-        <div className="px-3 mb-2 flex items-center justify-between">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-            Shortcuts &amp; Controls
-          </span>
-          <span className="text-[11px] text-neutral-400 font-mono">
-            {SHORTCUTS.length} Shortcuts
-          </span>
-        </div>
 
-        <div className="rounded-2xl bg-[var(--card)] border border-[var(--border)] divide-y divide-[var(--border)] overflow-hidden shadow-xs">
-          {SHORTCUTS.map((item, idx) => (
-            <div
-              key={idx}
-              className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs hover:bg-[var(--foreground)]/[0.02] transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-[var(--foreground)] font-medium">
-                  {item.action}
-                </span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[var(--background)] border border-[var(--border)] text-neutral-500 dark:text-neutral-400">
-                  {item.scope}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {item.keys.map((k, kIdx) => (
-                  <React.Fragment key={kIdx}>
-                    {kIdx > 0 && (
-                      <span className="text-neutral-400 dark:text-neutral-500 text-[10px]">
-                        /
-                      </span>
-                    )}
-                    <kbd className="px-2 py-1 rounded bg-[var(--background)] border border-[var(--border)] font-mono text-[11px] text-[var(--foreground)] shadow-2xs">
-                      {k}
-                    </kbd>
-                  </React.Fragment>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

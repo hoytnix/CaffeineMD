@@ -163,9 +163,9 @@ export function DocumentQuickSwitcherModal() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'p') {
+      if (e.key === 'Escape' && isQuickSwitcherOpen) {
         e.preventDefault();
-        setQuickSwitcherOpen(!isQuickSwitcherOpen);
+        setQuickSwitcherOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);

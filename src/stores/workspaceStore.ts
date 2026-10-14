@@ -17,6 +17,10 @@ import {
   softDeleteFolder,
 } from '../lib/storage/db';
 import { NativeFileSystemAdapter } from '../lib/storage/fileSystem';
+import {
+  ShortcutActionId,
+  DEFAULT_SHORTCUTS,
+} from '../lib/shortcuts/shortcutManager';
 
 export interface TabItem {
   path: string;
@@ -139,6 +143,11 @@ export interface WorkspaceState {
   autosaveInterval: number;
   setAutosaveInterval: (interval: number) => void;
 
+  // Customizable Keyboard Shortcuts
+  keyboardShortcuts: Record<ShortcutActionId, string>;
+  setKeyboardShortcut: (actionId: ShortcutActionId, combo: string) => void;
+  resetKeyboardShortcuts: () => void;
+
   // Workspace Creation Modal
   isCreateWorkspaceModalOpen: boolean;
   setCreateWorkspaceModalOpen: (open: boolean) => void;
@@ -231,6 +240,17 @@ const getInitialStoredEditorFont = (): EditorFontFamily => {
     localStorage.getItem('caffeinemd-editor-font-family') ||
     '';
   return ['sans', 'mono', 'serif'].includes(val) ? (val as EditorFontFamily) : 'sans';
+};
+
+const getInitialStoredShortcuts = (): Record<ShortcutActionId, string> => {
+  if (typeof window === 'undefined') return DEFAULT_SHORTCUTS;
+  try {
+    const raw = localStorage.getItem('caffeinemd-keyboard-shortcuts');
+    if (raw) {
+      return { ...DEFAULT_SHORTCUTS, ...JSON.parse(raw) };
+    }
+  } catch {}
+  return DEFAULT_SHORTCUTS;
 };
 
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
@@ -444,17 +464,46 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         ? (rawFont as EditorFontFamily)
         : 'sans';
 
+      const rawShortcuts = localStorage.getItem('caffeinemd-keyboard-shortcuts');
+      let savedShortcuts = get().keyboardShortcuts;
+      if (rawShortcuts) {
+        try {
+          savedShortcuts = { ...DEFAULT_SHORTCUTS, ...JSON.parse(rawShortcuts) };
+        } catch {}
+      }
+
       set({
         themeId: savedTheme,
         theme: savedTheme,
         customTheme: savedCustomColors,
         customThemeColors: savedCustomColors,
         editorFontFamily: savedFont,
+        keyboardShortcuts: savedShortcuts,
       });
 
       applyThemeId(savedTheme, savedCustomColors);
     } catch (err) {
       console.warn('Theme hydration error:', err);
+    }
+  },
+
+  // Customizable Keyboard Shortcuts
+  keyboardShortcuts: getInitialStoredShortcuts(),
+  setKeyboardShortcut: (actionId: ShortcutActionId, combo: string) => {
+    const updated = { ...get().keyboardShortcuts, [actionId]: combo };
+    set({ keyboardShortcuts: updated });
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('caffeinemd-keyboard-shortcuts', JSON.stringify(updated));
+      } catch {}
+    }
+  },
+  resetKeyboardShortcuts: () => {
+    set({ keyboardShortcuts: DEFAULT_SHORTCUTS });
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('caffeinemd-keyboard-shortcuts');
+      } catch {}
     }
   },
 

@@ -19,17 +19,6 @@ export function SplitPaneContainer({ primaryFilePath }: SplitPaneContainerProps)
     openTabs,
   } = useWorkspaceStore();
 
-  // Global shortcut: Cmd+\ or Ctrl+\ to toggle split pane
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
-        e.preventDefault();
-        toggleSplitPane();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [toggleSplitPane]);
 
   if (splitPaneMode === 'none') {
     return <TiptapEditor key={primaryFilePath} filePath={primaryFilePath} />;

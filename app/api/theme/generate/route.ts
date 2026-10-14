@@ -1,24 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
+import {
+  THEME_SYSTEM_INSTRUCTION,
+  THEME_RESPONSE_SCHEMA,
+  AI_THEME_CANDIDATE_MODELS,
+} from '@/src/lib/themes/aiThemeService';
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt } = await req.json();
+    const { prompt, apiKey } = await req.json();
 
     if (!prompt || typeof prompt !== 'string') {
       return NextResponse.json({ error: 'A theme description prompt is required.' }, { status: 400 });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
+    const trimmedKey = typeof apiKey === 'string' ? apiKey.trim() : '';
+    if (!trimmedKey) {
       return NextResponse.json(
-        { error: 'Gemini API key is not configured on the server.' },
-        { status: 500 }
+        { error: 'Gemini BYOK API key is required.' },
+        { status: 400 }
       );
     }
 
     const ai = new GoogleGenAI({
-      apiKey,
+      apiKey: trimmedKey,
       httpOptions: {
         headers: {
           'User-Agent': 'aistudio-build',
@@ -26,78 +31,18 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const systemInstruction = `You are a world-class UI color palette and typography designer specializing in dark/light minimalist IDE and knowledge base themes like Obsidian, VS Code, and Linear.
-Given a theme vibe description, generate a gorgeous, high-contrast, fully cohesive color palette.
-Ensure that:
-- background and foreground have high contrast (WCAG AAA compliant readability for text).
-- card is slightly lighter than background (if dark) or slightly softer (if light).
-- border complements the card and background with subtle delineation.
-- accent provides a distinct, striking highlight color.
-- all colors must be valid 6-character hex codes (e.g. #1e1e24).
-- fontFamily should be a clean, modern web font (e.g. Inter, 'JetBrains Mono', 'Fira Code', 'Outfit', 'Plus Jakarta Sans', 'Cinzel', 'Playfair Display').`;
-
-    // Cascade: Gemini 3.8 Flash -> 3.7 Flash -> 3.6 Flash -> 3.5 Flash -> 3.5 Flash-Lite -> 3.1 Pro
-    const candidateModels = [
-      'gemini-3.8-flash',
-      'gemini-3.7-flash',
-      'gemini-3.6-flash',
-      'gemini-3.5-flash',
-      'gemini-3.5-flash-lite',
-      'gemini-3.1-pro',
-    ];
     let lastError: any = null;
     let generatedData = null;
 
-    for (const model of candidateModels) {
+    for (const model of AI_THEME_CANDIDATE_MODELS) {
       try {
         const response = await ai.models.generateContent({
           model,
           contents: `Design a cohesive theme palette based on this user vibe: "${prompt.trim()}". Return JSON according to the schema.`,
           config: {
-            systemInstruction,
+            systemInstruction: THEME_SYSTEM_INSTRUCTION,
             responseMimeType: 'application/json',
-            responseSchema: {
-              type: Type.OBJECT,
-              properties: {
-                name: {
-                  type: Type.STRING,
-                  description: 'A creative title for this theme (2-4 words)',
-                },
-                background: {
-                  type: Type.STRING,
-                  description: 'Hex color for page background e.g. #0a0b10',
-                },
-                foreground: {
-                  type: Type.STRING,
-                  description: 'Hex color for primary text e.g. #f3f4f6',
-                },
-                card: {
-                  type: Type.STRING,
-                  description: 'Hex color for card/panel container background e.g. #141622',
-                },
-                accent: {
-                  type: Type.STRING,
-                  description: 'Hex color for accent buttons, active tabs, and highlights e.g. #6366f1',
-                },
-                border: {
-                  type: Type.STRING,
-                  description: 'Hex color for borders and dividers e.g. #282b3d',
-                },
-                fontFamily: {
-                  type: Type.STRING,
-                  description: 'CSS font family stack e.g. Inter, sans-serif or "JetBrains Mono", monospace',
-                },
-                fontFamilyGoogleUrl: {
-                  type: Type.STRING,
-                  description: 'Optional Google Fonts CSS URL if using a custom web font',
-                },
-                backgroundImageUrl: {
-                  type: Type.STRING,
-                  description: 'Optional subtle abstract ambient backdrop image URL from unsplash',
-                },
-              },
-              required: ['name', 'background', 'foreground', 'card', 'accent', 'border', 'fontFamily'],
-            },
+            responseSchema: THEME_RESPONSE_SCHEMA,
           },
         });
 

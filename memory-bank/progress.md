@@ -190,6 +190,23 @@
   - Added real page title and 2-line description preview above URL and quick action buttons (`Open Link`, `Copy URL`, `Remove Link`).
   - Increased external link preview card width to `w-80` (`320px`) with edge collision clamping.
 
+- [x] **Settings View Reordering, Gemini BYOK Integration & Reactive AI Theme Studio**:
+  - Reordered settings sections in [SettingsView.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/settings/SettingsView.tsx): `<GeminiSettingsCard />` rendered immediately after `<GoogleDriveSyncSection />` and directly before `<CustomThemeBuilder />` / `<ThemeSettingsSection />`; removed duplicate card from [StorageSettingsSection.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/settings/sections/StorageSettingsSection.tsx).
+  - Wired live event dispatching (`caffeinemd-gemini-key-updated`) and storage listener in [GeminiSettingsCard.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/settings/sections/GeminiSettingsCard.tsx) for instant cross-component reactivity without page reloads.
+  - Exported `getGeminiApiKey()` helper in [geminiTemplateGenerator.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/geminiTemplateGenerator.ts); conditionally hidden AI Theme Studio prompt input and generate button in [CustomThemeBuilder.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/settings/sections/CustomThemeBuilder.tsx) when no key is configured while maintaining manual theme customizer access.
+  - Implemented [aiThemeService.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/themes/aiThemeService.ts) calling `@google/genai` directly with client-side BYOK and cascading fallback, with server route fallback to `/api/theme/generate`.
+- [x] **Customizable Keyboard Shortcuts & Mobile Two-Tab Export Dialog**:
+  - Implemented [shortcutManager.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/shortcuts/shortcutManager.ts) (94 LOC, <130 LOC limit) with `ShortcutActionId`, `SHORTCUT_DEFINITIONS`, `DEFAULT_SHORTCUTS`, `eventToComboString()`, `matchesShortcut()`, and `formatShortcutForDisplay()`.
+  - Added `keyboardShortcuts`, `setKeyboardShortcut`, and `resetKeyboardShortcuts` to [workspaceStore.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/workspaceStore.ts), persisting to `localStorage` under `caffeinemd-keyboard-shortcuts` and hydrating on launch.
+  - Centralized global keydown handling in [page.tsx](file:///home/oloty/Dev/CaffeineMD/app/w/[workspaceId]/page.tsx) and [useEmojiDrawer.ts](file:///home/oloty/Dev/CaffeineMD/src/hooks/useEmojiDrawer.ts) using `matchesShortcut()` across `quickSwitcher`, `quickSearch` (with `Mod+O` support), `findReplace`, `splitPane`, `emojiDrawer`, `newNote`, `toggleSidebar`, and `openSettings`. Updated dynamic badge rendering in [FileTree.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/FileTree.tsx) and eliminated duplicate modal shortcut firing.
+  - Built interactive [KeyboardShortcutsSection.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/settings/sections/KeyboardShortcutsSection.tsx) (148 LOC, <160 LOC limit) with click-to-record keybinding capture, conflict swap detection, reset defaults, and mounted under `<EditorSettingsSection />` in [SettingsView.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/settings/SettingsView.tsx).
+  - Built responsive mobile two-tab layout ("Configure Export" vs "Live Preview") in [ExportPwaModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportPwaModal.tsx) (376 LOC, <400 LOC limit) and updated [ExportPreviewDrawer.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportPreviewDrawer.tsx) with full mobile viewport width.
+- [x] **Gemini 3.5 Flash-Lite Theme Engine Upgrade & Cascading Fallback Architecture**:
+  - Removed deprecated `gemini-2.5` model references from all theme generation modules.
+  - Defined `AI_THEME_CANDIDATE_MODELS` (`gemini-3.5-flash-lite`, `gemini-3.8-flash`, `gemini-3.7-flash`, `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-3.1-pro`) in [aiThemeService.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/themes/aiThemeService.ts) and shared with [route.ts](file:///home/oloty/Dev/CaffeineMD/app/api/theme/generate/route.ts).
+  - Iterates through the cascading sequence client-side via `@google/genai` before falling back to `/api/theme/generate`.
+  - Updated AI Theme Studio description and badge copy in [CustomThemeBuilder.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/settings/sections/CustomThemeBuilder.tsx) to "Gemini 3.5 Flash-Lite".
+
 ## Verification Status
 - Lint verification: Passing cleanly with 0 errors and 0 warnings (`pnpm run lint`).
 - TypeScript verification: Passing cleanly with 0 errors (`tsc --noEmit`).

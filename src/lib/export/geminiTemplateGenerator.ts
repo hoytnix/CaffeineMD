@@ -12,6 +12,11 @@ export {
   buildAuditedThemeTemplate,
 };
 
+export function getGeminiApiKey(): string {
+  if (typeof window === 'undefined') return '';
+  return localStorage.getItem('caffeinemd-gemini-api-key') || '';
+}
+
 export interface GenerateThemeOptions {
   apiKey: string;
   prompt: string;

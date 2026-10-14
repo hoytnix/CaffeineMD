@@ -4,21 +4,36 @@ import React, { useState, useEffect } from 'react';
 import { Sparkles, KeyRound, Check, AlertCircle, Loader2, ExternalLink } from 'lucide-react';
 import { db } from '@/src/lib/storage/db';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
-import { GEMINI_CANDIDATE_MODELS } from '@/src/lib/export/geminiTemplateGenerator';
+import { GEMINI_CANDIDATE_MODELS, getGeminiApiKey } from '@/src/lib/export/geminiTemplateGenerator';
 
 export function GeminiSettingsCard() {
   const activeWorkspaceId = useWorkspaceStore((s) => s.activeWorkspaceId);
-  const [apiKey, setApiKey] = useState(() =>
-    typeof window !== 'undefined' ? localStorage.getItem('caffeinemd-gemini-api-key') || '' : ''
-  );
+  const [apiKey, setApiKey] = useState(() => getGeminiApiKey());
   const [isTesting, setIsTesting] = useState(false);
   const [status, setStatus] = useState<{ ok?: boolean; message?: string } | null>(null);
 
+  useEffect(() => {
+    const handleKeyUpdate = () => {
+      setApiKey(getGeminiApiKey());
+    };
+    window.addEventListener('caffeinemd-gemini-key-updated', handleKeyUpdate);
+    window.addEventListener('storage', handleKeyUpdate);
+    return () => {
+      window.removeEventListener('caffeinemd-gemini-key-updated', handleKeyUpdate);
+      window.removeEventListener('storage', handleKeyUpdate);
+    };
+  }, []);
+
   const handleSaveApiKey = (key: string) => {
+    setApiKey(key);
     const trimmed = key.trim();
-    setApiKey(trimmed);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('caffeinemd-gemini-api-key', trimmed);
+      if (trimmed) {
+        localStorage.setItem('caffeinemd-gemini-api-key', trimmed);
+      } else {
+        localStorage.removeItem('caffeinemd-gemini-api-key');
+      }
+      window.dispatchEvent(new Event('caffeinemd-gemini-key-updated'));
     }
     if (activeWorkspaceId) {
       db.workspaces.update(activeWorkspaceId, { geminiApiKey: trimmed }).catch(() => {});
@@ -26,8 +41,13 @@ export function GeminiSettingsCard() {
     setStatus(null);
   };
 
+  const handleClearApiKey = () => {
+    handleSaveApiKey('');
+  };
+
   const handleTestKey = async () => {
-    if (!apiKey) return;
+    const trimmed = apiKey.trim();
+    if (!trimmed) return;
     setIsTesting(true);
     setStatus(null);
 
@@ -37,7 +57,7 @@ export function GeminiSettingsCard() {
     for (const model of GEMINI_CANDIDATE_MODELS) {
       try {
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(
-          apiKey.trim()
+          trimmed
         )}`;
         const res = await fetch(endpoint, {
           method: 'POST',
@@ -75,7 +95,7 @@ export function GeminiSettingsCard() {
       <div className="px-3 mb-2 flex items-center justify-between">
         <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5">
           <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-          AI Theme Studio &amp; Jinja Generator (Gemini BYOK)
+          AI &amp; Gemini BYOK API Key Settings
         </span>
       </div>
 
@@ -87,7 +107,7 @@ export function GeminiSettingsCard() {
                 Google Gemini API Key
               </span>
               <span className="text-neutral-400 text-[11px]">
-                Powers client-side Jinja theme generation for PWA &amp; Standalone HTML exports.
+                Powers AI Theme Studio and client-side Jinja theme generation.
               </span>
             </div>
             <a
@@ -111,6 +131,16 @@ export function GeminiSettingsCard() {
                 className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)] outline-none focus:border-[var(--accent)] font-mono"
               />
             </div>
+            {apiKey && (
+              <button
+                type="button"
+                onClick={handleClearApiKey}
+                className="px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--background)] hover:bg-neutral-800 text-[11px] text-neutral-400 hover:text-rose-400 transition-colors cursor-pointer"
+                title="Clear API Key"
+              >
+                Clear
+              </button>
+            )}
             <button
               type="button"
               onClick={handleTestKey}

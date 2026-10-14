@@ -24,6 +24,8 @@ import { NewNoteModal } from '@/src/components/sidebar/NewNoteModal';
 import { ExportPwaModal } from '@/src/components/export/ExportPwaModal';
 import { VaultFindReplaceModal } from '@/src/components/search/VaultFindReplaceModal';
 import { FileText, Check } from 'lucide-react';
+import { matchesShortcut } from '@/src/lib/shortcuts/shortcutManager';
+import { useFindReplaceStore } from '@/src/stores/findReplaceStore';
 
 export default function WorkspacePage() {
   // Bi-directional Gmail-style URL and hash routing synchronization
@@ -35,10 +37,17 @@ export default function WorkspacePage() {
     activeTab,
     setActiveTab,
     sidebarCollapsed,
+    toggleSidebar,
     isImportModalOpen,
     setImportModalOpen,
     isNewNoteModalOpen,
     setNewNoteModalOpen,
+    isSearchOpen,
+    setIsSearchOpen,
+    isQuickSwitcherOpen,
+    setQuickSwitcherOpen,
+    toggleSplitPane,
+    keyboardShortcuts,
     setTheme,
     hydrateThemeFromStorage,
     toastMessage,
@@ -52,20 +61,65 @@ export default function WorkspacePage() {
 
   const [, setHasInitialized] = useState(false);
 
-  // Focus Mode Global Shortcut (F11, Cmd+Shift+F, Esc to exit)
+  // Global Keyboard Shortcuts (Quick Switcher, Vault Search, Find & Replace, Split Pane, Focus Mode, New Note, Toggle Sidebar, Open Settings)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Focus Mode escape / toggle
       if (e.key === 'F11' || ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'f')) {
         e.preventDefault();
         toggleFocusMode();
-      } else if (e.key === 'Escape' && isFocusMode) {
+        return;
+      }
+      if (e.key === 'Escape' && isFocusMode) {
         e.preventDefault();
         setFocusMode(false);
+        return;
+      }
+
+      // Check configured shortcuts
+      if (matchesShortcut(e, keyboardShortcuts.quickSwitcher)) {
+        e.preventDefault();
+        setQuickSwitcherOpen(!isQuickSwitcherOpen);
+      } else if (
+        matchesShortcut(e, keyboardShortcuts.quickSearch) ||
+        (keyboardShortcuts.quickSearch === 'Mod+K' && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'o')
+      ) {
+        e.preventDefault();
+        setIsSearchOpen(!isSearchOpen);
+      } else if (matchesShortcut(e, keyboardShortcuts.findReplace)) {
+        e.preventDefault();
+        useFindReplaceStore.getState().setOpen(!useFindReplaceStore.getState().isOpen);
+      } else if (matchesShortcut(e, keyboardShortcuts.splitPane)) {
+        e.preventDefault();
+        toggleSplitPane();
+      } else if (matchesShortcut(e, keyboardShortcuts.newNote)) {
+        e.preventDefault();
+        setNewNoteModalOpen(true);
+      } else if (matchesShortcut(e, keyboardShortcuts.toggleSidebar)) {
+        e.preventDefault();
+        toggleSidebar();
+      } else if (matchesShortcut(e, keyboardShortcuts.openSettings)) {
+        e.preventDefault();
+        setActiveTab('settings');
       }
     };
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isFocusMode, toggleFocusMode, setFocusMode]);
+  }, [
+    isFocusMode,
+    toggleFocusMode,
+    setFocusMode,
+    keyboardShortcuts,
+    isQuickSwitcherOpen,
+    setQuickSwitcherOpen,
+    isSearchOpen,
+    setIsSearchOpen,
+    toggleSplitPane,
+    setNewNoteModalOpen,
+    toggleSidebar,
+    setActiveTab,
+  ]);
 
   // Initial vault seed and theme rehydration
   useEffect(() => {

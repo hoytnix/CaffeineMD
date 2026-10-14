@@ -12,13 +12,9 @@ export function QuickSearchModal() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Keyboard shortcut Cmd+K / Ctrl+K
+  // Escape key handler to close modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setIsSearchOpen(!isSearchOpen);
-      }
       if (e.key === 'Escape' && isSearchOpen) {
         setIsSearchOpen(false);
       }

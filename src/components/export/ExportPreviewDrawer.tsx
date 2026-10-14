@@ -55,7 +55,7 @@ export function ExportPreviewDrawer({
   };
 
   return (
-    <div className="flex flex-col h-full bg-[var(--background)] border border-[var(--border)] rounded-2xl overflow-hidden shadow-inner">
+    <div className="flex flex-col h-full w-full md:w-[460px] md:border-l bg-[var(--background)] border border-[var(--border)] rounded-2xl overflow-hidden shadow-inner">
       {/* Drawer Control Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--border)] bg-[var(--card)]/50">
         <div className="flex items-center gap-2">

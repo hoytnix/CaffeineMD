@@ -17,6 +17,8 @@ import {
   Download,
   X,
   Loader2,
+  Settings2,
+  Eye,
 } from 'lucide-react';
 import { DeploymentActionDrawer } from './DeploymentActionDrawer';
 import { AiThemePromptDrawer } from './AiThemePromptDrawer';
@@ -56,6 +58,7 @@ function ExportPwaDialog() {
   const [shortName, setShortName] = useState(() => defaultTitle.slice(0, 12));
   const [appId, setAppId] = useState(() => `com.caffeinemd.${slugify(defaultTitle)}`);
   const [isExporting, setIsExporting] = useState(false);
+  const [mobileActiveTab, setMobileActiveTab] = useState<'configure' | 'preview'>('configure');
 
   // Direct AI Synthesis states
   const [directHtmlMode, setDirectHtmlMode] = useState(false);
@@ -237,10 +240,42 @@ function ExportPwaDialog() {
           </button>
         </div>
 
+        {/* Mobile 2-Tab Segmented Switcher (Visible on < md) */}
+        <div className="flex md:hidden border-b border-slate-800/80 bg-slate-950/60 p-1.5 gap-1.5 shrink-0 rounded-xl mb-3">
+          <button
+            type="button"
+            onClick={() => setMobileActiveTab('configure')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+              mobileActiveTab === 'configure'
+                ? 'bg-[var(--accent)] text-white shadow-xs'
+                : 'text-neutral-400 hover:text-[var(--foreground)]'
+            }`}
+          >
+            <Settings2 className="w-3.5 h-3.5" />
+            <span>Configure Export</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileActiveTab('preview')}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+              mobileActiveTab === 'preview'
+                ? 'bg-[var(--accent)] text-white shadow-xs'
+                : 'text-neutral-400 hover:text-[var(--foreground)]'
+            }`}
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>Live Preview</span>
+          </button>
+        </div>
+
         {/* Main Split Layout: Options Panel (Left) & Sandboxed Preview Drawer (Right) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0 overflow-y-auto pr-1">
+        <div className="flex flex-col md:grid md:grid-cols-12 gap-5 flex-1 min-h-0 overflow-y-auto pr-1">
           {/* Options Column */}
-          <div className="lg:col-span-6 space-y-4">
+          <div
+            className={`${
+              mobileActiveTab === 'configure' ? 'flex flex-col' : 'hidden md:flex md:flex-col'
+            } md:col-span-6 space-y-4`}
+          >
             <ExportOptionsForm
               scopeMode={scopeMode}
               setScopeMode={setScopeMode}
@@ -307,7 +342,11 @@ function ExportPwaDialog() {
           </div>
 
           {/* Sandboxed Live Preview Column */}
-          <div className="lg:col-span-6 h-[380px] lg:h-auto min-h-[350px] flex flex-col">
+          <div
+            className={`${
+              mobileActiveTab === 'preview' ? 'flex flex-col flex-1 w-full' : 'hidden md:flex md:flex-col'
+            } md:col-span-6 h-[450px] md:h-auto min-h-[350px]`}
+          >
             <ExportPreviewDrawer
               compiledHtml={previewHtml}
               isLoading={isPreviewLoading}
@@ -317,31 +356,12 @@ function ExportPwaDialog() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border)]">
-          <button
-            type="button"
-            onClick={closeExportModal}
-            className="px-3.5 py-1.5 rounded-lg border border-[var(--border)] text-xs text-neutral-400 hover:text-[var(--foreground)] hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
-          >
+        <div className={`flex items-center justify-end gap-2 pt-2 border-t border-[var(--border)] ${mobileActiveTab === 'configure' ? 'flex' : 'hidden md:flex'}`}>
+          <button type="button" onClick={closeExportModal} className="px-3.5 py-1.5 rounded-lg border border-[var(--border)] text-xs text-neutral-400 hover:text-[var(--foreground)] hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer">
             Cancel
           </button>
-          <button
-            type="button"
-            onClick={handleDownload}
-            disabled={isExporting}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[var(--accent)] hover:opacity-90 text-white text-xs font-medium shadow-sm transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {isExporting ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Exporting...</span>
-              </>
-            ) : (
-              <>
-                <Download className="w-3.5 h-3.5" />
-                <span>{outputType === 'html' ? 'Download HTML' : 'Download PWA Bundle'}</span>
-              </>
-            )}
+          <button type="button" onClick={handleDownload} disabled={isExporting} className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[var(--accent)] hover:opacity-90 text-white text-xs font-medium shadow-sm transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+            {isExporting ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /><span>Exporting...</span></> : <><Download className="w-3.5 h-3.5" /><span>{outputType === 'html' ? 'Download HTML' : 'Download PWA Bundle'}</span></>}
           </button>
         </div>
       </div>

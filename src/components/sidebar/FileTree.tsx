@@ -18,6 +18,7 @@ import Link from 'next/link';
 import { useContextMenu } from '@/src/hooks/useContextMenu';
 import { FileTreeCanvasContextMenu } from './tree/FileTreeCanvasContextMenu';
 import { useFindReplaceStore } from '@/src/stores/findReplaceStore';
+import { formatShortcutForDisplay } from '@/src/lib/shortcuts/shortcutManager';
 
 export function FileTree() {
   const rawFiles = useLiveQuery(() => db.files.toArray());
@@ -51,6 +52,7 @@ export function FileTree() {
     isNewNoteModalOpen,
     setNewNoteModalOpen,
     customFolders,
+    keyboardShortcuts,
   } = useWorkspaceStore();
 
   const {
@@ -152,28 +154,28 @@ export function FileTree() {
         isDragOverTree ? 'ring-2 ring-indigo-500 bg-indigo-50/20' : ''
       }`}
     >
-      {/* ⌘K Search Bar & Vault RegEx Find-and-Replace */}
+      {/* Search Bar & Vault RegEx Find-and-Replace */}
       <div className="p-2 border-b border-[var(--border)] flex items-center gap-1.5">
         <button
           type="button"
           onClick={() => setIsSearchOpen(true)}
           className="flex-1 min-w-0 flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-[var(--background)] hover:bg-[var(--border)]/40 border border-[var(--border)] text-xs text-neutral-400 hover:text-[var(--foreground)] transition-colors cursor-pointer group"
-          title="Search notes (⌘K)"
-          aria-label="Search notes (⌘K)"
+          title={`Search notes (${formatShortcutForDisplay(keyboardShortcuts.quickSearch)})`}
+          aria-label={`Search notes (${formatShortcutForDisplay(keyboardShortcuts.quickSearch)})`}
         >
           <div className="flex items-center gap-2 truncate">
             <Search className="w-3.5 h-3.5 text-neutral-400 group-hover:text-[var(--foreground)] shrink-0 transition-colors" />
             <span className="truncate text-xs">Search notes...</span>
           </div>
           <kbd className="font-mono text-[10px] text-neutral-400 group-hover:text-[var(--foreground)] border border-[var(--border)] bg-[var(--card)] px-1 py-0.5 rounded shrink-0 transition-colors">
-            ⌘K
+            {formatShortcutForDisplay(keyboardShortcuts.quickSearch)}
           </kbd>
         </button>
         <button
           type="button"
           onClick={() => useFindReplaceStore.getState().setOpen(true)}
-          title="Vault RegEx Find & Replace (Cmd+Shift+H)"
-          aria-label="Vault RegEx Find & Replace (Cmd+Shift+H)"
+          title={`Vault RegEx Find & Replace (${formatShortcutForDisplay(keyboardShortcuts.findReplace)})`}
+          aria-label={`Vault RegEx Find & Replace (${formatShortcutForDisplay(keyboardShortcuts.findReplace)})`}
           className="p-1.5 rounded-lg border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--border)]/40 text-neutral-400 hover:text-[var(--foreground)] transition-colors shrink-0 cursor-pointer"
         >
           <Replace className="w-3.5 h-3.5" />
