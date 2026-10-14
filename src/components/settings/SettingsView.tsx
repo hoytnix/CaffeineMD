@@ -167,6 +167,18 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
         )}
       </main>
 
+      {/* Footer Branding */}
+      <footer className="text-center py-4 text-xs text-neutral-400 dark:text-neutral-500">
+        <a
+          href="https://tehwiz.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-indigo-400 underline underline-offset-2 transition-colors cursor-pointer"
+        >
+          A TehWiz Production.
+        </a>
+      </footer>
+
       <CreateWorkspaceModal />
     </div>
   );

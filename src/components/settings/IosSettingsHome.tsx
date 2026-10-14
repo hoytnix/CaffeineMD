@@ -42,6 +42,15 @@ export function IosSettingsHome({
   hasGeminiKey,
 }: IosSettingsHomeProps) {
   const isDriveConnected = Boolean(googleDriveUser);
+  const displayName = googleDriveUser?.displayName || 'Michael Hoyt';
+  const displayEmail = googleDriveUser?.email || 'Google Account, Cloud Sync, and more';
+  const initials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || 'MH';
 
   const SETTINGS_ROWS = [
     {
@@ -88,7 +97,7 @@ export function IosSettingsHome({
         Settings
       </h1>
 
-      {/* 1. Top PFP Account Card ("Michael Hoyt") */}
+      {/* 1. Top PFP Account Card (Dynamic SSO Profile) */}
       <button
         type="button"
         onClick={() => onSelectScreen('profile')}
@@ -98,7 +107,7 @@ export function IosSettingsHome({
         {googleDriveUser?.photoUrl ? (
           <Image
             src={googleDriveUser.photoUrl}
-            alt={googleDriveUser.displayName || 'Michael Hoyt'}
+            alt={displayName}
             width={56}
             height={56}
             unoptimized
@@ -107,17 +116,17 @@ export function IosSettingsHome({
           />
         ) : (
           <div className="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-600 via-indigo-700 to-slate-800 flex items-center justify-center text-white font-bold text-lg shadow-inner ring-2 ring-indigo-500/30 shrink-0">
-            MH
+            {initials}
           </div>
         )}
 
         {/* Center Text */}
         <div className="flex-1 min-w-0">
           <div className="text-lg font-semibold text-slate-100 leading-tight truncate">
-            {googleDriveUser?.displayName || 'Michael Hoyt'}
+            {displayName}
           </div>
           <div className="text-xs text-slate-400 mt-0.5 truncate">
-            {googleDriveUser?.email || 'Google Account, Cloud Sync, and more'}
+            {displayEmail}
           </div>
         </div>
 
@@ -169,7 +178,16 @@ export function IosSettingsHome({
       {/* About CaffeineMD Footer */}
       <div className="pt-6 border-t border-[var(--border)] text-center text-xs text-neutral-400 dark:text-neutral-500 space-y-1">
         <p className="font-semibold text-neutral-700 dark:text-neutral-300">CaffeineMD</p>
-        <p className="text-[11px]">Local-first, high-performance personal knowledge management workspace ☕</p>
+        <p className="text-[11px]">
+          <a
+            href="https://tehwiz.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-indigo-400 underline underline-offset-2 transition-colors cursor-pointer"
+          >
+            A TehWiz Production.
+          </a>
+        </p>
       </div>
     </div>
   );

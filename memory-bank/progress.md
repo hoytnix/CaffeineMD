@@ -29,8 +29,9 @@
 - [x] **1-Click Edge Deployment**: Zero-build binary zip deployer to Netlify edge and static deployer to GitHub Pages (`gh-pages`).
 
 ### 6. iOS Settings App & Custom Themes
-- [x] **iOS Settings Experience**: Root home screen with Account Card ("Michael Hoyt"), 5 squircle category rows, and sticky horizontal tab bar.
+- [x] **iOS Settings Experience**: Root home screen with dynamic SSO Profile Card, 5 squircle category rows, and sticky horizontal tab bar.
 - [x] **Theme Studio**: 14 handcrafted presets, AI Theme Studio (Gemini BYOK), Custom Theme Palette & Backdrop Wizard, and theme variables propagation.
+- [x] **Branding & Responsive UX**: "A TehWiz Production." link in settings footer, touch/mobile close file tab accessibility, and root welcome note seeding.
 - [x] **Customizable Keyboard Shortcuts**: Key combo recorder, conflict detection, and global accelerator dispatch.
 
 ## Verification Status

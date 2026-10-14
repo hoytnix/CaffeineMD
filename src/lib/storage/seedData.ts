@@ -6,6 +6,7 @@ export const INITIAL_VAULT_NOTES: Array<Omit<VaultFile, 'id'> & { id?: string }>
     path: '/Welcome to CaffeineMD ☕.md',
     name: 'Welcome to CaffeineMD ☕.md',
     title: 'Welcome to CaffeineMD ☕',
+    folder: '',
     extension: 'md',
     content: WELCOME_NOTE_CONTENT,
     frontmatter: {

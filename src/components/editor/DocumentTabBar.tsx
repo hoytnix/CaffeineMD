@@ -181,7 +181,7 @@ export function DocumentTabBar({ currentPath }: DocumentTabBarProps) {
                     e.stopPropagation();
                     closeFileTab(tab.path);
                   }}
-                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded transition-opacity cursor-pointer shrink-0 ml-0.5 hover:bg-black/10 dark:hover:bg-white/10"
+                  className="opacity-100 md:opacity-0 md:group-hover:opacity-100 p-0.5 rounded transition-opacity cursor-pointer shrink-0 ml-0.5 hover:bg-black/10 dark:hover:bg-white/10"
                   style={{ color: 'var(--theme-text-muted)' }}
                   title="Close tab (⌘W)"
                 >
