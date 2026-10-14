@@ -12,6 +12,7 @@ import { ListFormattingGroup } from './toolbar/ListFormattingGroup';
 import { MediaSelectorPopover } from './toolbar/MediaSelectorPopover';
 import { TableControlsGroup } from './toolbar/TableControlsGroup';
 import { HistorySelectorPopover } from './toolbar/HistorySelectorPopover';
+import { useKeyboardOffset } from '@/src/hooks/useKeyboardOffset';
 
 export interface EditorBottomToolbarProps {
   editor: Editor | null;
@@ -20,6 +21,7 @@ export interface EditorBottomToolbarProps {
 
 export function EditorBottomToolbar({ editor, position }: EditorBottomToolbarProps) {
   const { showToast, toolboxPosition } = useWorkspaceStore();
+  const { keyboardOffset, isKeyboardOpen } = useKeyboardOffset();
   const resolvedPosition = position || toolboxPosition;
   const isVertical = resolvedPosition === 'left' || resolvedPosition === 'right';
   const [copiedRecently, setCopiedRecently] = useState(false);
@@ -107,10 +109,14 @@ export function EditorBottomToolbar({ editor, position }: EditorBottomToolbarPro
 
   if (!editor) return null;
 
+  const isDockedAboveKeyboard = isKeyboardOpen && resolvedPosition === 'bottom';
+
   const containerClasses = isVertical
     ? 'w-fit max-h-[calc(100vh-10rem)] overflow-y-auto scrollbar-none no-scrollbar py-2 px-1.5 rounded-2xl bg-[var(--card)]/95 backdrop-blur-xl border border-[var(--border)] shadow-xl flex flex-col items-center gap-1.5 select-none transition-all cursor-grab active:cursor-grabbing shrink-0'
     : resolvedPosition === 'top'
     ? 'mx-auto w-fit max-w-[calc(100%-2rem)] sm:max-w-2xl overflow-x-auto scrollbar-none no-scrollbar py-1 px-3 rounded-2xl bg-[var(--card)]/95 backdrop-blur-xl border border-[var(--border)] shadow-xl flex items-center gap-1.5 select-none transition-all cursor-grab active:cursor-grabbing shrink-0'
+    : isDockedAboveKeyboard
+    ? 'fixed left-1/2 -translate-x-1/2 z-50 mx-auto w-fit max-w-[calc(100vw-1rem)] sm:max-w-2xl overflow-x-auto scrollbar-none no-scrollbar py-1 px-3 rounded-2xl backdrop-blur-xl border shadow-2xl flex items-center gap-1.5 select-none transition-all cursor-grab active:cursor-grabbing shrink-0'
     : 'sticky bottom-6 z-30 mx-auto w-fit max-w-[calc(100%-2rem)] sm:max-w-2xl overflow-x-auto scrollbar-none no-scrollbar py-1 px-3 rounded-2xl bg-[var(--card)]/95 backdrop-blur-xl border border-[var(--border)] shadow-xl flex items-center gap-1.5 select-none transition-all cursor-grab active:cursor-grabbing shrink-0';
 
   const btnClass = (active: boolean) =>
@@ -125,7 +131,19 @@ export function EditorBottomToolbar({ editor, position }: EditorBottomToolbarPro
       ref={containerRef}
       role="toolbar"
       aria-label="Editor Formatting Toolbar"
-      onMouseDown={handleMouseDown}
+      style={
+        isDockedAboveKeyboard
+          ? {
+              bottom: `${keyboardOffset + 10}px`,
+              backgroundColor: 'var(--theme-bg-sidebar)',
+              borderColor: 'var(--theme-border)',
+            }
+          : undefined
+      }
+      onMouseDown={(e) => {
+        e.preventDefault();
+        handleMouseDown(e);
+      }}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}

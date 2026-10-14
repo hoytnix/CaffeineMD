@@ -160,6 +160,12 @@
   - Removed legacy CSV table paste button from [TableControlsGroup.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/toolbar/TableControlsGroup.tsx).
   - Wired rich-text editor right-click context menu "Paste" action in [EditorContextMenu.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/EditorContextMenu.tsx) to execute `executeSmartPaste`.
 
+- [x] **Mobile Keyboard Viewport Adaptation & Bottom Toolbar Docking**:
+  - Exported Next.js `Viewport` config with `interactiveWidget: 'resizes-content'` in [app/layout.tsx](file:///home/oloty/Dev/CaffeineMD/app/layout.tsx) and updated [app/w/[workspaceId]/page.tsx](file:///home/oloty/Dev/CaffeineMD/app/w/[workspaceId]/page.tsx) to `h-[100dvh]`.
+  - Implemented [useKeyboardOffset.ts](file:///home/oloty/Dev/CaffeineMD/src/hooks/useKeyboardOffset.ts) (54 LOC) computing `offsetBottom` and `isKeyboardOpen` via `window.visualViewport`.
+  - Integrated dynamic keyboard docking in [EditorBottomToolbar.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/EditorBottomToolbar.tsx) using `fixed left-1/2 -translate-x-1/2 z-50` with `bottom: ${keyboardOffset + 10}px` and `e.preventDefault()` on container mouse events to prevent editor blur.
+  - Added dynamic `paddingBottom: ${keyboardOffset + 70}px` to editor scroll container in [TiptapEditor.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/TiptapEditor.tsx) to maintain clear scroll view above on-screen keyboard and floating toolbar.
+
 ## Verification Status
 - Lint verification: Passing cleanly with 0 errors and 0 warnings (`pnpm run lint`).
 - TypeScript verification: Passing cleanly with 0 errors (`tsc --noEmit`).

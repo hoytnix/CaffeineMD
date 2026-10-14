@@ -23,6 +23,7 @@ import { EditorMinimap } from './components/EditorMinimap';
 import { DocumentTabBar } from './DocumentTabBar';
 import { EditorContextMenu } from './EditorContextMenu';
 import { useContextMenu } from '@/src/hooks/useContextMenu';
+import { useKeyboardOffset } from '@/src/hooks/useKeyboardOffset';
 import { FileQuestion } from 'lucide-react';
 
 export interface TiptapEditorProps {
@@ -32,6 +33,7 @@ export interface TiptapEditorProps {
 export function TiptapEditor({ filePath }: TiptapEditorProps) {
   const { openFileTab, activeWorkspaceId, toolboxPosition, isTypewriterScrolling } =
     useWorkspaceStore();
+  const { keyboardOffset, isKeyboardOpen } = useKeyboardOffset();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const gutterRef = useRef<HTMLDivElement | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -165,6 +167,11 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
         <div
           ref={scrollContainerRef}
           onContextMenu={openContextMenu}
+          style={
+            isKeyboardOpen
+              ? { paddingBottom: `${keyboardOffset + 70}px` }
+              : undefined
+          }
           className="flex-1 flex flex-col h-full overflow-y-auto overflow-x-hidden min-w-0 relative"
         >
           {/* Top Toolbar Dock */}

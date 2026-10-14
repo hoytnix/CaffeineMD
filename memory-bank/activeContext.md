@@ -141,12 +141,19 @@
          - **Bottom Toolbar Button**: Added 1-click Smart Paste `<button>` with `<ClipboardPaste>` / `<Check>` icons immediately to the right of "Copy All" in [EditorBottomToolbar.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/EditorBottomToolbar.tsx) with 1800ms transient feedback state (`pastedLabel`).
          - **Legacy Paste Cleanup & Context Menu Wiring**: Removed redundant CSV table paste button and handler from [TableControlsGroup.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/toolbar/TableControlsGroup.tsx); wired rich-text editor right-click "Paste" action in [EditorContextMenu.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/EditorContextMenu.tsx) to execute `executeSmartPaste`.
 
+      35. **Mobile Keyboard Viewport Adaptation & Bottom Toolbar Docking (Live & Verified)**:
+         - **Viewport & 100dvh Container**: Exported Next.js `Viewport` config in [app/layout.tsx](file:///home/oloty/Dev/CaffeineMD/app/layout.tsx) with `interactiveWidget: 'resizes-content'` and `userScalable: false`. Updated [page.tsx](file:///home/oloty/Dev/CaffeineMD/app/w/[workspaceId]/page.tsx) root container from `h-screen` to `h-[100dvh]`.
+         - **Visual Viewport Keyboard Offset Hook**: Implemented [useKeyboardOffset.ts](file:///home/oloty/Dev/CaffeineMD/src/hooks/useKeyboardOffset.ts) (54 LOC, <60 LOC limit) subscribing to `window.visualViewport` resize/scroll events to calculate `offsetBottom = window.innerHeight - (vv.height + vv.offsetTop)` and `isKeyboardOpen: offsetBottom > 80`.
+         - **Mobile Toolbar Docking & Blur Prevention**: In [EditorBottomToolbar.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/EditorBottomToolbar.tsx), dynamically switches to `fixed left-1/2 -translate-x-1/2 z-50` with `bottom: ${keyboardOffset + 10}px` when `isKeyboardOpen` is true; added `e.preventDefault()` on container mouse events to prevent toolbar taps from dismissing the mobile keyboard.
+         - **Editor Scroll Clearance**: In [TiptapEditor.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/TiptapEditor.tsx), applied dynamic `paddingBottom: ${keyboardOffset + 70}px` to the scrollable note viewport while the keyboard is open so typing cursors and backlinks stay fully scrollable above the software keyboard and floating toolbar.
+
 - **Architecture & Tiered LOC Compliance**: All modules decomposed strictly within tiered LOC boundaries (<100 LOC sweet spot, <250 LOC soft limit, strictly <400 LOC).
 - **Verification Rule**: ESLint passing with 0 errors and 0 warnings (`pnpm run lint`). TypeScript check passing with 0 errors (`tsc --noEmit`).
 
 ## Next Steps
 - Maintain modular <100-250 LOC boundaries across all components.
 - Run `pnpm run lint` verification on every turn without building.
+
 
 
 

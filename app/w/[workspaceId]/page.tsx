@@ -87,7 +87,7 @@ export default function WorkspacePage() {
   }, [setTheme]);
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-[var(--background)] text-[var(--foreground)] relative">
+    <div className="flex flex-col h-[100dvh] w-screen overflow-hidden bg-[var(--background)] text-[var(--foreground)] relative">
       {/* 1. Top Navigation Bar (Hidden in Focus Mode) */}
       {!isFocusMode && <WorkspaceHeader />}
 
