@@ -14,7 +14,9 @@ import {
   Rows,
   Download,
   XCircle,
+  Plus,
 } from 'lucide-react';
+import { createNote, getAllNotes } from '@/src/lib/storage/repositories/noteRepository';
 
 interface DocumentTabBarProps {
   currentPath: string;
@@ -34,12 +36,32 @@ export function DocumentTabBar({ currentPath }: DocumentTabBarProps) {
     duplicateToSplitView,
     openExportModal,
     showToast,
+    activeWorkspaceId,
+    setNotes,
   } = useWorkspaceStore();
 
   const { isOpen, position, targetData, openMenu, closeMenu, bindLongPress } =
     useContextMenu<{ path: string; title: string }>();
 
-  if (openTabs.length === 0) return null;
+  const handleCreateNewTabNote = async () => {
+    try {
+      const newNote = await createNote({
+        title: 'Untitled',
+        content: '# Untitled\n\n',
+        workspaceId: activeWorkspaceId,
+      });
+      const updatedNotes = await getAllNotes(activeWorkspaceId);
+      setNotes(updatedNotes);
+      React.startTransition(() => {
+        if (setActiveNoteId) {
+          setActiveNoteId(newNote.id);
+        }
+        openFileTab(newNote.path, newNote.title);
+      });
+    } catch (err) {
+      console.error('Failed to create new tab note:', err);
+    }
+  };
 
   const targetTab = targetData || { path: currentPath, title: '' };
   const isTargetPinned = pinnedTabs.includes(targetTab.path);
@@ -59,10 +81,12 @@ export function DocumentTabBar({ currentPath }: DocumentTabBarProps) {
     },
     {
       label: 'Close Tabs to the Right',
+      icon: <XCircle className="w-3.5 h-3.5" />,
       onClick: () => closeTabsToTheRight(targetTab.path),
     },
     {
       label: 'Close All Tabs',
+      icon: <X className="w-3.5 h-3.5" />,
       destructive: true,
       onClick: () => closeAllTabs(),
     },
@@ -167,6 +191,20 @@ export function DocumentTabBar({ currentPath }: DocumentTabBarProps) {
             </div>
           );
         })}
+
+        {/* Plus / New File Button */}
+        <button
+          type="button"
+          onClick={handleCreateNewTabNote}
+          className="flex items-center justify-center p-1.5 rounded-lg transition-all cursor-pointer shrink-0 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5 opacity-70"
+          style={{
+            color: 'var(--theme-text-muted)',
+          }}
+          title="New Note"
+          aria-label="New Note"
+        >
+          <Plus className="w-3.5 h-3.5" />
+        </button>
       </div>
 
       <ContextMenu

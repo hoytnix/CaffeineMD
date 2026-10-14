@@ -9,11 +9,13 @@ import {
   trashRemoteFile,
 } from './driveApiClient';
 import { DriveAuthService } from './driveAuthService';
-import { listAllRemoteFiles } from './remoteCrawler';
+import { crawlRemoteWorkspace } from './remoteCrawler';
 import { reconcileDriveState } from './driveReconciler';
 import { syncFileToDrive } from './resumableChunkUploader';
 import { getFileBlob } from '../syncExecutor';
 import { getAllNotes, getTrashedNotes } from '@/src/lib/storage/repositories/noteRepository';
+import { softDeleteNote } from '@/src/lib/storage/repositories/fileOperations';
+import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { parseFrontmatter, normalizeEisenhower } from '@/src/lib/markdown/frontmatter';
 import { SyncProgressState, syncProgressEmitter } from '../syncProgress';
 
@@ -99,10 +101,44 @@ export async function pullRemoteNote(
     updatedAt: remoteModifiedMs,
     vaultId: workspaceId,
     driveFileId: remote.id,
+    lastSyncedAt: Date.now(),
   };
 
   await db.files.put(record);
   return record;
+}
+
+/**
+ * Push a single local note to Google Drive and update driveFileId and lastSyncedAt.
+ */
+export async function pushLocalNote(
+  token: string,
+  local: VaultFile,
+  folderId: string,
+  remoteFileId?: string
+): Promise<string> {
+  const driveFileName = local.path.replace(/\//g, '___');
+  const fileBlob = getFileBlob(local);
+  const metadata = {
+    name: driveFileName,
+    mimeType: local.mimeType || fileBlob.type,
+  };
+  const remoteId = await syncFileToDrive(
+    token,
+    metadata,
+    fileBlob,
+    remoteFileId ? undefined : folderId,
+    remoteFileId
+  );
+  if (remoteId && local.id) {
+    await db.files
+      .update(local.id, {
+        driveFileId: remoteId,
+        lastSyncedAt: Date.now(),
+      })
+      .catch(() => {});
+  }
+  return remoteId;
 }
 
 /**
@@ -127,7 +163,7 @@ export async function runDriveSyncCycle(
   const stats = { uploaded: 0, downloaded: 0, skipped: 0 };
 
   onProgress?.('Scanning Google Drive for remote files...');
-  const remoteMap = await listAllRemoteFiles(token, folderId);
+  const { files: remoteMap, trashedPaths } = await crawlRemoteWorkspace(token, folderId);
   const remoteFiles = Array.from(remoteMap.values());
 
   onProgress?.('Analyzing local workspace notes...');
@@ -137,7 +173,7 @@ export async function runDriveSyncCycle(
   ]);
   const localNotes = [...activeNotes, ...trashedNotes];
 
-  const actions = reconcileDriveState(localNotes, remoteFiles);
+  const actions = reconcileDriveState(localNotes, remoteFiles, trashedPaths);
   const activeActions = actions.filter((a) => a.type !== 'noop');
   const totalFiles = activeActions.length;
   let processedFiles = 0;
@@ -155,6 +191,28 @@ export async function runDriveSyncCycle(
   for (const action of actions) {
     if (action.type === 'noop') {
       stats.skipped++;
+      continue;
+    }
+
+    if (action.type === 'delete_local') {
+      if (action.noteId) {
+        onProgress?.(`Moving ${action.path} to trash (deleted remotely)...`);
+        await softDeleteNote(action.noteId, workspaceId);
+        try {
+          useWorkspaceStore.getState().closeTab(action.noteId);
+        } catch {
+          // Ignore if called outside React context
+        }
+      }
+      processedFiles++;
+      syncProgressEmitter.emit({
+        status: 'syncing',
+        currentAction: 'downloading',
+        currentFileName: action.path,
+        totalFiles,
+        processedFiles,
+      });
+      onProgressState?.(syncProgressEmitter.getState());
       continue;
     }
 
@@ -197,22 +255,7 @@ export async function runDriveSyncCycle(
 
     if (action.type === 'push' && action.local) {
       onProgress?.(`Uploading ${action.path}...`);
-      const driveFileName = action.path.replace(/\//g, '___');
-      const fileBlob = getFileBlob(action.local);
-      const metadata = {
-        name: driveFileName,
-        mimeType: action.local.mimeType || fileBlob.type,
-      };
-      const remoteId = await syncFileToDrive(
-        token,
-        metadata,
-        fileBlob,
-        action.remoteFileId ? undefined : folderId,
-        action.remoteFileId
-      );
-      if (remoteId && action.local.id) {
-        await db.files.update(action.local.id, { driveFileId: remoteId }).catch(() => {});
-      }
+      await pushLocalNote(token, action.local, folderId, action.remoteFileId);
       stats.uploaded++;
       processedFiles++;
       syncProgressEmitter.emit({

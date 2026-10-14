@@ -161,6 +161,7 @@ export interface VaultFile {
   deletedAt?: number;
   originalPath?: string;
   driveFileId?: string;
+  lastSyncedAt?: number;
   deployMeta?: {
     netlifySiteId?: string;
     netlifyUrl?: string;

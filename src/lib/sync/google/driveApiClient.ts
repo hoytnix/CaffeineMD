@@ -13,6 +13,15 @@ export interface RemoteDriveFile {
   mimeType: string;
   md5Checksum?: string;
   size?: number;
+  trashed?: boolean;
+}
+
+export interface DriveFileItem {
+  id: string;
+  name: string;
+  mimeType: string;
+  modifiedTime: string;
+  trashed?: boolean;
 }
 
 export type DriveRemoteFile = RemoteDriveFile;
@@ -276,5 +285,35 @@ export async function trashRemoteFile(fileId: string, token?: string): Promise<v
     }
   } catch (err) {
     console.warn(`Network error trashing remote file ${fileId}:`, err);
+  }
+}
+
+/**
+ * List trashed files in a Google Drive folder
+ */
+export async function listTrashedDriveFolder(
+  folderId: string,
+  token?: string
+): Promise<DriveFileItem[]> {
+  let accessToken = token;
+  if (!accessToken) {
+    const { DriveAuthService } = await import('./driveAuthService');
+    accessToken = (await DriveAuthService.getValidToken().catch(() => null)) || undefined;
+  }
+  if (!accessToken) return [];
+
+  try {
+    const q = `'${folderId}' in parents and trashed = true`;
+    const data = await fetchDriveFiles(accessToken, q, 'files(id,name,mimeType,modifiedTime,trashed)');
+    return (data.files || []).map((f) => ({
+      id: f.id,
+      name: f.name,
+      mimeType: f.mimeType,
+      modifiedTime: f.modifiedTime,
+      trashed: Boolean(f.trashed),
+    }));
+  } catch (err) {
+    console.warn(`Failed to list trashed files for folder ${folderId}:`, err);
+    return [];
   }
 }

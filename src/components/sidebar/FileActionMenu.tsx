@@ -139,6 +139,7 @@ export function FileActionMenu({
       { isDivider: true },
       {
         label: 'Export Document',
+        icon: <Download className="w-3.5 h-3.5" />,
         submenu: [
           {
             label: 'Standalone HTML',

@@ -2,8 +2,9 @@
 
 import React from 'react';
 import { ContextMenu, ContextMenuElement } from '@/src/components/common/ContextMenu';
-import { Scissors, Copy, Clipboard, Bold, Italic, Code, Link, Calculator } from 'lucide-react';
+import { Scissors, Copy, Clipboard, Bold, Italic, Code, Link, Calculator, Download } from 'lucide-react';
 import { wasmSandbox } from '@/src/lib/sandbox/wasmSandbox';
+import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 
 export interface PlaintextSelectionInfo {
   start: number;
@@ -74,6 +75,7 @@ export function PlaintextContextMenu({
     { isDivider: true },
     {
       label: 'Format Markdown',
+      icon: <Code className="w-3.5 h-3.5" />,
       disabled: !hasSelection,
       submenu: [
         { label: 'Bold', icon: <Bold className="w-3.5 h-3.5" />, shortcut: '⌘B', onClick: () => replaceSelection(`**${selectedText}**`) },
@@ -99,6 +101,12 @@ export function PlaintextContextMenu({
           replaceSelection(`${selectedText} = ${resultText}`);
         }
       },
+    },
+    { isDivider: true },
+    {
+      label: 'Export Document',
+      icon: <Download className="w-3.5 h-3.5" />,
+      onClick: () => useWorkspaceStore.getState().openExportModal({}),
     },
   ];
 

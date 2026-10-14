@@ -7,6 +7,7 @@ import {
   applyThemeToDocument,
 } from '../lib/themes/themeDefinitions';
 import {
+  VaultFile,
   deleteVaultFile,
   moveToTrash as dbMoveToTrash,
   restoreFromTrash as dbRestoreFromTrash,
@@ -192,9 +193,15 @@ export interface WorkspaceState {
   removeCustomFolder: (folderPath: string) => void;
   renameCustomFolder: (oldPrefix: string, newPrefix: string) => void;
   closeTab: (path: string) => void;
+
+  // Workspace Notes List
+  notes: VaultFile[];
+  setNotes: (notes: VaultFile[]) => void;
 }
 
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
+  notes: [],
+  setNotes: (notes) => set({ notes }),
   vaultName: 'CaffeineMD Vault',
   activeWorkspaceId: 'default-vault',
   mountedMode: 'indexeddb',

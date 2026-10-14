@@ -7,7 +7,7 @@ import { reconcileSyncSets, UploadSyncTask, SyncReconciliationResult } from '../
 export const TIME_TOLERANCE_MS = 2000;
 
 export interface DriveSyncAction {
-  type: 'push' | 'pull' | 'delete_remote' | 'conflict' | 'noop';
+  type: 'push' | 'pull' | 'delete_remote' | 'delete_local' | 'conflict' | 'noop';
   path: string;
   noteId?: string;
   remoteFileId?: string;
@@ -31,11 +31,12 @@ export interface DriveReconciliationPlan extends SyncReconciliationResult {
 
 /**
  * Reconcile local and remote drive states handling active notes, soft-deleted notes,
- * and remote files.
+ * remote active files, and remote trashed files.
  */
 export function reconcileDriveState(
   localNotes: VaultFile[],
   remoteFiles: DriveRemoteFile[],
+  trashedRemoteMap?: Map<string, DriveRemoteFile>,
   toleranceMs = TIME_TOLERANCE_MS
 ): DriveSyncAction[] {
   const actions: DriveSyncAction[] = [];
@@ -112,6 +113,44 @@ export function reconcileDriveState(
 
     // Active local note
     if (!remote) {
+      const trashedRemote = trashedRemoteMap
+        ? trashedRemoteMap.get(path) ||
+          trashedRemoteMap.get(flat) ||
+          trashedRemoteMap.get(local.name) ||
+          (local.driveFileId
+            ? Array.from(trashedRemoteMap.values()).find((r) => r.id === local.driveFileId)
+            : undefined)
+        : undefined;
+
+      const wasTrashedRemotely = Boolean(trashedRemote);
+      const wasPreviouslySynced = Boolean(local.driveFileId);
+
+      if (wasTrashedRemotely || wasPreviouslySynced) {
+        let isModifiedAfterTrash = false;
+        if (trashedRemote) {
+          const trashTime =
+            typeof trashedRemote.modifiedTime === 'number'
+              ? trashedRemote.modifiedTime
+              : new Date(trashedRemote.modifiedTime).getTime();
+          isModifiedAfterTrash = local.updatedAt - trashTime > toleranceMs;
+        } else if (local.lastSyncedAt) {
+          isModifiedAfterTrash = local.updatedAt - local.lastSyncedAt > toleranceMs;
+        }
+
+        if (!isModifiedAfterTrash) {
+          actions.push({
+            type: 'delete_local',
+            path,
+            noteId: local.id || local.path,
+            remoteFileId: trashedRemote?.id || local.driveFileId,
+            reason: 'Deleted remotely on another client; moving local copy to Trash',
+            local,
+            remote: trashedRemote,
+          });
+          continue;
+        }
+      }
+
       actions.push({
         type: 'push',
         path,

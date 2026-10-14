@@ -50,7 +50,83 @@ export async function getTrashedNotes(vaultId?: string): Promise<VaultFile[]> {
  */
 export const getNotesByWorkspace = listNotes;
 export const getAllNotes = listNotes;
-export const createNote = saveNote;
+
+/**
+ * Create a new note record, accepting optional driveFileId and lastSyncedAt fields
+ */
+export async function createNote(
+  input: Partial<VaultFile> & { title?: string; content?: string; workspaceId?: string }
+): Promise<VaultFile> {
+  const now = Date.now();
+  const title = input.title || 'Untitled';
+  const vaultId = input.workspaceId || input.vaultId || 'default-vault';
+  const folder = input.folder || '';
+
+  let path = input.path;
+  if (!path) {
+    const baseName = `${title}.md`;
+    path = folder ? `${folder}/${baseName}` : baseName;
+    let counter = 1;
+    while (await db.files.get(path)) {
+      const candidateName = `${title} ${counter}.md`;
+      path = folder ? `${folder}/${candidateName}` : candidateName;
+      counter++;
+    }
+  }
+
+  const content = input.content !== undefined ? input.content : `# ${title}\n\n`;
+  const fileName = path.split('/').pop() || path;
+  const extension = input.extension || fileName.split('.').pop() || 'md';
+
+  const newNote: VaultFile = {
+    id: input.id || path,
+    path,
+    name: fileName,
+    title,
+    extension,
+    content,
+    frontmatter: input.frontmatter || {
+      title,
+      tags: input.tags || [],
+      status: 'Draft',
+    },
+    tags: input.tags || [],
+    eisenhower: input.eisenhower || 'Not Urgent & Not Immediate',
+    isBinary: input.isBinary || false,
+    size: content ? new Blob([content]).size : 0,
+    createdAt: input.createdAt || now,
+    updatedAt: input.updatedAt || now,
+    vaultId,
+    folder: input.folder,
+    driveFileId: input.driveFileId,
+    lastSyncedAt: input.lastSyncedAt,
+    isTrash: false,
+    isDeleted: false,
+  };
+
+  await db.files.put(newNote);
+  return newNote;
+}
+
+/**
+ * Update an existing note record, accepting optional driveFileId and lastSyncedAt
+ */
+export async function updateNote(
+  path: string,
+  updates: Partial<VaultFile>
+): Promise<VaultFile | undefined> {
+  const existing = await db.files.get(path);
+  if (!existing) return undefined;
+  const updated: VaultFile = {
+    ...existing,
+    ...updates,
+    driveFileId: updates.driveFileId !== undefined ? updates.driveFileId : existing.driveFileId,
+    lastSyncedAt: updates.lastSyncedAt !== undefined ? updates.lastSyncedAt : existing.lastSyncedAt,
+    updatedAt: updates.updatedAt || Date.now(),
+  };
+  await db.files.put(updated);
+  return updated;
+}
 
 /**
  * Bulk upsert notes within an atomic Dexie transaction

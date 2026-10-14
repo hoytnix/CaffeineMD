@@ -159,6 +159,7 @@ export function EditorContextMenu({
       { isDivider: true },
       {
         label: 'Format Text',
+        icon: <Bold className="w-3.5 h-3.5" />,
         submenu: [
           {
             label: 'Bold',
@@ -197,6 +198,7 @@ export function EditorContextMenu({
       },
       {
         label: 'Turn into Heading',
+        icon: <Heading1 className="w-3.5 h-3.5" />,
         submenu: [
           {
             label: 'Heading 1',
@@ -244,6 +246,7 @@ export function EditorContextMenu({
       { isDivider: true },
       {
         label: 'Insert Element',
+        icon: <Table className="w-3.5 h-3.5" />,
         submenu: [
           {
             label: 'Table (3x3)',

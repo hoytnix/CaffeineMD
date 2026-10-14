@@ -66,3 +66,52 @@ export async function crawlRemoteDirectory(
 }
 
 export const listAllRemoteFiles = crawlRemoteDirectory;
+
+export interface RemoteWorkspaceCrawlResult {
+  files: Map<string, RemoteDriveFile>;
+  trashedPaths: Map<string, RemoteDriveFile>;
+}
+
+/**
+ * Crawls active remote workspace files and queries trashed remote workspace files.
+ */
+export async function crawlRemoteWorkspace(
+  accessToken: string,
+  rootFolderId: string
+): Promise<RemoteWorkspaceCrawlResult> {
+  const files = await crawlRemoteDirectory(accessToken, rootFolderId);
+  const trashedPaths = new Map<string, RemoteDriveFile>();
+
+  try {
+    const q = encodeURIComponent(`'${rootFolderId}' in parents and trashed = true`);
+    const fields = encodeURIComponent('files(id, name, mimeType, modifiedTime, trashed)');
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=${fields}&pageSize=100`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (res.ok) {
+      const data: any = await res.json();
+      for (const f of data.files || []) {
+        let relativePath = f.name;
+        if (f.name.includes('___')) {
+          relativePath = f.name.replace(/___/g, '/');
+        }
+        trashedPaths.set(relativePath, {
+          id: f.id,
+          name: f.name,
+          relativePath,
+          modifiedTime: f.modifiedTime,
+          mimeType: f.mimeType,
+          trashed: true,
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to crawl trashed files from remote workspace:', err);
+  }
+
+  return { files, trashedPaths };
+}
+

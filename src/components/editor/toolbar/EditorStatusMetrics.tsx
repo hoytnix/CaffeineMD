@@ -21,19 +21,47 @@ export function EditorStatusMetrics({
 }: EditorStatusMetricsProps) {
   const syncProgress = useSyncProgress();
 
-  const { wordCount, charCount, readingTimeMinutes } = useMemo(() => {
+  const stats = useMemo(() => {
     if (!editor) {
-      return { wordCount: 0, charCount: 0, readingTimeMinutes: 0 };
+      return {
+        wordCount: 0,
+        charCount: 0,
+        readingTimeMinutes: 0,
+        links: 0,
+        wikiLinks: 0,
+      };
     }
     const text = editor.getText() || '';
     const trimmed = text.trim();
     const words = trimmed.length === 0 ? 0 : trimmed.split(/\s+/).filter(Boolean).length;
     const readingTime = Math.max(1, Math.ceil(words / 200));
 
+    let mdLinks = 0;
+    let wikiLinks = 0;
+    try {
+      editor.state.doc.descendants((node) => {
+        if (node.type.name === 'codeBlock') return false;
+        if (node.type.name === 'wikiLink') {
+          wikiLinks++;
+        } else if (node.isText) {
+          if (node.marks?.some((m) => m.type.name === 'link')) {
+            mdLinks++;
+          } else if (node.text) {
+            const urls = node.text.match(/https?:\/\/[^\s<>)"]+/gi);
+            if (urls) mdLinks += urls.length;
+          }
+        }
+      });
+    } catch {
+      // Fallback if editor state is not yet ready
+    }
+
     return {
       wordCount: words,
       charCount: text.length,
       readingTimeMinutes: words > 0 ? readingTime : 0,
+      links: mdLinks,
+      wikiLinks,
     };
   }, [editor]);
 
@@ -49,9 +77,9 @@ export function EditorStatusMetrics({
       {/* Word Count Metric */}
       <div
         className="flex items-center gap-1 font-mono"
-        title={`${wordCount} total words written in note`}
+        title={`${stats.wordCount} total words written in note`}
       >
-        <span className="font-medium text-[var(--foreground)]/80">{wordCount}</span>
+        <span className="font-medium text-[var(--foreground)]/80">{stats.wordCount}</span>
         <span>words</span>
       </div>
 
@@ -60,12 +88,25 @@ export function EditorStatusMetrics({
       {/* Character Count Metric */}
       <div
         className="flex items-center gap-1 font-mono hidden sm:flex"
-        title={`${charCount} raw characters`}
+        title={`${stats.charCount} raw characters`}
       >
-        <span>{charCount} chars</span>
+        <span>{stats.charCount} chars</span>
       </div>
 
-      {readingTimeMinutes > 0 && (
+      <span className="w-1 h-1 rounded-full bg-neutral-300 dark:bg-neutral-700 hidden lg:inline-block" />
+
+      {/* Markdown Links & WikiLinks Metrics */}
+      <span title="Markdown Links" className="hidden lg:inline-flex items-center gap-1 font-mono">
+        <strong className="text-slate-400 font-semibold">{stats.links}</strong> {stats.links === 1 ? 'link' : 'links'}
+      </span>
+
+      <span className="w-1 h-1 rounded-full bg-neutral-300 dark:bg-neutral-700 hidden lg:inline-block" />
+
+      <span title="WikiLinks" className="hidden lg:inline-flex items-center gap-1 font-mono">
+        <strong className="text-slate-400 font-semibold">{stats.wikiLinks}</strong> {stats.wikiLinks === 1 ? 'wikilink' : 'wikilinks'}
+      </span>
+
+      {stats.readingTimeMinutes > 0 && (
         <>
           <span className="w-1 h-1 rounded-full bg-neutral-300 dark:bg-neutral-700 hidden md:inline-block" />
           <div
@@ -73,7 +114,7 @@ export function EditorStatusMetrics({
             title="Estimated reading duration at 200 wpm"
           >
             <BookOpen className="w-3 h-3 opacity-60" />
-            <span>{readingTimeMinutes} min read</span>
+            <span>{stats.readingTimeMinutes} min read</span>
           </div>
         </>
       )}

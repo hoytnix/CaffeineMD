@@ -18,31 +18,32 @@ const EMOJI_REGEX =
  * Extracts links (Markdown, WikiLinks, HTML anchors, and bare URLs) from text.
  * Ignores fenced code blocks and inline code spans.
  */
-function extractLinksFromText(rawText: string): number {
-  if (!rawText) return 0;
+function extractLinksFromText(rawText: string): { mdLinks: number; wikiLinks: number } {
+  if (!rawText) return { mdLinks: 0, wikiLinks: 0 };
   const clean = rawText.replace(/```[\s\S]*?```/g, '').replace(/`[^`\n]+`/g, '');
-  let count = 0;
+  let mdLinks = 0;
+  let wikiLinks = 0;
 
   // 1. HTML anchor tags
   const htmlMatches = clean.match(/<a\s+[^>]*href=/gi);
-  if (htmlMatches) count += htmlMatches.length;
+  if (htmlMatches) mdLinks += htmlMatches.length;
   let remaining = clean.replace(/<a\s+[^>]*>[\s\S]*?<\/a>/gi, '');
 
   // 2. WikiLinks [[target]] or [[target|alias]]
   const wikiMatches = remaining.match(/\[\[(.*?)\]\]/g);
-  if (wikiMatches) count += wikiMatches.length;
+  if (wikiMatches) wikiLinks += wikiMatches.length;
   remaining = remaining.replace(/\[\[(.*?)\]\]/g, '');
 
   // 3. Markdown links [text](url)
   const mdMatches = remaining.match(/\[(.*?)\]\((.*?)\)/g);
-  if (mdMatches) count += mdMatches.length;
+  if (mdMatches) mdLinks += mdMatches.length;
   remaining = remaining.replace(/\[(.*?)\]\((.*?)\)/g, '');
 
   // 4. Standalone raw URLs
   const rawUrls = remaining.match(/https?:\/\/[^\s<>)"]+/gi);
-  if (rawUrls) count += rawUrls.length;
+  if (rawUrls) mdLinks += rawUrls.length;
 
-  return count;
+  return { mdLinks, wikiLinks };
 }
 
 /**
@@ -104,25 +105,26 @@ export function NoteMetricsBar({
     };
   }, [activeText]);
 
-  // Calculate link count (WikiLinks, Markdown links, HTML anchors, and raw URLs)
-  const linkCount = useMemo(() => {
+  // Calculate separate link counts (WikiLinks vs standard Markdown links & URLs)
+  const { mdLinks, wikiLinks } = useMemo(() => {
     if (editorMode === 'rich' && editor && !editor.isDestroyed) {
-      let count = 0;
+      let md = 0;
+      let wiki = 0;
       try {
         editor.state.doc.descendants((node) => {
           if (node.type.name === 'codeBlock') return false;
           if (node.type.name === 'wikiLink') {
-            count++;
+            wiki++;
           } else if (node.isText) {
             if (node.marks?.some((m) => m.type.name === 'link')) {
-              count++;
+              md++;
             } else if (node.text) {
               const urls = node.text.match(/https?:\/\/[^\s<>)"]+/gi);
-              if (urls) count += urls.length;
+              if (urls) md += urls.length;
             }
           }
         });
-        return count;
+        return { mdLinks: md, wikiLinks: wiki };
       } catch {
         return extractLinksFromText(activeText);
       }
@@ -147,42 +149,67 @@ export function NoteMetricsBar({
     return { byteCount: bytes, kbDisplay: kbStr };
   }, [editorMode, rawMarkdown, fallbackContent, activeText]);
 
+  const stats = useMemo(
+    () => ({
+      words: wordCount,
+      chars: charCount,
+      tokens: tokenCount,
+      emojis: emojiCount,
+      links: mdLinks,
+      wikiLinks,
+      kb: kbDisplay,
+    }),
+    [wordCount, charCount, tokenCount, emojiCount, mdLinks, wikiLinks, kbDisplay]
+  );
+
   const metrics = [
     {
       id: 'words',
-      value: wordCount.toLocaleString(),
-      label: wordCount === 1 ? 'word' : 'words',
-      title: `${wordCount.toLocaleString()} total words`,
+      value: stats.words.toLocaleString(),
+      label: stats.words === 1 ? 'word' : 'words',
+      title: `${stats.words.toLocaleString()} total words`,
     },
     {
       id: 'chars',
-      value: charCount.toLocaleString(),
-      label: charCount === 1 ? 'char' : 'chars',
-      title: `${charCount.toLocaleString()} total characters`,
+      value: stats.chars.toLocaleString(),
+      label: stats.chars === 1 ? 'char' : 'chars',
+      title: `${stats.chars.toLocaleString()} total characters`,
     },
     {
       id: 'tokens',
-      value: tokenCount.toLocaleString(),
-      label: tokenCount === 1 ? 'token' : 'tokens',
-      title: `Estimated ${tokenCount.toLocaleString()} LLM tokens (~4 characters per token)`,
+      value: stats.tokens.toLocaleString(),
+      label: stats.tokens === 1 ? 'token' : 'tokens',
+      title: `Estimated ${stats.tokens.toLocaleString()} LLM tokens (~4 characters per token)`,
     },
     {
       id: 'emojis',
-      value: emojiCount.toLocaleString(),
-      label: emojiCount === 1 ? 'emoji' : 'emojis',
-      title: `${emojiCount.toLocaleString()} total emojis`,
+      value: stats.emojis.toLocaleString(),
+      label: stats.emojis === 1 ? 'emoji' : 'emojis',
+      title: `${stats.emojis.toLocaleString()} total emojis`,
     },
     {
       id: 'links',
-      value: linkCount.toLocaleString(),
-      label: linkCount === 1 ? 'link' : 'links',
-      title: `${linkCount.toLocaleString()} links & WikiLinks`,
+      customNode: (
+        <span title="Markdown Links">
+          <strong className="text-slate-400 font-semibold">{stats.links}</strong>{' '}
+          {stats.links === 1 ? 'link' : 'links'}
+        </span>
+      ),
+    },
+    {
+      id: 'wikilinks',
+      customNode: (
+        <span title="WikiLinks">
+          <strong className="text-slate-400 font-semibold">{stats.wikiLinks}</strong>{' '}
+          {stats.wikiLinks === 1 ? 'wikilink' : 'wikilinks'}
+        </span>
+      ),
     },
     {
       id: 'kb',
-      value: kbDisplay,
+      value: stats.kb,
       label: 'KB',
-      title: `${byteCount.toLocaleString()} bytes (${kbDisplay} KB)`,
+      title: `${byteCount.toLocaleString()} bytes (${stats.kb} KB)`,
     },
   ];
 
@@ -195,10 +222,14 @@ export function NoteMetricsBar({
       {metrics.map((m, idx) => (
         <React.Fragment key={m.id}>
           {idx > 0 && <span className="text-[var(--border)]">·</span>}
-          <div className="flex items-center gap-1.5" title={m.title}>
-            <span className="font-semibold text-[var(--foreground)]">{m.value}</span>
-            <span>{m.label}</span>
-          </div>
+          {m.customNode ? (
+            m.customNode
+          ) : (
+            <div className="flex items-center gap-1.5" title={m.title}>
+              <span className="font-semibold text-[var(--foreground)]">{m.value}</span>
+              <span>{m.label}</span>
+            </div>
+          )}
         </React.Fragment>
       ))}
     </div>
