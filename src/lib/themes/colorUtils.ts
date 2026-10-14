@@ -1,4 +1,12 @@
-import type { ThemeDefinition } from './themeDefinitions';
+import type { ThemeDefinition, ThemeColors } from './themeDefinitions';
+
+/**
+ * Converts a hex color string (#rgb, #rrggbb) to RGBA string rgba(r, g, b, alpha).
+ */
+export function hexToRgba(hex: string, alpha: number): string {
+  const [r, g, b] = hexToRgb(hex);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 /**
  * Converts a hex color string (#rgb, #rrggbb) to RGB tuple [r, g, b] (0-255).
@@ -124,13 +132,13 @@ export function meetsWcagAA(foregroundHex: string, backgroundHex: string): boole
 /**
  * Apply theme CSS variables and document classes to root DOM element.
  */
-export function applyThemeToDocument(theme: ThemeDefinition): void {
+export function applyThemeToDocument(colors: ThemeColors | ThemeDefinition): void {
   if (typeof document === 'undefined') return;
 
   const root = document.documentElement;
 
   // Toggle dark/light class for Tailwind compatibility
-  if (theme.isDark) {
+  if (colors.isDark) {
     root.classList.add('dark');
     root.classList.remove('light');
   } else {
@@ -139,25 +147,56 @@ export function applyThemeToDocument(theme: ThemeDefinition): void {
   }
 
   // Set data-theme attribute for theme-scoped selectors
-  root.setAttribute('data-theme', theme.id);
+  root.setAttribute('data-theme', colors.id);
+
+  const bgPrimary = colors.bgPrimary || colors.background;
+  const bgSidebar = colors.bgSidebar || colors.card;
+  const bgCard = colors.bgCard || colors.card;
+  const bgImageUrl = colors.bgImageUrl || colors.backgroundImageUrl;
+  const hasBg = Boolean(bgImageUrl || colors.backgroundGradient);
 
   // Set CSS custom properties
-  root.style.setProperty('--background', theme.background);
-  root.style.setProperty('--foreground', theme.foreground);
-  root.style.setProperty('--card', theme.card);
-  root.style.setProperty('--border', theme.border);
-  root.style.setProperty('--accent', theme.accent);
-  root.style.setProperty('--primary', theme.primary);
+  root.style.setProperty('--background', colors.background);
+  root.style.setProperty('--foreground', colors.foreground);
+  root.style.setProperty('--card', colors.card);
+  root.style.setProperty('--border', colors.border);
+  root.style.setProperty('--accent', colors.accent);
+  root.style.setProperty('--primary', colors.primary);
 
   // Set theme semantic custom properties for views
-  root.style.setProperty('--theme-bg-primary', theme.background);
-  root.style.setProperty('--theme-bg-sidebar', theme.card);
-  root.style.setProperty('--theme-bg-card', theme.card);
-  root.style.setProperty('--theme-border', theme.border);
-  root.style.setProperty('--theme-text-primary', theme.foreground);
-  root.style.setProperty('--theme-text-secondary', theme.foreground);
-  root.style.setProperty('--theme-text-muted', theme.isDark ? '#94a3b8' : '#64748b');
-  root.style.setProperty('--theme-accent', theme.accent);
+  root.style.setProperty('--theme-bg-primary', bgPrimary);
+  root.style.setProperty('--theme-bg-sidebar', bgSidebar);
+  root.style.setProperty('--theme-bg-card', bgCard);
+  root.style.setProperty('--theme-border', colors.border);
+  root.style.setProperty('--theme-text-primary', colors.foreground);
+  root.style.setProperty('--theme-text-secondary', colors.foreground);
+  root.style.setProperty('--theme-text-muted', colors.isDark ? '#94a3b8' : '#64748b');
+  root.style.setProperty('--theme-accent', colors.accent);
+
+  // Map colors.fontFamily to CSS font stack variable --theme-font-family
+  let themeFontFamily = 'var(--font-sans)';
+  if (colors.fontFamily === 'JetBrains Mono' || colors.fontFamily?.includes('JetBrains Mono')) {
+    themeFontFamily = 'var(--font-mono)';
+  } else if (colors.fontFamily === 'Merriweather' || colors.fontFamily?.includes('Merriweather')) {
+    themeFontFamily = 'Georgia, Cambria, "Times New Roman", Times, serif';
+  } else {
+    themeFontFamily = 'var(--font-sans)';
+  }
+  root.style.setProperty('--theme-font-family', themeFontFamily);
+  root.dataset.themeFont = colors.fontFamily || 'Inter';
+
+  // Background image & gradient configuration
+  root.dataset.hasBgImage = hasBg ? 'true' : 'false';
+  const bgImageValue = bgImageUrl
+    ? `url("${bgImageUrl}")`
+    : (colors.backgroundGradient || 'none');
+  root.style.setProperty('--theme-bg-image', bgImageValue);
+
+  // Set translucent glassmorphic CSS variables
+  root.style.setProperty('--theme-bg-primary-glass', hexToRgba(bgPrimary, 0.78));
+  root.style.setProperty('--theme-bg-sidebar-glass', hexToRgba(bgSidebar, 0.82));
+  root.style.setProperty('--theme-bg-card-glass', hexToRgba(bgCard, 0.85));
+
   // Guarantee universal color emoji font fallback across all themes
   const withEmojiFallback = (font: string): string => {
     if (!font) return '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
@@ -169,26 +208,26 @@ export function applyThemeToDocument(theme: ThemeDefinition): void {
     return `${font}, ${emojiStack}, sans-serif`;
   };
 
-  root.style.setProperty('--font-family', withEmojiFallback(theme.fontFamily));
+  root.style.setProperty('--font-family', withEmojiFallback(colors.fontFamily));
 
   // Set Syntax Highlighting custom properties
-  root.style.setProperty('--syntax-bg', theme.syntaxBg || theme.card);
-  root.style.setProperty('--syntax-keyword', theme.syntaxKeyword || theme.primary);
-  root.style.setProperty('--syntax-string', theme.syntaxString || theme.accent);
-  root.style.setProperty('--syntax-function', theme.syntaxFunction || theme.accent);
-  root.style.setProperty('--syntax-comment', theme.syntaxComment || '#6b7280');
-  root.style.setProperty('--syntax-variable', theme.syntaxVariable || theme.foreground);
-  root.style.setProperty('--syntax-number', theme.syntaxNumber || '#fb923c');
-  root.style.setProperty('--syntax-operator', theme.syntaxOperator || theme.accent);
+  root.style.setProperty('--syntax-bg', colors.syntaxBg || colors.card);
+  root.style.setProperty('--syntax-keyword', colors.syntaxKeyword || colors.primary);
+  root.style.setProperty('--syntax-string', colors.syntaxString || colors.accent);
+  root.style.setProperty('--syntax-function', colors.syntaxFunction || colors.accent);
+  root.style.setProperty('--syntax-comment', colors.syntaxComment || '#6b7280');
+  root.style.setProperty('--syntax-variable', colors.syntaxVariable || colors.foreground);
+  root.style.setProperty('--syntax-number', colors.syntaxNumber || '#fb923c');
+  root.style.setProperty('--syntax-operator', colors.syntaxOperator || colors.accent);
 
-  if (theme.backgroundImageUrl) {
-    root.style.setProperty('--bg-image', `url("${theme.backgroundImageUrl}")`);
+  if (bgImageUrl) {
+    root.style.setProperty('--bg-image', `url("${bgImageUrl}")`);
   } else {
     root.style.removeProperty('--bg-image');
   }
 
   // Inject or update dynamic Google Font if requested
-  if (theme.fontFamilyGoogleUrl) {
+  if (colors.fontFamilyGoogleUrl) {
     let fontLink = document.getElementById('kite-dynamic-font') as HTMLLinkElement | null;
     if (!fontLink) {
       fontLink = document.createElement('link');
@@ -196,6 +235,6 @@ export function applyThemeToDocument(theme: ThemeDefinition): void {
       fontLink.rel = 'stylesheet';
       document.head.appendChild(fontLink);
     }
-    fontLink.href = theme.fontFamilyGoogleUrl;
+    fontLink.href = colors.fontFamilyGoogleUrl;
   }
 }

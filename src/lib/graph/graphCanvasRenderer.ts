@@ -1,4 +1,5 @@
 import { GraphNode, GraphLink } from '@/src/hooks/useGraphData';
+import { hexToRgba } from '@/src/lib/themes/themeDefinitions';
 import { renderEdges } from './renderers/edgeRenderer';
 import { renderNodes } from './renderers/nodeRenderer';
 
@@ -14,6 +15,9 @@ export interface GraphThemeColors {
   textSecondary: string;
   textMuted: string;
   accent: string;
+  bgImageUrl?: string;
+  backgroundGradient?: string;
+  hasBgImage?: boolean;
 }
 
 export interface RenderOptions {
@@ -32,7 +36,13 @@ export function renderGraphFrame(
   height: number,
   themeColors?: GraphThemeColors
 ) {
-  if (themeColors?.bgPrimary) {
+  if (!themeColors?.bgPrimary) return;
+
+  if (themeColors.hasBgImage || themeColors.bgImageUrl || themeColors.backgroundGradient) {
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = hexToRgba(themeColors.bgPrimary, 0.72);
+    ctx.fillRect(0, 0, width, height);
+  } else {
     ctx.fillStyle = themeColors.bgPrimary;
     ctx.fillRect(0, 0, width, height);
   }

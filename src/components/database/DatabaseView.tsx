@@ -99,7 +99,7 @@ Start writing here...
 
   return (
     <div
-      style={{ backgroundColor: 'var(--theme-bg-primary)', color: 'var(--theme-text-primary)' }}
+      style={{ backgroundColor: 'var(--theme-bg-primary-glass, var(--theme-bg-primary))', color: 'var(--theme-text-primary)' }}
       className="flex-1 flex flex-col h-full overflow-y-auto p-8"
     >
       <DatabaseToolbar

@@ -17,6 +17,8 @@ export function GraphView() {
 
   const themeColors = useMemo(() => {
     const def = getThemeDefinition(activeThemeId, activeCustomTheme);
+    const bgImage = def.bgImageUrl || def.backgroundImageUrl;
+    const hasBgImage = Boolean(bgImage || def.backgroundGradient);
     return {
       bgPrimary: def.background,
       bgCard: def.card,
@@ -25,6 +27,9 @@ export function GraphView() {
       textSecondary: def.foreground,
       textMuted: def.isDark ? '#94a3b8' : '#64748b',
       accent: def.accent,
+      bgImageUrl: bgImage,
+      backgroundGradient: def.backgroundGradient,
+      hasBgImage,
     };
   }, [activeThemeId, activeCustomTheme]);
 
@@ -196,7 +201,7 @@ export function GraphView() {
 
   return (
     <div
-      style={{ backgroundColor: 'var(--theme-bg-primary)', color: 'var(--theme-text-primary)' }}
+      style={{ backgroundColor: 'var(--theme-bg-primary-glass, var(--theme-bg-primary))', color: 'var(--theme-text-primary)' }}
       className="relative w-full h-full overflow-hidden flex flex-col select-none"
     >
       <GraphControls

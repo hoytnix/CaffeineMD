@@ -65,6 +65,8 @@ export function EditorSettingsSection({
   const toggleMinimap = useWorkspaceStore((s) => s.toggleMinimap);
   const typewriterMode = useWorkspaceStore((s) => s.typewriterMode);
   const toggleTypewriterMode = useWorkspaceStore((s) => s.toggleTypewriterMode);
+  const editorFontFamily = useWorkspaceStore((s) => s.editorFontFamily);
+  const setEditorFontFamily = useWorkspaceStore((s) => s.setEditorFontFamily);
 
   const activeAutosaveInterval = autosaveInterval ?? storeAutosaveInterval;
   const updateAutosaveInterval = setAutosaveInterval ?? storeSetAutosaveInterval;
@@ -237,6 +239,41 @@ export function EditorSettingsSection({
         </div>
 
         <div className="rounded-2xl bg-[var(--card)] border border-[var(--border)] overflow-hidden shadow-xs divide-y divide-[var(--border)] px-4 sm:px-5">
+          {/* Editor Font Family */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3.5 gap-2">
+            <div className="space-y-0.5">
+              <label className="text-sm font-medium text-[var(--foreground)]">
+                Editor Font Family
+              </label>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                Choose the primary typography stack for writing and drafting notes.
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              {[
+                { id: 'sans' as const, label: 'Inter (Sans)' },
+                { id: 'mono' as const, label: 'JetBrains (Mono)' },
+                { id: 'serif' as const, label: 'Merriweather (Serif)' },
+              ].map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => {
+                    setEditorFontFamily(opt.id);
+                    showToast?.(`Font set to ${opt.label}`);
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors cursor-pointer ${
+                    editorFontFamily === opt.id
+                      ? 'bg-indigo-600 border-indigo-500 text-white shadow-xs'
+                      : 'bg-[var(--background)] border-[var(--border)] text-neutral-400 hover:text-[var(--foreground)]'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Editor Minimap Toggle */}
           <div className="flex items-center justify-between py-3.5">
             <div className="space-y-0.5">

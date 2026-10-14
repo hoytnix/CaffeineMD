@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Sliders, Sparkles } from 'lucide-react';
 import { ThemeDefinition } from '@/src/lib/themes/themeDefinitions';
+import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 
 export interface CustomThemeBuilderProps {
   customTheme: ThemeDefinition;
@@ -26,6 +27,7 @@ export function CustomThemeBuilder({
   showCustomWizard,
   setShowCustomWizard,
 }: CustomThemeBuilderProps) {
+  const setEditorFontFamily = useWorkspaceStore((s) => s.setEditorFontFamily);
   const [vibePrompt, setVibePrompt] = useState('');
   const [isGeneratingTheme, setIsGeneratingTheme] = useState(false);
   const [aiThemeError, setAiThemeError] = useState<string | null>(null);
@@ -181,12 +183,25 @@ export function CustomThemeBuilder({
               </label>
               <select
                 value={customTheme.fontFamily}
-                onChange={(e) => updateCustomTheme({ fontFamily: e.target.value })}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  updateCustomTheme({ fontFamily: val });
+                  if (val.includes('JetBrains Mono') || val === 'mono') {
+                    setEditorFontFamily('mono');
+                  } else if (val.includes('Merriweather') || val === 'serif') {
+                    setEditorFontFamily('serif');
+                  } else {
+                    setEditorFontFamily('sans');
+                  }
+                }}
                 className="w-full px-3 py-1.5 rounded-lg bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-xs text-neutral-900 dark:text-neutral-100 outline-none"
               >
+                <option value="Inter">Inter (Sans-Serif)</option>
+                <option value="JetBrains Mono">JetBrains Mono (Monospace)</option>
+                <option value="Merriweather">Merriweather (Serif)</option>
                 <option value="system-ui, -apple-system, sans-serif">System Default</option>
-                <option value="'Inter', sans-serif">Inter</option>
-                <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+                <option value="'Inter', sans-serif">Inter (CSS stack)</option>
+                <option value="'JetBrains Mono', monospace">JetBrains Mono (CSS stack)</option>
                 <option value="'Fira Code', monospace">Fira Code</option>
                 <option value="'Outfit', sans-serif">Outfit</option>
                 <option value="'Plus Jakarta Sans', sans-serif">Plus Jakarta Sans</option>

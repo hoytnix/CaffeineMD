@@ -13,7 +13,11 @@ export interface ThemeDesignTokens {
   textBright: string;      // e.g. #ffffff
   fontSans: string;        // Must default to Inter / system sans-serif
   fontMono: string;        // Must default to JetBrains Mono / system monospace
+  bgImageUrl?: string;     // Theme ambient backdrop image URL
+  fontFamily?: string;     // Theme / editor font choice ('JetBrains Mono', 'Merriweather', 'Inter')
 }
+
+export type ExportThemeTokens = ThemeDesignTokens;
 
 export const DEFAULT_THEME_TOKENS: ThemeDesignTokens = {
   themeName: 'Cyber Glass Dark',
@@ -50,11 +54,22 @@ export function sanitizeThemeTokens(input?: Partial<ThemeDesignTokens> | null): 
     textBright: typeof input.textBright === 'string' && input.textBright ? input.textBright : d.textBright,
     fontSans: d.fontSans, // Enforce safe sans-serif stack
     fontMono: d.fontMono, // Enforce safe mono stack
+    bgImageUrl: typeof input.bgImageUrl === 'string' ? input.bgImageUrl : undefined,
+    fontFamily: typeof input.fontFamily === 'string' ? input.fontFamily : undefined,
   };
 }
 
 export function compileTokensToStylesheet(tokens: ThemeDesignTokens): string {
   const t = sanitizeThemeTokens(tokens);
+  const isMono = t.fontFamily?.includes('JetBrains Mono') || t.fontFamily === 'mono';
+  const isSerif = t.fontFamily?.includes('Merriweather') || t.fontFamily === 'serif';
+  const effectiveFont = isMono
+    ? 'var(--font-mono)'
+    : isSerif
+    ? 'Georgia, Cambria, "Times New Roman", Times, serif'
+    : 'var(--font-sans)';
+  const bgImageValue = t.bgImageUrl ? `url("${t.bgImageUrl}")` : 'none';
+
   return `
 :root {
   --bg-base: ${t.bgBase};
@@ -70,12 +85,18 @@ export function compileTokensToStylesheet(tokens: ThemeDesignTokens): string {
   --text-bright: ${t.textBright};
   --font-sans: ${t.fontSans};
   --font-mono: ${t.fontMono};
+  --bg-image: ${bgImageValue};
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   background-color: var(--bg-base);
+  background-image: var(--bg-image, none);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   color: var(--text-main);
-  font-family: var(--font-sans);
+  font-family: ${effectiveFont};
   line-height: 1.6;
   text-align: left;
   min-height: 100vh;

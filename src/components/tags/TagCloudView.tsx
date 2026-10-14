@@ -116,12 +116,12 @@ export function TagCloudView() {
 
   return (
     <div
-      style={{ backgroundColor: 'var(--theme-bg-primary)', color: 'var(--theme-text-primary)' }}
+      style={{ backgroundColor: 'var(--theme-bg-primary-glass, var(--theme-bg-primary))', color: 'var(--theme-text-primary)' }}
       className="flex-1 flex flex-col h-full overflow-y-auto"
     >
       {/* Header Bar */}
       <div
-        style={{ backgroundColor: 'var(--theme-bg-sidebar)', borderColor: 'var(--theme-border)' }}
+        style={{ backgroundColor: 'var(--theme-bg-sidebar-glass, var(--theme-bg-sidebar))', borderColor: 'var(--theme-border)' }}
         className="sticky top-0 z-20 px-8 py-5 backdrop-blur-md border-b flex flex-col gap-4"
       >
         <div className="flex items-center justify-between gap-4">

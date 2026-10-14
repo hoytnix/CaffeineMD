@@ -25,6 +25,7 @@ export type ActiveWorkspaceView = 'editor' | 'graph' | 'table' | 'board' | 'list
 export type WorkspaceTabId = ActiveWorkspaceView | 'kanban';
 export type ToolboxPosition = 'left' | 'right' | 'bottom' | 'top';
 export type EditorModeType = 'richtext' | 'plaintext' | 'diff';
+export type EditorFontFamily = 'sans' | 'mono' | 'serif';
 
 export const AUTOSAVE_INTERVAL_PRESETS = [
   { value: 0, label: 'Manual only (Off)' },
@@ -123,6 +124,8 @@ export interface WorkspaceState {
   customThemeColors: Partial<ThemeDefinition>;
   setTheme: (themeId: string) => void;
   updateCustomTheme: (tokens: Partial<ThemeDefinition>) => void;
+  editorFontFamily: EditorFontFamily;
+  setEditorFontFamily: (font: EditorFontFamily) => void;
 
   // Editor Toolbox Placement
   toolboxPosition: ToolboxPosition;
@@ -368,6 +371,21 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       } catch {}
     }
     applyThemeToDocument(updated);
+  },
+
+  // Editor Font Family Selection
+  editorFontFamily:
+    typeof window !== 'undefined' &&
+    ['sans', 'mono', 'serif'].includes(localStorage.getItem('caffeinemd-editor-font-family') || '')
+      ? (localStorage.getItem('caffeinemd-editor-font-family') as EditorFontFamily)
+      : 'sans',
+  setEditorFontFamily: (font: EditorFontFamily) => {
+    set({ editorFontFamily: font });
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('caffeinemd-editor-font-family', font);
+      } catch {}
+    }
   },
 
   // Editor Toolbox Placement

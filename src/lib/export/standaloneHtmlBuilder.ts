@@ -157,6 +157,14 @@ export async function buildStandaloneHtml(
   const card = selectedTheme.card || '#1e1e1e';
   const border = selectedTheme.border || '#333333';
   const accent = selectedTheme.accent || '#6366f1';
+  const bgImage = selectedTheme.bgImageUrl || selectedTheme.backgroundImageUrl;
+  const isMono = selectedTheme.fontFamily?.includes('JetBrains Mono') || selectedTheme.fontFamily === 'mono';
+  const isSerif = selectedTheme.fontFamily?.includes('Merriweather') || selectedTheme.fontFamily === 'serif';
+  const effectiveFont = isMono
+    ? 'var(--font-mono)'
+    : isSerif
+    ? 'Georgia, Cambria, "Times New Roman", Times, serif'
+    : 'var(--font-sans)';
 
   const hasMeta = Boolean(
     frontmatter.author || (frontmatter.tags && frontmatter.tags.length > 0) || (frontmatter.status && frontmatter.status !== 'Draft')
@@ -180,12 +188,18 @@ export async function buildStandaloneHtml(
       --accent: ${accent};
       --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --bgImage: ${bgImage ? `url("${bgImage}")` : 'none'};
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background-color: var(--bgPrimary, #121212);
+      background-image: var(--bgImage, none);
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      background-repeat: no-repeat;
       color: var(--textPrimary, #e0e0e0);
-      font-family: var(--font-sans);
+      font-family: ${effectiveFont};
       line-height: 1.6;
       text-align: left;
       padding: 2.5rem 1.25rem;

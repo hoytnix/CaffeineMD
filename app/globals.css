@@ -35,21 +35,22 @@
 }
 
 body {
-  font-family: var(--font-sans);
-  background-color: var(--background);
-  color: var(--foreground);
-  background-image: var(--bg-image);
+  background-color: var(--theme-bg-primary);
+  background-image: var(--theme-bg-image, none);
   background-size: cover;
   background-position: center;
-  background-repeat: no-repeat;
   background-attachment: fixed;
+  background-repeat: no-repeat;
+  color: var(--theme-text-primary);
+  font-family: var(--theme-font-family, var(--font-sans));
+  font-variant-ligatures: none;
 }
 
 input,
 textarea,
 select,
 button {
-  font-family: var(--font-sans);
+  font-family: inherit;
 }
 
 /* Universal color emoji rendering guarantee across macOS, Windows, Linux, iOS, Android */
@@ -60,11 +61,23 @@ button {
 
 /* Tiptap / ProseMirror Editor Enhancements & Typography */
 .ProseMirror {
-  font-family: var(--font-sans);
+  font-family: inherit;
   outline: none;
   font-size: 15px;
   line-height: 1.8;
   color: inherit;
+}
+
+.font-mono .ProseMirror,
+.font-mono,
+html[data-theme-font="JetBrains Mono"] .ProseMirror {
+  font-family: var(--font-mono) !important;
+}
+
+.font-serif .ProseMirror,
+.font-serif,
+html[data-theme-font="Merriweather"] .ProseMirror {
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif !important;
 }
 
 /* Headings */
@@ -568,5 +581,32 @@ code [data-wikilink] {
 
 [data-theme] .border-indigo-500\/30 {
   border-color: color-mix(in srgb, var(--theme-accent) 30%, transparent) !important;
+}
+
+/* =========================================================================
+   Glassmorphic Overrides when Theme Background Image is Active
+   ========================================================================= */
+html[data-has-bg-image="true"] .bg-slate-950,
+html[data-has-bg-image="true"] .bg-slate-950\/80,
+html[data-has-bg-image="true"] .bg-slate-950\/60,
+html[data-has-bg-image="true"] .bg-slate-950\/50 {
+  background-color: var(--theme-bg-primary-glass) !important;
+}
+
+html[data-has-bg-image="true"] .bg-slate-900,
+html[data-has-bg-image="true"] .bg-slate-900\/90,
+html[data-has-bg-image="true"] .bg-slate-900\/80,
+html[data-has-bg-image="true"] .bg-slate-900\/60,
+html[data-has-bg-image="true"] .bg-slate-900\/50,
+html[data-has-bg-image="true"] .bg-slate-900\/40 {
+  background-color: var(--theme-bg-sidebar-glass) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+html[data-has-bg-image="true"] .bg-slate-800,
+html[data-has-bg-image="true"] .bg-slate-800\/80,
+html[data-has-bg-image="true"] .bg-slate-800\/60 {
+  background-color: var(--theme-bg-card-glass) !important;
 }
 

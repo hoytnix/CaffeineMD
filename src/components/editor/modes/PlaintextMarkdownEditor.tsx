@@ -3,6 +3,7 @@
 import React, { useRef, useState, useMemo, useEffect, useLayoutEffect } from 'react';
 import { Code, WrapText } from 'lucide-react';
 import { useContextMenu } from '@/src/hooks/useContextMenu';
+import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { PlaintextContextMenu, PlaintextSelectionInfo } from './PlaintextContextMenu';
 
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
@@ -38,6 +39,21 @@ export function PlaintextMarkdownEditor({
 
   const gutterRef = externalGutterRef || internalGutterRef;
   const textareaRef = externalTextareaRef || internalTextareaRef;
+
+  const { theme, customThemeColors, editorFontFamily } = useWorkspaceStore();
+  const isMono =
+    editorFontFamily === 'mono' ||
+    (theme === 'custom' && (customThemeColors?.fontFamily === 'JetBrains Mono' || customThemeColors?.fontFamily?.includes('JetBrains Mono')));
+  const isSerif =
+    editorFontFamily === 'serif' ||
+    (theme === 'custom' && (customThemeColors?.fontFamily === 'Merriweather' || customThemeColors?.fontFamily?.includes('Merriweather')));
+
+  const effectiveFontFamily = isMono
+    ? 'var(--font-mono)'
+    : isSerif
+    ? 'Georgia, Cambria, "Times New Roman", Times, serif'
+    : (editorFontFamily === 'sans' ? 'var(--theme-font-family, var(--font-sans))' : 'var(--font-mono)');
+  const fontClass = isMono ? 'font-mono' : isSerif ? 'font-serif' : '';
 
   const lines = useMemo(() => rawMarkdown.split('\n'), [rawMarkdown]);
 
@@ -260,8 +276,8 @@ export function PlaintextMarkdownEditor({
           autoCapitalize="off"
           autoComplete="off"
           autoCorrect="off"
-          wrap={wordWrap ? 'soft' : 'off'}
-          className={`flex-1 w-full h-full resize-none overflow-y-auto py-2.5 sm:py-4 px-2.5 sm:px-4 font-mono text-[13px] leading-7 bg-transparent text-[var(--foreground)] placeholder-neutral-400 dark:placeholder-neutral-600 focus:outline-none ${
+          style={{ fontFamily: effectiveFontFamily }}
+          className={`flex-1 w-full h-full resize-none overflow-y-auto py-2.5 sm:py-4 px-2.5 sm:px-4 text-[13px] leading-7 bg-transparent text-[var(--foreground)] placeholder-neutral-400 dark:placeholder-neutral-600 focus:outline-none ${fontClass} ${
             wordWrap ? 'whitespace-pre-wrap break-words' : 'overflow-x-auto whitespace-pre'
           }`}
         />
@@ -271,7 +287,8 @@ export function PlaintextMarkdownEditor({
       <div
         ref={mirrorRef}
         aria-hidden="true"
-        className="absolute -top-[99999px] -left-[99999px] invisible pointer-events-none font-mono text-[13px] leading-7 whitespace-pre-wrap break-words py-2.5 sm:py-4 px-2.5 sm:px-4 box-border"
+        style={{ fontFamily: effectiveFontFamily }}
+        className={`absolute -top-[99999px] -left-[99999px] invisible pointer-events-none text-[13px] leading-7 whitespace-pre-wrap break-words py-2.5 sm:py-4 px-2.5 sm:px-4 box-border ${fontClass}`}
       >
         {lines.map((line, i) => (
           <div key={i}>{line || '\u00A0'}</div>

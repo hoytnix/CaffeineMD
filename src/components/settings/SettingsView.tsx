@@ -54,7 +54,10 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
   const [showCustomWizard, setShowCustomWizard] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col font-sans transition-colors duration-200">
+    <div
+      style={{ backgroundColor: 'var(--theme-bg-primary-glass, var(--theme-bg-primary))' }}
+      className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col transition-colors duration-200"
+    >
       {/* iOS Top Navigation Bar */}
       <header className="sticky top-0 z-40 bg-[var(--card)]/80 backdrop-blur-xl border-b border-[var(--border)] px-4 py-3 select-none">
         <div className="max-w-4xl mx-auto flex items-center justify-between">

@@ -121,7 +121,7 @@ export function TableView({ files, columns, onRefresh }: TableViewProps) {
 
   return (
     <div
-      style={{ backgroundColor: 'var(--theme-bg-sidebar)', borderColor: 'var(--theme-border)' }}
+      style={{ backgroundColor: 'var(--theme-bg-sidebar-glass, var(--theme-bg-sidebar))', borderColor: 'var(--theme-border)' }}
       className="w-full flex flex-col border rounded-lg shadow-xs overflow-hidden"
     >
       <div className="w-full overflow-x-auto">

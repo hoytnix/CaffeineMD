@@ -31,8 +31,10 @@ export interface TiptapEditorProps {
 }
 
 export function TiptapEditor({ filePath }: TiptapEditorProps) {
-  const { openFileTab, activeWorkspaceId, toolboxPosition, isTypewriterScrolling } =
-    useWorkspaceStore();
+  const {
+    openFileTab, activeWorkspaceId, toolboxPosition, isTypewriterScrolling,
+    theme, customThemeColors, editorFontFamily,
+  } = useWorkspaceStore();
   const { keyboardOffset, isKeyboardOpen } = useKeyboardOffset();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const gutterRef = useRef<HTMLDivElement | null>(null);
@@ -102,6 +104,21 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
     };
   }, [editor, isTypewriterScrolling]);
 
+  // Compute effective editor font stack
+  const isMono =
+    editorFontFamily === 'mono' ||
+    (theme === 'custom' && (customThemeColors?.fontFamily === 'JetBrains Mono' || customThemeColors?.fontFamily?.includes('JetBrains Mono')));
+  const isSerif =
+    editorFontFamily === 'serif' ||
+    (theme === 'custom' && (customThemeColors?.fontFamily === 'Merriweather' || customThemeColors?.fontFamily?.includes('Merriweather')));
+
+  const effectiveFontFamily = isMono
+    ? 'var(--font-mono)'
+    : isSerif
+    ? 'Georgia, Cambria, "Times New Roman", Times, serif'
+    : 'var(--theme-font-family, var(--font-sans))';
+  const fontClass = isMono ? 'font-mono' : isSerif ? 'font-serif' : '';
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center p-12 text-neutral-400">
@@ -131,6 +148,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
         }
       }}
       onDrop={() => setIsDraggingOver(false)}
+      style={{ backgroundColor: 'var(--theme-bg-primary-glass, var(--theme-bg-primary))' }}
       className="flex-1 flex flex-col h-full overflow-hidden min-w-0 bg-[var(--background)] text-[var(--foreground)] relative"
     >
       <EditorDragOverlay
@@ -188,7 +206,8 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
                 {editor && !editor.isDestroyed ? (
                   <EditorContent
                     editor={editor}
-                    className="min-h-[280px] sm:min-h-[400px] caffeine-editor-content pt-1 sm:pt-2 first:mt-0 [&>*:first-child]:mt-0 [&_.ProseMirror>*:first-child]:mt-0 [&_.tiptap>*:first-child]:mt-0"
+                    style={{ fontFamily: effectiveFontFamily }}
+                    className={`min-h-[280px] sm:min-h-[400px] caffeine-editor-content pt-1 sm:pt-2 first:mt-0 [&>*:first-child]:mt-0 [&_.ProseMirror>*:first-child]:mt-0 [&_.tiptap>*:first-child]:mt-0 ${fontClass}`}
                   />
                 ) : (
                   <div className="min-h-[280px] sm:min-h-[400px] flex items-center justify-center text-neutral-400 animate-pulse text-xs font-mono">

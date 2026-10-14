@@ -16,6 +16,11 @@ export interface ThemeDefinition {
   fontFamily: string;
   fontFamilyGoogleUrl?: string;
   backgroundImageUrl?: string;
+  bgImageUrl?: string;
+  backgroundGradient?: string;
+  bgPrimary?: string;
+  bgSidebar?: string;
+  bgCard?: string;
   bgOpacity?: number;
 
   // Code Block Syntax Highlighting Tokens
@@ -30,6 +35,7 @@ export interface ThemeDefinition {
 }
 
 export type Theme = ThemeDefinition;
+export type ThemeColors = ThemeDefinition;
 export type ThemeMode = 'light' | 'dark' | 'custom' | string;
 
 export const THEME_PRESETS: ThemeDefinition[] = [
@@ -67,6 +73,7 @@ export {
   getContrastRatio,
   hexToHsl,
   hexToRgb,
+  hexToRgba,
   hslToHex,
   meetsWcagAA,
   rgbToHex,
