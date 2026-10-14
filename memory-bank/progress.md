@@ -213,9 +213,12 @@
   - Isolated Tiptap editor body by extracting `cleanBody` with `parseFrontmatter` in [useTiptapInit.ts](file:///home/oloty/Dev/CaffeineMD/src/components/editor/hooks/useTiptapInit.ts) on editor initialization and reactive note syncing.
   - Sanitized transitions in [useEditorModeSwitch.ts](file:///home/oloty/Dev/CaffeineMD/src/components/editor/hooks/useEditorModeSwitch.ts) ensuring raw frontmatter is stripped before converting to rich text HTML.
   - Implemented `performSave` in [useEditorAutosave.ts](file:///home/oloty/Dev/CaffeineMD/src/components/editor/hooks/useEditorAutosave.ts) parsing input markdown, merging explicit plaintext frontmatter with stored meta, and serializing clean bodies.
-  - Implemented `handleUpdateProperties` in [TiptapEditor.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/TiptapEditor.tsx) extracting `cleanBody` before serialization and bound it to `<EditorHeader />` and `<BacklinksPanel />` (`<NotePropertiesCard />`).
+- [x] **Duplicate `baseline` Declaration Build Error Resolution**:
+  - Removed duplicate `const baseline` identifier redeclaration in `useEditorAutosave.ts` line 166.
+  - Verified `pnpm run build` and `pnpm run lint` execute with 0 errors and 0 warnings.
 
 ## Verification Status
+- Production Build verification: Passing cleanly with 0 errors (`pnpm run build`).
 - Lint verification: Passing cleanly with 0 errors and 0 warnings (`pnpm run lint`).
 - TypeScript verification: Passing cleanly with 0 errors (`tsc --noEmit`).
 - Tiered LOC Limits: 100% compliant (<100 LOC sweet spot, <250 LOC soft limit, strictly <400 LOC across all modules).

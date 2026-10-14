@@ -195,9 +195,12 @@
            - **Mode Switch Body Sanitization**: In [useEditorModeSwitch.ts](file:///home/oloty/Dev/CaffeineMD/src/components/editor/hooks/useEditorModeSwitch.ts), extracts `parseFrontmatter(rawMarkdown).content` when switching from Plaintext or Diff back to Rich Text mode.
            - **Unified Plaintext & Rich Text Autosave**: In [useEditorAutosave.ts](file:///home/oloty/Dev/CaffeineMD/src/components/editor/hooks/useEditorAutosave.ts), implemented `performSave` stripping frontmatter from input markdown, merging explicit plaintext frontmatter with stored meta, and serializing via `serializeFrontmatter`; updated `triggerAutosave`, `handleManualSave`, and `handleRevert`.
            - **Property Inspector Isolation**: In [TiptapEditor.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/TiptapEditor.tsx), implemented `handleUpdateProperties` stripping existing frontmatter from active note body before calling `serializeFrontmatter(newMeta, cleanBody)` and wired it to `<EditorHeader />` and `<BacklinksPanel />` (`<NotePropertiesCard />`), preventing duplicate frontmatter blocks when updating properties.
+         44. **Duplicate `baseline` Declaration Build Error Resolution (Live & Verified)**:
+            - **Eliminated Block-Scope Redeclaration**: Removed duplicate `const baseline` declaration in `triggerAutosave` in [useEditorAutosave.ts](file:///home/oloty/Dev/CaffeineMD/src/components/editor/hooks/useEditorAutosave.ts) allowing `if (isContentEqual(fullRaw, baseline))` to cleanly reuse the scoped constant defined at the start of the autosave pipeline.
+            - **Clean Production Build Verification**: Verified Next.js production build (`pnpm run build`) and ESLint (`pnpm run lint`) succeed with zero errors and zero warnings.
 
 - **Architecture & Tiered LOC Compliance**: All modules decomposed strictly within tiered LOC boundaries (<100 LOC sweet spot, <250 LOC soft limit, strictly <400 LOC).
-- **Verification Rule**: ESLint passing with 0 errors and 0 warnings (`pnpm run lint`). TypeScript check passing with 0 errors (`tsc --noEmit`).
+- **Verification Rule**: ESLint passing with 0 errors and 0 warnings (`pnpm run lint`). TypeScript check passing with 0 errors (`tsc --noEmit`). Production build passing with 0 errors (`pnpm run build`).
 
 ## Next Steps
 - Maintain modular <100-250 LOC boundaries across all components.

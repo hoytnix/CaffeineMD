@@ -163,8 +163,6 @@ export function useEditorAutosave({ filePath, editor }: UseEditorAutosaveProps) 
       dirtyContentRef.current = { mode, content: fullRaw };
       setRawMarkdown(fullRaw);
 
-      const baseline = lastSavedContentRef.current || targetFile.content || '';
-
       // If content matches saved baseline, reset dirty status and clear pending timer
       if (isContentEqual(fullRaw, baseline)) {
         isDirtyRef.current = false;
