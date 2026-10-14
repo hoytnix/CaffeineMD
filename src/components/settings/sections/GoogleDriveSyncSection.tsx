@@ -35,12 +35,7 @@ export function GoogleDriveSyncSection({
     handleGoogleLogout,
     handleSyncNow,
     handleSelectRemoteWorkspace,
-  } = useGoogleDriveSyncSettings({
-    vaultName,
-    showToast,
-    setActiveWorkspaceId,
-    setMountedMode,
-  });
+  } = useGoogleDriveSyncSettings({ vaultName, showToast, setActiveWorkspaceId, setMountedMode });
 
   return (
     <div>

@@ -2,22 +2,26 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft } from 'lucide-react';
 import { CreateWorkspaceModal } from '@/src/components/workspace/CreateWorkspaceModal';
 import { db } from '@/src/lib/storage/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
+import { THEME_PRESETS } from '@/src/lib/themes/themeDefinitions';
+import { getCurrentUser, initAuth } from '@/src/lib/firebase/client';
+import { getGeminiApiKey } from '@/src/lib/export/geminiTemplateGenerator';
+import { IosSettingsHome, SettingsScreen, GoogleDriveUserInfo } from './IosSettingsHome';
+import { SettingsHeader } from './SettingsHeader';
 import { GoogleDriveSyncSection } from './sections/GoogleDriveSyncSection';
 import { GeminiSettingsCard } from './sections/GeminiSettingsCard';
 import { DeploymentSettingsCard } from './sections/DeploymentSettingsCard';
 import { ThemeSettingsSection } from './sections/ThemeSettingsSection';
-import { CustomThemeBuilder } from './sections/CustomThemeBuilder';
 import { StorageSettingsSection } from './sections/StorageSettingsSection';
 import { EditorSettingsSection } from './sections/EditorSettingsSection';
 import { KeyboardShortcutsSection } from './sections/KeyboardShortcutsSection';
 
 export function SettingsView({ onBack }: { onBack?: () => void }) {
   const router = useRouter();
+  const [activeScreen, setActiveScreen] = useState<SettingsScreen>('home');
   const {
     activeWorkspaceId,
     activeView,
@@ -39,22 +43,50 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
     setMountedMode,
     showToast,
     setCreateWorkspaceModalOpen,
+    editorFontSize,
   } = useWorkspaceStore();
 
   useEffect(() => {
     hydrateThemeFromStorage();
   }, [hydrateThemeFromStorage]);
 
+  const [googleDriveUser, setGoogleDriveUser] = useState<GoogleDriveUserInfo | null>(() => {
+    const user = getCurrentUser();
+    return user ? { displayName: user.displayName, email: user.email, photoUrl: user.photoURL } : null;
+  });
+
+  useEffect(() => {
+    const unsubscribe = initAuth(
+      (user) => {
+        if (user) {
+          setGoogleDriveUser({ displayName: user.displayName, email: user.email, photoUrl: user.photoURL });
+        } else {
+          setGoogleDriveUser(null);
+        }
+      },
+      () => setGoogleDriveUser(null)
+    );
+    return () => unsubscribe();
+  }, []);
+
+  const [geminiApiKey, setGeminiApiKey] = useState(() => getGeminiApiKey());
+  useEffect(() => {
+    const handleKeyUpdate = () => setGeminiApiKey(getGeminiApiKey());
+    window.addEventListener('caffeinemd-gemini-key-updated', handleKeyUpdate);
+    window.addEventListener('storage', handleKeyUpdate);
+    return () => {
+      window.removeEventListener('caffeinemd-gemini-key-updated', handleKeyUpdate);
+      window.removeEventListener('storage', handleKeyUpdate);
+    };
+  }, []);
+
   const handleBackToWorkspace = () => {
-    if (activeView === 'settings') {
-      setActiveView('editor');
-    }
+    if (activeView === 'settings') setActiveView('editor');
     if (onBack) {
       onBack();
       return;
     }
-    const targetWorkspace = activeWorkspaceId || 'default-workspace';
-    router.push(`/w/${targetWorkspace}`);
+    router.push(`/w/${activeWorkspaceId || 'default-workspace'}`);
   };
 
   const rawFiles = useLiveQuery(() => db.files.toArray());
@@ -65,94 +97,76 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
     setWizardOverride(typeof show === 'function' ? show(showCustomWizard) : show);
   };
 
+  const activeThemePreset = THEME_PRESETS.find((t) => t.id === themeId);
+  const themeName = activeThemePreset?.name || (themeId === 'custom' ? customTheme?.name || 'Custom' : themeId);
+
   return (
     <div
       style={{ backgroundColor: 'var(--theme-bg-primary-glass, var(--theme-bg-primary))' }}
       className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col transition-colors duration-200"
     >
-      {/* iOS Top Navigation Bar */}
-      <header className="sticky top-0 z-40 bg-[var(--card)]/80 backdrop-blur-xl border-b border-[var(--border)] px-4 py-3 select-none">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <button
-            onClick={handleBackToWorkspace}
-            className="flex items-center gap-1 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors group cursor-pointer"
-          >
-            <ChevronLeft className="w-5 h-5 -ml-1 transition-transform group-hover:-translate-x-0.5" />
-            <span>Workspace</span>
-          </button>
+      <SettingsHeader
+        activeScreen={activeScreen}
+        setActiveScreen={setActiveScreen}
+        onBackToWorkspace={handleBackToWorkspace}
+      />
 
-          <h1 className="text-sm font-semibold tracking-tight text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5">
-            <span>☕</span>
-            <span>CaffeineMD Settings</span>
-          </h1>
-
-          <div className="w-16" />
-        </div>
-      </header>
-
-      {/* Main Settings Body */}
-      <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 space-y-8 pb-20">
-        {/* Google SSO & Google Drive Cloud Sync */}
-        <GoogleDriveSyncSection
-          vaultName={vaultName}
-          showToast={showToast}
-          setActiveWorkspaceId={setActiveWorkspaceId}
-          setMountedMode={setMountedMode}
-          setCreateWorkspaceModalOpen={setCreateWorkspaceModalOpen}
-        />
-
-        {/* AI & Gemini BYOK API Key Settings */}
-        <GeminiSettingsCard />
-
-        {/* 1-Click Cloud Deployment Integrations */}
-        <DeploymentSettingsCard />
-
-        {/* AI Theme Generator & Inline Custom Theme Wizard */}
-        <CustomThemeBuilder
-          customTheme={customTheme}
-          updateCustomTheme={updateCustomTheme}
-          setTheme={setTheme}
-          showCustomWizard={showCustomWizard}
-          setShowCustomWizard={setShowCustomWizard}
-        />
-
-        {/* Theme Presets Grid */}
-        <ThemeSettingsSection
-          themeId={themeId}
-          setTheme={setTheme}
-          customTheme={customTheme}
-          showCustomWizard={showCustomWizard}
-          setShowCustomWizard={setShowCustomWizard}
-        />
-
-        {/* Editor & Formatting Toolbox Position */}
-        <EditorSettingsSection
-          toolboxPosition={toolboxPosition}
-          setToolboxPosition={setToolboxPosition}
-          autosaveInterval={autosaveInterval}
-          setAutosaveInterval={setAutosaveInterval}
-          showToast={showToast}
-        />
-
-        {/* Customizable Keyboard Shortcuts */}
-        <KeyboardShortcutsSection />
-
-        {/* Storage & Ephemeral Trash Retention */}
-        <StorageSettingsSection
-          trashRetentionDays={trashRetentionDays}
-          setTrashRetentionDays={setTrashRetentionDays}
-          emptyTrashAll={emptyTrashAll}
-          trashCount={trashCount}
-        />
-
-        {/* About CaffeineMD */}
-        <div className="pt-6 border-t border-[var(--border)] text-center text-xs text-neutral-400 dark:text-neutral-500 space-y-1">
-          <p className="font-semibold text-neutral-700 dark:text-neutral-300">CaffeineMD</p>
-          <p className="text-[11px]">Local-first, high-performance personal knowledge management workspace ☕</p>
-        </div>
+      {/* Main Settings Content */}
+      <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 pb-20">
+        {activeScreen === 'home' && (
+          <IosSettingsHome
+            onSelectScreen={setActiveScreen}
+            googleDriveUser={googleDriveUser}
+            themeName={themeName}
+            editorFontSize={editorFontSize}
+            hasGeminiKey={Boolean(geminiApiKey?.trim())}
+          />
+        )}
+        {activeScreen === 'profile' && (
+          <GoogleDriveSyncSection
+            vaultName={vaultName}
+            showToast={showToast}
+            setActiveWorkspaceId={setActiveWorkspaceId}
+            setMountedMode={setMountedMode}
+            setCreateWorkspaceModalOpen={setCreateWorkspaceModalOpen}
+          />
+        )}
+        {activeScreen === 'apiKeys' && (
+          <div className="space-y-8">
+            <GeminiSettingsCard />
+            <DeploymentSettingsCard />
+          </div>
+        )}
+        {activeScreen === 'themes' && (
+          <ThemeSettingsSection
+            themeId={themeId}
+            setTheme={setTheme}
+            customTheme={customTheme}
+            updateCustomTheme={updateCustomTheme}
+            showCustomWizard={showCustomWizard}
+            setShowCustomWizard={setShowCustomWizard}
+          />
+        )}
+        {activeScreen === 'editor' && (
+          <EditorSettingsSection
+            toolboxPosition={toolboxPosition}
+            setToolboxPosition={setToolboxPosition}
+            autosaveInterval={autosaveInterval}
+            setAutosaveInterval={setAutosaveInterval}
+            showToast={showToast}
+          />
+        )}
+        {activeScreen === 'keyboard' && <KeyboardShortcutsSection />}
+        {activeScreen === 'storage' && (
+          <StorageSettingsSection
+            trashRetentionDays={trashRetentionDays}
+            setTrashRetentionDays={setTrashRetentionDays}
+            emptyTrashAll={emptyTrashAll}
+            trashCount={trashCount}
+          />
+        )}
       </main>
 
-      {/* Create Workspace Modal */}
       <CreateWorkspaceModal />
     </div>
   );

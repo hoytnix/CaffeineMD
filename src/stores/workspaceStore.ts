@@ -134,6 +134,11 @@ export interface WorkspaceState {
   hydrateThemeFromStorage: () => void;
   editorFontFamily: EditorFontFamily;
   setEditorFontFamily: (font: EditorFontFamily) => void;
+  editorFontSize: number;
+  setEditorFontSize: (size: number) => void;
+  spellcheck: boolean;
+  setSpellcheck: (val: boolean) => void;
+  toggleSpellcheck: () => void;
 
   // Editor Toolbox Placement
   toolboxPosition: ToolboxPosition;
@@ -240,6 +245,17 @@ const getInitialStoredEditorFont = (): EditorFontFamily => {
     localStorage.getItem('caffeinemd-editor-font-family') ||
     '';
   return ['sans', 'mono', 'serif'].includes(val) ? (val as EditorFontFamily) : 'sans';
+};
+
+const getInitialStoredEditorFontSize = (): number => {
+  if (typeof window === 'undefined') return 16;
+  const val = parseInt(localStorage.getItem('caffeinemd-editor-font-size') || '16', 10);
+  return isNaN(val) || val < 12 || val > 24 ? 16 : val;
+};
+
+const getInitialStoredSpellcheck = (): boolean => {
+  if (typeof window === 'undefined') return true;
+  return localStorage.getItem('caffeinemd-spellcheck') !== 'false';
 };
 
 const getInitialStoredShortcuts = (): Record<ShortcutActionId, string> => {
@@ -517,6 +533,30 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         localStorage.setItem('caffeinemd-editor-font-family', font);
       } catch {}
     }
+  },
+
+  // Editor Font Size & Spellcheck
+  editorFontSize: getInitialStoredEditorFontSize(),
+  setEditorFontSize: (size: number) => {
+    set({ editorFontSize: size });
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('caffeinemd-editor-font-size', String(size));
+      } catch {}
+    }
+  },
+  spellcheck: getInitialStoredSpellcheck(),
+  setSpellcheck: (val: boolean) => {
+    set({ spellcheck: val });
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('caffeinemd-spellcheck', String(val));
+      } catch {}
+    }
+  },
+  toggleSpellcheck: () => {
+    const nextVal = !get().spellcheck;
+    get().setSpellcheck(nextVal);
   },
 
   // Editor Toolbox Placement

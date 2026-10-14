@@ -1,11 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Sliders, Sparkles } from 'lucide-react';
+import React from 'react';
 import { ThemeDefinition } from '@/src/lib/themes/themeDefinitions';
-import { useWorkspaceStore } from '@/src/stores/workspaceStore';
-import { getGeminiApiKey } from '@/src/lib/export/geminiTemplateGenerator';
-import { generateAiThemePalette } from '@/src/lib/themes/aiThemeService';
+import { AiThemeStudioCard } from './AiThemeStudioCard';
+import { CustomThemeWizard } from './CustomThemeWizard';
 
 export interface CustomThemeBuilderProps {
   customTheme: ThemeDefinition;
@@ -15,13 +13,6 @@ export interface CustomThemeBuilderProps {
   setShowCustomWizard: (show: boolean) => void;
 }
 
-const COLOR_FIELDS: { label: string; key: keyof ThemeDefinition }[] = [
-  { label: 'Background Color', key: 'background' },
-  { label: 'Card Container Color', key: 'card' },
-  { label: 'Accent Color', key: 'accent' },
-  { label: 'Text / Foreground', key: 'foreground' },
-];
-
 export function CustomThemeBuilder({
   customTheme,
   updateCustomTheme,
@@ -29,220 +20,22 @@ export function CustomThemeBuilder({
   showCustomWizard,
   setShowCustomWizard,
 }: CustomThemeBuilderProps) {
-  const setEditorFontFamily = useWorkspaceStore((s) => s.setEditorFontFamily);
-  const [vibePrompt, setVibePrompt] = useState('');
-  const [isGeneratingTheme, setIsGeneratingTheme] = useState(false);
-  const [aiThemeError, setAiThemeError] = useState<string | null>(null);
-  const [geminiApiKey, setGeminiApiKey] = useState(() => getGeminiApiKey());
-
-  useEffect(() => {
-    const handleKeyUpdate = () => {
-      setGeminiApiKey(getGeminiApiKey());
-    };
-    window.addEventListener('caffeinemd-gemini-key-updated', handleKeyUpdate);
-    window.addEventListener('storage', handleKeyUpdate);
-    return () => {
-      window.removeEventListener('caffeinemd-gemini-key-updated', handleKeyUpdate);
-      window.removeEventListener('storage', handleKeyUpdate);
-    };
-  }, []);
-
-  const hasGeminiKey = Boolean(geminiApiKey?.trim());
-
-  const handleGenerate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!vibePrompt.trim()) return;
-
-    const apiKey = getGeminiApiKey()?.trim();
-    if (!apiKey) {
-      setAiThemeError('Gemini BYOK API key is required.');
-      return;
-    }
-
-    setIsGeneratingTheme(true);
-    setAiThemeError(null);
-
-    try {
-      const generated = await generateAiThemePalette(vibePrompt, apiKey);
-
-      const newCustom: Partial<ThemeDefinition> = {
-        name: generated.name || 'AI Generated Theme',
-        description: `Theme generated for vibe: "${vibePrompt}"`,
-        background: generated.background,
-        foreground: generated.foreground,
-        card: generated.card,
-        border: generated.border,
-        accent: generated.accent,
-        primary: generated.primary || generated.accent,
-        fontFamily: generated.fontFamily || 'system-ui, sans-serif',
-        fontFamilyGoogleUrl: generated.fontFamilyGoogleUrl,
-        backgroundImageUrl: generated.backgroundImageUrl || '',
-        isDark: true,
-        syntaxBg: generated.card || '#1c1c26',
-        syntaxKeyword: generated.accent || '#c084fc',
-        syntaxString: '#a7f3d0',
-        syntaxFunction: generated.primary || '#60a5fa',
-        syntaxComment: '#71717a',
-        syntaxVariable: generated.foreground || '#f472b6',
-        syntaxNumber: '#fb923c',
-        syntaxOperator: generated.accent || '#818cf8',
-      };
-
-      updateCustomTheme(newCustom);
-      setTheme('custom');
-      setShowCustomWizard(true);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Theme generation failed';
-      setAiThemeError(message);
-    } finally {
-      setIsGeneratingTheme(false);
-    }
-  };
-
-  if (!hasGeminiKey && !showCustomWizard) {
-    return null;
-  }
-
   return (
     <div className="space-y-6">
-      {/* AI Theme Studio Generator - Only rendered when a Gemini BYOK key is set */}
-      {hasGeminiKey && (
-        <div>
-          <div className="px-3 mb-2 flex items-center justify-between">
-            <div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-                AI Theme Studio
-              </span>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-                Generate tailored high-contrast color palettes powered by Gemini 3.5 Flash-Lite
-              </p>
-            </div>
-            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-400 bg-purple-950/50 border border-purple-800/40 px-2 py-0.5 rounded-full">
-              <Sparkles className="w-3 h-3" />
-              Gemini 3.5 Flash-Lite
-            </span>
-          </div>
+      {/* 1. AI Theme Studio Generator (Visible when Gemini BYOK key is set) */}
+      <AiThemeStudioCard
+        updateCustomTheme={updateCustomTheme}
+        setTheme={setTheme}
+        setShowCustomWizard={setShowCustomWizard}
+      />
 
-          <form
-            onSubmit={handleGenerate}
-            className="rounded-2xl bg-slate-900/50 border border-slate-800/80 p-4 shadow-xs space-y-3"
-          >
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Describe your theme vibe (e.g. 'Cyberpunk neon rain', 'Cozy 80s parchment library', 'Tokyo midnight synthwave')..."
-                value={vibePrompt}
-                onChange={(e) => setVibePrompt(e.target.value)}
-                disabled={isGeneratingTheme}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-slate-700/60 text-xs text-slate-100 placeholder-slate-400 outline-none focus:ring-2 focus:ring-indigo-500 transition-all pr-32"
-              />
-              <button
-                type="submit"
-                disabled={isGeneratingTheme || !vibePrompt.trim()}
-                className="absolute right-1.5 top-1.5 bottom-1.5 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-medium transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
-              >
-                <Sparkles className={`w-3.5 h-3.5 ${isGeneratingTheme ? 'animate-spin' : ''}`} />
-                <span>{isGeneratingTheme ? 'Designing...' : 'Generate'}</span>
-              </button>
-            </div>
-
-            {aiThemeError && (
-              <p className="text-xs text-red-400">{aiThemeError}</p>
-            )}
-          </form>
-        </div>
-      )}
-
-      {/* Custom Theme Inline Color & Backdrop Wizard */}
-      {showCustomWizard && (
-        <div className="rounded-2xl bg-slate-900/50 border border-slate-800/80 p-5 shadow-xs space-y-4 animate-in fade-in slide-in-from-top-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sliders className="w-4 h-4 text-indigo-400" />
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                Custom Theme Palette &amp; Backdrop Wizard
-              </h3>
-            </div>
-            <button
-              onClick={() => setShowCustomWizard(false)}
-              className="text-xs text-slate-400 hover:text-slate-200 cursor-pointer"
-            >
-              Close
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            {COLOR_FIELDS.map(({ label, key }) => (
-              <div key={key}>
-                <label className="text-[11px] font-medium text-slate-400 block mb-1">
-                  {label}
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={(customTheme[key] as string) || '#000000'}
-                    onChange={(e) => updateCustomTheme({ [key]: e.target.value })}
-                    className="w-8 h-8 rounded-lg cursor-pointer border border-slate-700/60 bg-transparent"
-                  />
-                  <input
-                    type="text"
-                    value={(customTheme[key] as string) || ''}
-                    onChange={(e) => updateCustomTheme({ [key]: e.target.value })}
-                    className="w-full text-xs font-mono px-2 py-1 rounded bg-slate-950/60 border border-slate-700/60 text-slate-200"
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-            <div>
-              <label className="text-[11px] font-medium text-slate-400 block mb-1">
-                Font Family
-              </label>
-              <select
-                value={customTheme.fontFamily}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  updateCustomTheme({ fontFamily: val });
-                  if (val.includes('JetBrains Mono') || val === 'mono') {
-                    setEditorFontFamily('mono');
-                  } else if (val.includes('Merriweather') || val === 'serif') {
-                    setEditorFontFamily('serif');
-                  } else {
-                    setEditorFontFamily('sans');
-                  }
-                }}
-                className="w-full px-3 py-1.5 rounded-lg bg-slate-950/60 border border-slate-700/60 text-xs text-slate-200 outline-none"
-              >
-                <option value="Inter">Inter (Sans-Serif)</option>
-                <option value="JetBrains Mono">JetBrains Mono (Monospace)</option>
-                <option value="Merriweather">Merriweather (Serif)</option>
-                <option value="system-ui, -apple-system, sans-serif">System Default</option>
-                <option value="'Inter', sans-serif">Inter (CSS stack)</option>
-                <option value="'JetBrains Mono', monospace">JetBrains Mono (CSS stack)</option>
-                <option value="'Fira Code', monospace">Fira Code</option>
-                <option value="'Outfit', sans-serif">Outfit</option>
-                <option value="'Plus Jakarta Sans', sans-serif">Plus Jakarta Sans</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-[11px] font-medium text-slate-400 block mb-1">
-                Custom Ambient Backdrop Image URL
-              </label>
-              <input
-                type="text"
-                placeholder="https://images.unsplash.com/..."
-                value={customTheme.backgroundImageUrl || ''}
-                onChange={(e) => updateCustomTheme({ backgroundImageUrl: e.target.value })}
-                className="w-full px-3 py-1.5 rounded-lg bg-slate-950/60 border border-slate-700/60 text-xs text-slate-200 placeholder-slate-500 outline-none"
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 2. Custom Theme Inline Color & Backdrop Wizard (Visible when custom or toggled) */}
+      <CustomThemeWizard
+        customTheme={customTheme}
+        updateCustomTheme={updateCustomTheme}
+        showCustomWizard={showCustomWizard}
+        setShowCustomWizard={setShowCustomWizard}
+      />
     </div>
   );
 }
