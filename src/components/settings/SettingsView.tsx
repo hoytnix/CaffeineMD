@@ -9,6 +9,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { GoogleDriveSyncSection } from './sections/GoogleDriveSyncSection';
 import { GeminiSettingsCard } from './sections/GeminiSettingsCard';
+import { DeploymentSettingsCard } from './sections/DeploymentSettingsCard';
 import { ThemeSettingsSection } from './sections/ThemeSettingsSection';
 import { CustomThemeBuilder } from './sections/CustomThemeBuilder';
 import { StorageSettingsSection } from './sections/StorageSettingsSection';
@@ -102,6 +103,9 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
 
         {/* AI & Gemini BYOK API Key Settings */}
         <GeminiSettingsCard />
+
+        {/* 1-Click Cloud Deployment Integrations */}
+        <DeploymentSettingsCard />
 
         {/* AI Theme Generator & Inline Custom Theme Wizard */}
         <CustomThemeBuilder

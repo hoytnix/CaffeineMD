@@ -30,14 +30,14 @@ export function RemoteWorkspacesList({
   isDownloadingWorkspace,
 }: RemoteWorkspacesListProps) {
   return (
-    <div className="p-4 bg-neutral-50/40 dark:bg-neutral-900/40 border-t border-neutral-100 dark:border-neutral-800/60 space-y-3">
+    <div className="p-4 bg-slate-950/60 border-t border-slate-800/60 space-y-3">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h4 className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5">
-            <FolderOpen className="w-3.5 h-3.5 text-indigo-500" />
+          <h4 className="text-xs font-semibold text-slate-100 flex items-center gap-1.5">
+            <FolderOpen className="w-3.5 h-3.5 text-indigo-400" />
             <span>Workspaces in Google Drive</span>
           </h4>
-          <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+          <p className="text-[11px] text-slate-400 mt-0.5">
             Select an existing Google Drive workspace folder to download and begin syncing
           </p>
         </div>
@@ -54,7 +54,7 @@ export function RemoteWorkspacesList({
             type="button"
             onClick={fetchRemoteWorkspaces}
             disabled={isLoadingRemoteWorkspaces}
-            className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-neutral-600 dark:text-neutral-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+            className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-slate-400 hover:text-indigo-400 hover:bg-slate-800/60 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
             title="Refresh remote workspaces"
           >
             <RefreshCw className={`w-3 h-3 ${isLoadingRemoteWorkspaces ? 'animate-spin' : ''}`} />
@@ -64,7 +64,7 @@ export function RemoteWorkspacesList({
       </div>
 
       {isLoadingRemoteWorkspaces ? (
-        <div className="py-4 text-center text-xs text-neutral-400 flex items-center justify-center gap-2">
+        <div className="py-4 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
           <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-500" />
           <span>Scanning Google Drive for workspaces...</span>
         </div>
@@ -81,22 +81,22 @@ export function RemoteWorkspacesList({
                 key={remote.id}
                 className={`p-3 rounded-xl border transition-all flex items-center justify-between gap-3 ${
                   isCurrentActive
-                    ? 'border-indigo-500/80 bg-indigo-50/50 dark:bg-indigo-950/20 ring-1 ring-indigo-500/20'
-                    : 'border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900/60 hover:border-neutral-300 dark:hover:border-neutral-700'
+                    ? 'border-indigo-500/80 bg-indigo-950/30 ring-1 ring-indigo-500/20'
+                    : 'border-slate-800/80 bg-slate-900/50 hover:border-slate-700/60'
                 }`}
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <span className="font-semibold text-xs text-neutral-900 dark:text-neutral-100 truncate">
+                    <span className="font-semibold text-xs text-slate-100 truncate">
                       {remote.name}
                     </span>
                     {isCurrentActive && (
-                      <span className="shrink-0 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/50 rounded">
+                      <span className="shrink-0 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-indigo-400 bg-indigo-900/50 rounded">
                         Active
                       </span>
                     )}
                   </div>
-                  <p className="text-[10px] font-mono text-neutral-400 dark:text-neutral-500 truncate mt-0.5">
+                  <p className="text-[10px] font-mono text-slate-400 truncate mt-0.5">
                     {remote.folderName}
                   </p>
                 </div>
@@ -117,9 +117,9 @@ export function RemoteWorkspacesList({
                       type="button"
                       onClick={() => handleSelectRemoteWorkspace(remote)}
                       disabled={isDownloadingWorkspace || isSyncing}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 text-[11px] font-medium shadow-xs cursor-pointer transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-700/60 hover:bg-slate-800/60 text-slate-200 text-[11px] font-medium shadow-xs cursor-pointer transition-colors disabled:opacity-50"
                     >
-                      <Download className="w-3 h-3 text-indigo-500" />
+                      <Download className="w-3 h-3 text-indigo-400" />
                       <span>Download &amp; Sync</span>
                     </button>
                   )}
@@ -129,11 +129,11 @@ export function RemoteWorkspacesList({
           })}
         </div>
       ) : (
-        <div className="py-3 px-3.5 rounded-xl border border-dashed border-neutral-200 dark:border-neutral-800 text-center">
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+        <div className="py-3 px-3.5 rounded-xl border border-dashed border-slate-800/80 text-center">
+          <p className="text-xs text-slate-400">
             No existing CaffeineMD workspaces found in Google Drive yet.
           </p>
-          <p className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-0.5">
+          <p className="text-[10px] text-slate-500 mt-0.5">
             Click &ldquo;Sync Now&rdquo; above to upload your current workspace to Google Drive.
           </p>
         </div>

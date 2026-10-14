@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Trash2, HardDrive } from 'lucide-react';
-import { DeploymentSettingsCard } from './DeploymentSettingsCard';
 
 export interface StorageSettingsSectionProps {
   trashRetentionDays: number;
@@ -82,11 +81,6 @@ export function StorageSettingsSection({
           </div>
         </div>
       </div>
-
-      {/* 1-Click Cloud Deployment Integrations */}
-      <DeploymentSettingsCard />
-
-
 
       {/* Trash & Ephemeral Retention Settings */}
       <div>

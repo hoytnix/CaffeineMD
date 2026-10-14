@@ -110,14 +110,15 @@ export function CustomThemeBuilder({
         <div>
           <div className="px-3 mb-2 flex items-center justify-between">
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
                 AI Theme Studio
               </span>
-              <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
                 Generate tailored high-contrast color palettes powered by Gemini 3.5 Flash-Lite
               </p>
             </div>
-            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/50 px-2 py-0.5 rounded-full">
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-400 bg-purple-950/50 border border-purple-800/40 px-2 py-0.5 rounded-full">
               <Sparkles className="w-3 h-3" />
               Gemini 3.5 Flash-Lite
             </span>
@@ -125,7 +126,7 @@ export function CustomThemeBuilder({
 
           <form
             onSubmit={handleGenerate}
-            className="rounded-2xl bg-white dark:bg-neutral-900/80 border border-neutral-200/80 dark:border-neutral-800/80 p-4 shadow-xs space-y-3"
+            className="rounded-2xl bg-slate-900/50 border border-slate-800/80 p-4 shadow-xs space-y-3"
           >
             <div className="relative">
               <input
@@ -134,7 +135,7 @@ export function CustomThemeBuilder({
                 value={vibePrompt}
                 onChange={(e) => setVibePrompt(e.target.value)}
                 disabled={isGeneratingTheme}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800/80 border border-neutral-200 dark:border-neutral-700/80 text-xs text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 outline-none focus:ring-2 focus:ring-indigo-500 transition-all pr-32"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/60 border border-slate-700/60 text-xs text-slate-100 placeholder-slate-400 outline-none focus:ring-2 focus:ring-indigo-500 transition-all pr-32"
               />
               <button
                 type="submit"
@@ -147,7 +148,7 @@ export function CustomThemeBuilder({
             </div>
 
             {aiThemeError && (
-              <p className="text-xs text-red-500 dark:text-red-400">{aiThemeError}</p>
+              <p className="text-xs text-red-400">{aiThemeError}</p>
             )}
           </form>
         </div>
@@ -155,17 +156,17 @@ export function CustomThemeBuilder({
 
       {/* Custom Theme Inline Color & Backdrop Wizard */}
       {showCustomWizard && (
-        <div className="rounded-2xl bg-white dark:bg-neutral-900/80 border border-neutral-200/80 dark:border-neutral-800/80 p-5 shadow-xs space-y-4 animate-in fade-in slide-in-from-top-2">
+        <div className="rounded-2xl bg-slate-900/50 border border-slate-800/80 p-5 shadow-xs space-y-4 animate-in fade-in slide-in-from-top-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Sliders className="w-4 h-4 text-indigo-500" />
-              <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-200">
+              <Sliders className="w-4 h-4 text-indigo-400" />
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200">
                 Custom Theme Palette &amp; Backdrop Wizard
               </h3>
             </div>
             <button
               onClick={() => setShowCustomWizard(false)}
-              className="text-xs text-neutral-400 hover:text-neutral-600 cursor-pointer"
+              className="text-xs text-slate-400 hover:text-slate-200 cursor-pointer"
             >
               Close
             </button>
@@ -174,7 +175,7 @@ export function CustomThemeBuilder({
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {COLOR_FIELDS.map(({ label, key }) => (
               <div key={key}>
-                <label className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400 block mb-1">
+                <label className="text-[11px] font-medium text-slate-400 block mb-1">
                   {label}
                 </label>
                 <div className="flex items-center gap-2">
@@ -182,13 +183,13 @@ export function CustomThemeBuilder({
                     type="color"
                     value={(customTheme[key] as string) || '#000000'}
                     onChange={(e) => updateCustomTheme({ [key]: e.target.value })}
-                    className="w-8 h-8 rounded-lg cursor-pointer border border-neutral-300 dark:border-neutral-700 bg-transparent"
+                    className="w-8 h-8 rounded-lg cursor-pointer border border-slate-700/60 bg-transparent"
                   />
                   <input
                     type="text"
                     value={(customTheme[key] as string) || ''}
                     onChange={(e) => updateCustomTheme({ [key]: e.target.value })}
-                    className="w-full text-xs font-mono px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700"
+                    className="w-full text-xs font-mono px-2 py-1 rounded bg-slate-950/60 border border-slate-700/60 text-slate-200"
                   />
                 </div>
               </div>
@@ -197,7 +198,7 @@ export function CustomThemeBuilder({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
             <div>
-              <label className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400 block mb-1">
+              <label className="text-[11px] font-medium text-slate-400 block mb-1">
                 Font Family
               </label>
               <select
@@ -213,7 +214,7 @@ export function CustomThemeBuilder({
                     setEditorFontFamily('sans');
                   }
                 }}
-                className="w-full px-3 py-1.5 rounded-lg bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-xs text-neutral-900 dark:text-neutral-100 outline-none"
+                className="w-full px-3 py-1.5 rounded-lg bg-slate-950/60 border border-slate-700/60 text-xs text-slate-200 outline-none"
               >
                 <option value="Inter">Inter (Sans-Serif)</option>
                 <option value="JetBrains Mono">JetBrains Mono (Monospace)</option>
@@ -228,7 +229,7 @@ export function CustomThemeBuilder({
             </div>
 
             <div>
-              <label className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400 block mb-1">
+              <label className="text-[11px] font-medium text-slate-400 block mb-1">
                 Custom Ambient Backdrop Image URL
               </label>
               <input
@@ -236,7 +237,7 @@ export function CustomThemeBuilder({
                 placeholder="https://images.unsplash.com/..."
                 value={customTheme.backgroundImageUrl || ''}
                 onChange={(e) => updateCustomTheme({ backgroundImageUrl: e.target.value })}
-                className="w-full px-3 py-1.5 rounded-lg bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-xs text-neutral-900 dark:text-neutral-100 outline-none"
+                className="w-full px-3 py-1.5 rounded-lg bg-slate-950/60 border border-slate-700/60 text-xs text-slate-200 placeholder-slate-500 outline-none"
               />
             </div>
           </div>
