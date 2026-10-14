@@ -28,7 +28,8 @@ export function BacklinksPanel({
   rawMarkdown,
   editorMode = 'rich',
 }: BacklinksPanelProps) {
-  const [isOpen, setIsOpen] = useState(true);
+  const [linkedOpen, setLinkedOpen] = useState(true);
+  const [unlinkedOpen, setUnlinkedOpen] = useState(false);
   const [linkedRefs, setLinkedRefs] = useState<BacklinkRecord[]>([]);
   const [unlinkedNotes, setUnlinkedNotes] = useState<{ file: VaultFile; snippet: string }[]>([]);
 
@@ -90,7 +91,7 @@ export function BacklinksPanel({
   if (!currentFile) return null;
 
   return (
-    <div className="mt-6 sm:mt-12 pt-4 sm:pt-6 border-t border-neutral-200 dark:border-neutral-800 text-neutral-800 dark:text-neutral-200 select-none">
+    <div className="mt-6 sm:mt-12 pt-4 sm:pt-6 border-t border-[var(--theme-border,var(--border))] text-[var(--theme-text-primary,var(--foreground))] select-none">
       {/* Live Word & Token Count placed right above NOTE PROPERTIES */}
       <NoteMetricsBar
         editor={editor}
@@ -108,20 +109,28 @@ export function BacklinksPanel({
       {/* Linked References Section */}
       <div className="mb-4">
         <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-1.5 text-xs font-semibold text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 transition-colors uppercase tracking-wider mb-2 cursor-pointer"
+          type="button"
+          onClick={() => setLinkedOpen(!linkedOpen)}
+          className="flex items-center gap-1.5 text-xs font-semibold text-[var(--theme-text-primary,var(--foreground))] hover:text-[var(--theme-accent,#6366f1)] transition-colors uppercase tracking-wider mb-2 cursor-pointer select-none"
         >
-          {isOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+          {linkedOpen ? (
+            <ChevronDown className="w-3.5 h-3.5 text-[var(--theme-accent,#6366f1)]" />
+          ) : (
+            <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+          )}
           <div className="flex items-center gap-1.5">
-            <Link2 className="w-3.5 h-3.5 text-neutral-400" />
-            <span>Linked References ({linkedRefs.length})</span>
+            <Link2 className="w-3.5 h-3.5 text-[var(--theme-accent,#6366f1)]" />
+            <span>Linked References</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-[var(--theme-bg-card,var(--card))] border border-[var(--theme-border,var(--border))] text-[var(--theme-text-primary,var(--foreground))]">
+              {linkedRefs.length}
+            </span>
           </div>
         </button>
 
-        {isOpen && (
+        {linkedOpen && (
           <div className="space-y-2 mt-2">
             {linkedRefs.length === 0 ? (
-              <div className="text-xs text-neutral-400 italic pl-5">
+              <div className="text-xs text-neutral-400 italic pl-5 py-1">
                 No notes link directly to this document yet.
               </div>
             ) : (
@@ -129,16 +138,16 @@ export function BacklinksPanel({
                 <div
                   key={ref.id}
                   onClick={() => openFileTab(ref.sourcePath, ref.sourceTitle)}
-                  className="p-2.5 rounded-lg border border-[var(--border)] bg-[var(--card)] hover:border-[var(--accent)] hover:shadow-xs transition-all cursor-pointer group"
+                  className="p-2.5 rounded-lg border border-[var(--theme-border,var(--border))] bg-[var(--theme-bg-card,var(--card))] hover:border-[var(--theme-accent,#6366f1)] hover:shadow-xs transition-all cursor-pointer group"
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <FileText className="w-3.5 h-3.5 text-neutral-400 group-hover:text-[var(--accent)]" />
-                    <span className="text-xs font-medium text-[var(--foreground)] group-hover:text-[var(--accent)]">
+                    <FileText className="w-3.5 h-3.5 text-neutral-400 group-hover:text-[var(--theme-accent,#6366f1)]" />
+                    <span className="text-xs font-medium text-[var(--theme-text-primary,var(--foreground))] group-hover:text-[var(--theme-accent,#6366f1)]">
                       {ref.sourceTitle}
                     </span>
                   </div>
                   {ref.snippet && (
-                    <div className="text-[11px] text-neutral-500 line-clamp-2 pl-5.5 font-mono">
+                    <div className="text-[11px] text-neutral-400 line-clamp-2 pl-5.5 font-mono">
                       {ref.snippet}
                     </div>
                   )}
@@ -150,33 +159,54 @@ export function BacklinksPanel({
       </div>
 
       {/* Unlinked Mentions Section */}
-      {unlinkedNotes.length > 0 && (
-        <div className="mt-6 pt-4 border-t border-[var(--border)]">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">
-            <Unlink className="w-3.5 h-3.5" />
-            <span>Unlinked Mentions ({unlinkedNotes.length})</span>
+      <div className="mt-6 pt-4 border-t border-[var(--theme-border,var(--border))]">
+        <button
+          type="button"
+          onClick={() => setUnlinkedOpen(!unlinkedOpen)}
+          className="flex items-center gap-1.5 text-xs font-semibold text-[var(--theme-text-primary,var(--foreground))] hover:text-[var(--theme-accent,#6366f1)] transition-colors uppercase tracking-wider mb-2 cursor-pointer select-none"
+        >
+          {unlinkedOpen ? (
+            <ChevronDown className="w-3.5 h-3.5 text-[var(--theme-accent,#6366f1)]" />
+          ) : (
+            <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+          )}
+          <div className="flex items-center gap-1.5">
+            <Unlink className="w-3.5 h-3.5 text-amber-500/80" />
+            <span>Unlinked Mentions</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-[var(--theme-bg-card,var(--card))] border border-[var(--theme-border,var(--border))] text-[var(--theme-text-primary,var(--foreground))]">
+              {unlinkedNotes.length}
+            </span>
           </div>
+        </button>
+
+        {unlinkedOpen && (
           <div className="space-y-2 mt-2">
-            {unlinkedNotes.map(({ file, snippet }) => (
-              <div
-                key={file.id}
-                onClick={() => openFileTab(file.path, file.title)}
-                className="p-2.5 rounded-lg border border-[var(--border)] bg-[var(--card)] hover:border-neutral-400 transition-all cursor-pointer group"
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <FileText className="w-3.5 h-3.5 text-neutral-400" />
-                  <span className="text-xs font-medium text-[var(--foreground)] group-hover:underline">
-                    {file.title || file.name}
-                  </span>
-                </div>
-                <div className="text-[11px] text-neutral-400 line-clamp-2 pl-5.5 font-mono">
-                  {snippet}
-                </div>
+            {unlinkedNotes.length === 0 ? (
+              <div className="text-xs text-neutral-400 italic pl-5 py-1">
+                No unlinked mentions found for this document.
               </div>
-            ))}
+            ) : (
+              unlinkedNotes.map(({ file, snippet }) => (
+                <div
+                  key={file.id}
+                  onClick={() => openFileTab(file.path, file.title)}
+                  className="p-2.5 rounded-lg border border-[var(--theme-border,var(--border))] bg-[var(--theme-bg-card,var(--card))] hover:border-[var(--theme-accent,#6366f1)] hover:shadow-xs transition-all cursor-pointer group"
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <FileText className="w-3.5 h-3.5 text-neutral-400 group-hover:text-[var(--theme-accent,#6366f1)]" />
+                    <span className="text-xs font-medium text-[var(--theme-text-primary,var(--foreground))] group-hover:text-[var(--theme-accent,#6366f1)]">
+                      {file.title || file.name}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-neutral-400 line-clamp-2 pl-5.5 font-mono">
+                    {snippet}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { baseThemes } from './presets/baseThemes';
 import { seasonalThemes } from './presets/seasonalThemes';
 import { customThemes, DEFAULT_CUSTOM_THEME } from './presets/customThemes';
+import { applyThemeToDocument } from './colorUtils';
 
 export interface ThemeDefinition {
   id: string;
@@ -61,6 +62,15 @@ export function getThemeDefinition(
   }
   const found = THEME_PRESETS.find((t) => t.id === themeId);
   return found || THEME_PRESETS[0];
+}
+
+export function applyThemeId(
+  themeId: string = 'dark',
+  customThemeColors?: Partial<ThemeDefinition>
+): ThemeDefinition {
+  const target = getThemeDefinition(themeId, customThemeColors);
+  applyThemeToDocument(target);
+  return target;
 }
 
 export { DEFAULT_CUSTOM_THEME };

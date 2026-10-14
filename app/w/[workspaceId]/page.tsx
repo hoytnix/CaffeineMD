@@ -40,6 +40,7 @@ export default function WorkspacePage() {
     isNewNoteModalOpen,
     setNewNoteModalOpen,
     setTheme,
+    hydrateThemeFromStorage,
     toastMessage,
     isFocusMode,
     setFocusMode,
@@ -72,19 +73,8 @@ export default function WorkspacePage() {
       setHasInitialized(true);
     });
 
-    if (typeof window !== 'undefined') {
-      try {
-        const savedThemeId = localStorage.getItem('kite-theme-id');
-        if (savedThemeId) {
-          setTheme(savedThemeId);
-        } else {
-          applyThemeToDocument(THEME_PRESETS[0]);
-        }
-      } catch (err) {
-        console.warn('Theme hydration error:', err);
-      }
-    }
-  }, [setTheme]);
+    hydrateThemeFromStorage();
+  }, [hydrateThemeFromStorage]);
 
   return (
     <div

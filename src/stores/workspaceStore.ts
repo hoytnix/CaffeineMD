@@ -5,6 +5,7 @@ import {
   THEME_PRESETS,
   DEFAULT_CUSTOM_THEME,
   applyThemeToDocument,
+  applyThemeId,
 } from '../lib/themes/themeDefinitions';
 import {
   VaultFile,
@@ -124,7 +125,9 @@ export interface WorkspaceState {
   customTheme: ThemeDefinition;
   customThemeColors: Partial<ThemeDefinition>;
   setTheme: (themeId: string) => void;
+  setCustomThemeColors: (colors: Partial<ThemeDefinition>) => void;
   updateCustomTheme: (tokens: Partial<ThemeDefinition>) => void;
+  hydrateThemeFromStorage: () => void;
   editorFontFamily: EditorFontFamily;
   setEditorFontFamily: (font: EditorFontFamily) => void;
 
@@ -198,6 +201,37 @@ export interface WorkspaceState {
   notes: VaultFile[];
   setNotes: (notes: VaultFile[]) => void;
 }
+
+const getInitialStoredTheme = (): string => {
+  if (typeof window === 'undefined') return 'dark';
+  return (
+    localStorage.getItem('caffeinemd-theme') ||
+    localStorage.getItem('kite-theme-id') ||
+    'dark'
+  );
+};
+
+const getInitialStoredCustomColors = (): ThemeDefinition => {
+  if (typeof window === 'undefined') return DEFAULT_CUSTOM_THEME;
+  try {
+    const raw =
+      localStorage.getItem('caffeinemd-custom-theme-colors') ||
+      localStorage.getItem('kite-custom-theme');
+    if (raw) {
+      return { ...DEFAULT_CUSTOM_THEME, ...JSON.parse(raw), id: 'custom' };
+    }
+  } catch {}
+  return DEFAULT_CUSTOM_THEME;
+};
+
+const getInitialStoredEditorFont = (): EditorFontFamily => {
+  if (typeof window === 'undefined') return 'sans';
+  const val =
+    localStorage.getItem('caffeinemd-editor-font') ||
+    localStorage.getItem('caffeinemd-editor-font-family') ||
+    '';
+  return ['sans', 'mono', 'serif'].includes(val) ? (val as EditorFontFamily) : 'sans';
+};
 
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   notes: [],
@@ -346,50 +380,91 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   setActiveEditor: (editor) => set({ activeEditor: editor }),
 
   // Theme
-  themeId: 'dark',
-  theme: 'dark',
-  customTheme: DEFAULT_CUSTOM_THEME,
-  customThemeColors: DEFAULT_CUSTOM_THEME,
+  themeId: getInitialStoredTheme(),
+  theme: getInitialStoredTheme(),
+  customTheme: getInitialStoredCustomColors(),
+  customThemeColors: getInitialStoredCustomColors(),
   setTheme: (themeId) => {
     set({ themeId, theme: themeId });
     if (typeof window !== 'undefined') {
       try {
+        localStorage.setItem('caffeinemd-theme', themeId);
         localStorage.setItem('kite-theme-id', themeId);
       } catch {}
     }
-    const currentCustom = get().customTheme;
-    const target =
-      themeId === 'custom'
-        ? currentCustom
-        : THEME_PRESETS.find((t) => t.id === themeId) || THEME_PRESETS[0];
-    applyThemeToDocument(target);
+    const currentCustom = get().customThemeColors || get().customTheme;
+    applyThemeId(themeId, currentCustom);
   },
-  updateCustomTheme: (tokens) => {
+  setCustomThemeColors: (colors) => {
     const updated: ThemeDefinition = {
       ...get().customTheme,
-      ...tokens,
+      ...colors,
       id: 'custom',
     };
-    set({ customTheme: updated, customThemeColors: updated, themeId: 'custom', theme: 'custom' });
+    set({
+      customTheme: updated,
+      customThemeColors: updated,
+      themeId: 'custom',
+      theme: 'custom',
+    });
     if (typeof window !== 'undefined') {
       try {
+        localStorage.setItem('caffeinemd-custom-theme-colors', JSON.stringify(updated));
         localStorage.setItem('kite-custom-theme', JSON.stringify(updated));
+        localStorage.setItem('caffeinemd-theme', 'custom');
         localStorage.setItem('kite-theme-id', 'custom');
       } catch {}
     }
-    applyThemeToDocument(updated);
+    applyThemeId('custom', updated);
+  },
+  updateCustomTheme: (tokens) => {
+    get().setCustomThemeColors(tokens);
+  },
+  hydrateThemeFromStorage: () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const savedTheme =
+        localStorage.getItem('caffeinemd-theme') ||
+        localStorage.getItem('kite-theme-id') ||
+        'dark';
+      let savedCustomColors = get().customTheme;
+      const rawCustom =
+        localStorage.getItem('caffeinemd-custom-theme-colors') ||
+        localStorage.getItem('kite-custom-theme');
+      if (rawCustom) {
+        try {
+          savedCustomColors = { ...DEFAULT_CUSTOM_THEME, ...JSON.parse(rawCustom), id: 'custom' };
+        } catch {}
+      }
+      const rawFont =
+        localStorage.getItem('caffeinemd-editor-font') ||
+        localStorage.getItem('caffeinemd-editor-font-family') ||
+        'sans';
+      const savedFont: EditorFontFamily = ['sans', 'mono', 'serif'].includes(rawFont)
+        ? (rawFont as EditorFontFamily)
+        : 'sans';
+
+      set({
+        themeId: savedTheme,
+        theme: savedTheme,
+        customTheme: savedCustomColors,
+        customThemeColors: savedCustomColors,
+        editorFontFamily: savedFont,
+      });
+
+      applyThemeId(savedTheme, savedCustomColors);
+    } catch (err) {
+      console.warn('Theme hydration error:', err);
+    }
   },
 
   // Editor Font Family Selection
-  editorFontFamily:
-    typeof window !== 'undefined' &&
-    ['sans', 'mono', 'serif'].includes(localStorage.getItem('caffeinemd-editor-font-family') || '')
-      ? (localStorage.getItem('caffeinemd-editor-font-family') as EditorFontFamily)
-      : 'sans',
+  editorFontFamily: getInitialStoredEditorFont(),
   setEditorFontFamily: (font: EditorFontFamily) => {
     set({ editorFontFamily: font });
     if (typeof window !== 'undefined') {
       try {
+        localStorage.setItem('caffeinemd-editor-font', font);
         localStorage.setItem('caffeinemd-editor-font-family', font);
       } catch {}
     }

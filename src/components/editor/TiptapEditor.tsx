@@ -22,6 +22,7 @@ import { DocumentOutlineHud } from './components/DocumentOutlineHud';
 import { EditorMinimap } from './components/EditorMinimap';
 import { DocumentTabBar } from './DocumentTabBar';
 import { EditorContextMenu } from './EditorContextMenu';
+import { IosLinkPreviewCard } from './components/IosLinkPreviewCard';
 import { useContextMenu } from '@/src/hooks/useContextMenu';
 import { useKeyboardOffset } from '@/src/hooks/useKeyboardOffset';
 import { FileQuestion } from 'lucide-react';
@@ -286,6 +287,9 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
         onExecuteCommand={(item) => executeCommand(item, editor)}
         onExecuteWikiLink={(sugg) => executeWikiLink(sugg, editor)}
       />
+
+      {/* iOS-styled Link Preview Card for External Links and [[WikiLinks]] */}
+      <IosLinkPreviewCard editor={editor} />
 
       {/* Unified Glassmorphic Editor Context Menu */}
       <EditorContextMenu

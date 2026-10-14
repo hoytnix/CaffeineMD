@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 import { CreateWorkspaceModal } from '@/src/components/workspace/CreateWorkspaceModal';
@@ -23,6 +23,7 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
     setTheme,
     customTheme,
     updateCustomTheme,
+    hydrateThemeFromStorage,
     toolboxPosition,
     setToolboxPosition,
     autosaveInterval,
@@ -36,6 +37,10 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
     showToast,
     setCreateWorkspaceModalOpen,
   } = useWorkspaceStore();
+
+  useEffect(() => {
+    hydrateThemeFromStorage();
+  }, [hydrateThemeFromStorage]);
 
   const handleBackToWorkspace = () => {
     if (activeView === 'settings') {

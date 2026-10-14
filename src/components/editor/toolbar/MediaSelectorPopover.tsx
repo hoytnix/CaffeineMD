@@ -36,6 +36,10 @@ export function MediaSelectorPopover({
 }: MediaSelectorPopoverProps) {
   const { activeWorkspaceId } = useWorkspaceStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showLinkInput, setShowLinkInput] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkText, setLinkText] = useState('');
+  const selectedTextRef = useRef('');
 
   const {
     isOpen,
@@ -50,18 +54,68 @@ export function MediaSelectorPopover({
   } = useToolbarPopover({
     editor,
     checkHasDragged,
-    popoverWidth: 208,
+    popoverWidth: 224,
   });
 
+  const handleOpenLinkInput = () => {
+    const { from, to, empty } = editor.state.selection;
+    const selected = empty ? '' : editor.state.doc.textBetween(from, to, ' ');
+    selectedTextRef.current = selected;
+    setLinkText(selected);
+    const existingHref = editor.getAttributes('link').href || '';
+    setLinkUrl(existingHref);
+    setShowLinkInput(true);
+  };
+
   const handleInsertLink = () => {
-    setIsOpen(false);
-    const url = window.prompt('Enter link URL (or note title for WikiLink):');
-    if (!url) return;
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      editor.chain().focus().setLink?.({ href: url }).run();
-    } else {
-      editor.chain().focus().insertContent(`[[${url}]]`).run();
+    let normalizedUrl = linkUrl.trim();
+    if (!normalizedUrl) return;
+
+    if (normalizedUrl.startsWith('[[') && normalizedUrl.endsWith(']]')) {
+      const noteTitle = normalizedUrl.slice(2, -2).trim();
+      editor.chain().focus().insertContent(`[[${noteTitle}]]`).run();
+      setLinkUrl('');
+      setLinkText('');
+      setShowLinkInput(false);
+      setIsOpen(false);
+      onActionNotice?.('WikiLink inserted');
+      return;
     }
+
+    if (
+      !normalizedUrl.startsWith('http://') &&
+      !normalizedUrl.startsWith('https://') &&
+      !normalizedUrl.startsWith('mailto:') &&
+      !normalizedUrl.startsWith('/')
+    ) {
+      normalizedUrl = `https://${normalizedUrl}`;
+    }
+
+    const { empty } = editor.state.selection;
+    const initialSelected = selectedTextRef.current;
+    const hasCustomLabel = linkText.trim() && linkText.trim() !== initialSelected;
+
+    if (empty || hasCustomLabel) {
+      const displayLabel = linkText.trim() || normalizedUrl;
+      editor
+        .chain()
+        .focus()
+        .insertContent(`<a href="${normalizedUrl}" target="_blank" rel="noopener noreferrer">${displayLabel}</a> `)
+        .run();
+    } else {
+      editor
+        .chain()
+        .focus()
+        .extendMarkRange('link')
+        .setLink({ href: normalizedUrl })
+        .run();
+    }
+
+    setLinkUrl('');
+    setLinkText('');
+    setShowLinkInput(false);
+    setIsOpen(false);
+    onActionNotice?.('Link inserted');
   };
 
   const handleInsertImageUrl = () => {
@@ -190,22 +244,94 @@ export function MediaSelectorPopover({
             Links & Images
           </div>
 
-          {/* Link */}
-          <button
-            type="button"
-            onClick={handleInsertLink}
-            className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-xs transition-colors cursor-pointer text-left w-full ${
-              isLinkActive ? 'bg-[var(--accent)] text-white font-semibold' : 'hover:bg-[var(--foreground)]/10 text-[var(--foreground)]'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <LinkIcon className="w-3.5 h-3.5 shrink-0" />
-              <span>Link / WikiLink</span>
+          {/* Link / WikiLink Section */}
+          {showLinkInput ? (
+            <div className="p-1.5 flex flex-col gap-1.5 bg-[var(--background)]/70 rounded-lg border border-[var(--border)]">
+              <div className="flex items-center justify-between text-[11px] font-medium text-[var(--foreground)]">
+                <span className="flex items-center gap-1 font-semibold text-[10px] uppercase tracking-wider text-[var(--foreground)]/70">
+                  <LinkIcon className="w-3 h-3 text-[var(--accent)]" />
+                  Insert Link
+                </span>
+                {isLinkActive && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      editor.chain().focus().unsetLink().run();
+                      setShowLinkInput(false);
+                      setIsOpen(false);
+                      onActionNotice?.('Link removed');
+                    }}
+                    className="text-[10px] text-red-400 hover:text-red-300 transition-colors cursor-pointer"
+                  >
+                    Unlink
+                  </button>
+                )}
+              </div>
+              <input
+                type="text"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                placeholder="URL (https://... or note)"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleInsertLink();
+                  } else if (e.key === 'Escape') {
+                    setShowLinkInput(false);
+                  }
+                }}
+                className="w-full px-2 py-1 text-xs rounded bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] placeholder:text-neutral-500 focus:outline-hidden focus:border-[var(--accent)]"
+              />
+              <input
+                type="text"
+                value={linkText}
+                onChange={(e) => setLinkText(e.target.value)}
+                placeholder="Link Label (optional)"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleInsertLink();
+                  } else if (e.key === 'Escape') {
+                    setShowLinkInput(false);
+                  }
+                }}
+                className="w-full px-2 py-1 text-xs rounded bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] placeholder:text-neutral-500 focus:outline-hidden focus:border-[var(--accent)]"
+              />
+              <div className="flex items-center justify-end gap-1.5 mt-0.5">
+                <button
+                  type="button"
+                  onClick={() => setShowLinkInput(false)}
+                  className="px-2 py-0.5 rounded text-[11px] text-[var(--foreground)]/60 hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/10 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleInsertLink}
+                  className="px-2 py-0.5 rounded text-[11px] bg-[var(--accent)] text-white font-medium hover:brightness-110 transition-all cursor-pointer shadow-xs"
+                >
+                  Insert
+                </button>
+              </div>
             </div>
-            <span className={`text-[10px] font-mono px-1 py-0.5 rounded ${isLinkActive ? 'bg-white/20 text-white' : 'bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)]/60'}`}>
-              [[ ]]
-            </span>
-          </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleOpenLinkInput}
+              className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-xs transition-colors cursor-pointer text-left w-full ${
+                isLinkActive ? 'bg-[var(--accent)] text-white font-semibold' : 'hover:bg-[var(--foreground)]/10 text-[var(--foreground)]'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <LinkIcon className="w-3.5 h-3.5 shrink-0" />
+                <span>Link / WikiLink</span>
+              </div>
+              <span className={`text-[10px] font-mono px-1 py-0.5 rounded ${isLinkActive ? 'bg-white/20 text-white' : 'bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)]/60'}`}>
+                [[ ]]
+              </span>
+            </button>
+          )}
 
           {/* Upload Image */}
           <button
