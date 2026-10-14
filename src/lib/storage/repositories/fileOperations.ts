@@ -363,3 +363,5 @@ export async function moveFolder(
     }
   });
 }
+
+export { permanentlyDeleteNote, emptyTrash } from './noteRepository';

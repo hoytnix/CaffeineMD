@@ -120,6 +120,7 @@ export async function executeDownloadBatch(
       createdAt: remoteModifiedMs,
       updatedAt: remoteModifiedMs,
       vaultId: currentWorkspaceId,
+      driveFileId: remote.id,
     });
 
     onFileProcessed?.(fileName, 'downloading');
@@ -128,6 +129,11 @@ export async function executeDownloadBatch(
   if (downloadedRecords.length > 0) {
     await db.transaction('rw', db.files, async () => {
       for (const record of downloadedRecords) {
+        const existing = await db.files.get(record.path);
+        if (existing?.isDeleted || existing?.isTrash) {
+          // Never overwrite or resurrect a soft-deleted note
+          continue;
+        }
         await db.files.put(record);
       }
     });
@@ -156,13 +162,16 @@ export async function executeUploadBatch(
       name: task.driveFileName,
       mimeType: task.local.mimeType || fileBlob.type,
     };
-    await syncFileToDrive(
+    const remoteId = await syncFileToDrive(
       token,
       metadata,
       fileBlob,
       task.remoteId ? undefined : folderId,
       task.remoteId
     );
+    if (remoteId && task.local.path) {
+      await db.files.update(task.local.path, { driveFileId: remoteId }).catch(() => {});
+    }
     count++;
     const friendlyName = task.driveFileName.includes('___')
       ? task.driveFileName.replace(/___/g, '/')

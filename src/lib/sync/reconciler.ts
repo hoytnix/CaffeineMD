@@ -1,4 +1,4 @@
-import { VaultFile } from '@/src/lib/storage/schema';
+import { VaultFile } from '../storage/schema';
 import { RemoteDriveFile } from './google/driveApiClient';
 
 export interface UploadSyncTask {

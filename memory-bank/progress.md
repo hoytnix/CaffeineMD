@@ -147,6 +147,13 @@
   - Added **Plaintext** (`Code2`) and **Diff** (`GitCompare`) tabs immediately following **Editor** (`FileText`) in [WorkspaceHeader.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/workspace/WorkspaceHeader.tsx) desktop nav and mobile `<select>` view switcher, with theme accent highlights.
   - Upgraded [useEditorModeSwitch.ts](file:///home/oloty/Dev/CaffeineMD/src/components/editor/hooks/useEditorModeSwitch.ts) with reactive `useEffect` and `useRef` transition detection to seamlessly serialize HTML-to-Markdown and parse Markdown-to-HTML without loss.
 
+- [x] **Google Drive Sync Trashed File Reconciliation & Ghost Note Prevention**:
+  - Implemented `trashRemoteFile(fileId)` in [driveApiClient.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sync/google/driveApiClient.ts) issuing `PATCH` requests to Google Drive v3 files endpoint with `{ trashed: true }` and 404 resilience.
+  - Implemented `reconcileDriveState` in [driveReconciler.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sync/google/driveReconciler.ts) with `delete_remote` and `noop` actions, preventing resurrection of soft-deleted notes and emitting remote trashing when local deletion timestamp >= remote modified timestamp.
+  - Updated [driveSyncRunner.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sync/google/driveSyncRunner.ts) with `runDriveSyncCycle` querying both active and trashed notes via `getAllNotes` and `getTrashedNotes` from [noteRepository.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/repositories/noteRepository.ts) and executing `delete_remote`.
+  - Added anti-resurrection guards in `pullRemoteNote` and [syncExecutor.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sync/syncExecutor.ts) `executeDownloadBatch` preventing overwrite of soft-deleted records.
+  - Linked remote file trashing to `deleteVaultFile`, `emptyTrash`, and `permanentlyDeleteNote` in [noteRepository.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/repositories/noteRepository.ts) and [fileOperations.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/repositories/fileOperations.ts) when active Drive credentials and `driveFileId` exist.
+
 ## Verification Status
 - Lint verification: Passing cleanly with 0 errors and 0 warnings (`pnpm run lint`).
 - TypeScript verification: Passing cleanly with 0 errors (`tsc --noEmit`).

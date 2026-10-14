@@ -25,7 +25,20 @@ export async function saveNote(note: VaultFile): Promise<void> {
 export async function listNotes(vaultId?: string): Promise<VaultFile[]> {
   const all = await db.files.toArray();
   return all.filter((f) => {
-    if (f.isTrash) return false;
+    if (f.isTrash || f.isDeleted) return false;
+    if (!vaultId) return true;
+    if (vaultId === 'default-vault') return !f.vaultId || f.vaultId === 'default-vault';
+    return f.vaultId === vaultId;
+  });
+}
+
+/**
+ * List all trashed / soft-deleted notes in a given workspace
+ */
+export async function getTrashedNotes(vaultId?: string): Promise<VaultFile[]> {
+  const all = await db.files.toArray();
+  return all.filter((f) => {
+    if (!f.isTrash && !f.isDeleted) return false;
     if (!vaultId) return true;
     if (vaultId === 'default-vault') return !f.vaultId || f.vaultId === 'default-vault';
     return f.vaultId === vaultId;
@@ -37,6 +50,7 @@ export async function listNotes(vaultId?: string): Promise<VaultFile[]> {
  */
 export const getNotesByWorkspace = listNotes;
 export const getAllNotes = listNotes;
+export const createNote = saveNote;
 
 /**
  * Bulk upsert notes within an atomic Dexie transaction
@@ -89,6 +103,20 @@ export async function restoreFromTrash(path: string): Promise<boolean> {
  */
 export async function deleteVaultFile(path: string): Promise<void> {
   const file = await db.files.get(path);
+
+  // Best-effort remote trash on Google Drive if synced
+  if (file?.driveFileId) {
+    try {
+      const { DriveAuthService } = await import('../../sync/google/driveAuthService');
+      if (await DriveAuthService.hasActiveToken()) {
+        const { trashRemoteFile } = await import('../../sync/google/driveApiClient');
+        await trashRemoteFile(file.driveFileId);
+      }
+    } catch (err) {
+      console.warn('Best-effort Google Drive trash failed:', err);
+    }
+  }
+
   if (file && file.tags && file.tags.length > 0) {
     for (const tag of file.tags) {
       const existing = await db.tags.get(tag);
@@ -118,11 +146,19 @@ export async function deleteVaultFile(path: string): Promise<void> {
 }
 
 /**
+ * Permanently delete a note and prune associated metadata
+ */
+export const permanentlyDeleteNote = async (path: string): Promise<boolean> => {
+  await deleteVaultFile(path);
+  return true;
+};
+
+/**
  * Get all files currently in ephemeral trash
  */
 export async function getTrashFiles(): Promise<VaultFile[]> {
   const allFiles = await db.files.toArray();
-  return allFiles.filter((f) => f.isTrash);
+  return allFiles.filter((f) => f.isTrash || f.isDeleted);
 }
 
 /**

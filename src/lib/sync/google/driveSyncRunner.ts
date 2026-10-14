@@ -1,11 +1,24 @@
 'use client';
 
 import { db, VaultFile } from '@/src/lib/storage/db';
-import { DriveSyncStatus } from './driveApiClient';
+import {
+  DriveSyncStatus,
+  RemoteDriveFile,
+  downloadRemoteFile,
+  downloadRemoteBinary,
+  trashRemoteFile,
+} from './driveApiClient';
+import { DriveAuthService } from './driveAuthService';
 import { listAllRemoteFiles } from './remoteCrawler';
-import { DriveReconciler } from './driveReconciler';
-import { executeDownloadBatch, executeUploadBatch } from '../syncExecutor';
+import { reconcileDriveState } from './driveReconciler';
+import { syncFileToDrive } from './resumableChunkUploader';
+import { getFileBlob } from '../syncExecutor';
+import { getAllNotes, getTrashedNotes } from '@/src/lib/storage/repositories/noteRepository';
+import { parseFrontmatter, normalizeEisenhower } from '@/src/lib/markdown/frontmatter';
 import { SyncProgressState, syncProgressEmitter } from '../syncProgress';
+
+const imageExtensions = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico']);
+const pdfExtensions = new Set(['pdf']);
 
 export interface DriveSyncRunnerParams {
   token: string;
@@ -17,42 +30,116 @@ export interface DriveSyncRunnerParams {
 }
 
 /**
- * executeDriveSyncSession
- * Executes the full bidirectional delta synchronization sequence between
- * local Dexie database notes and remote Google Drive files.
+ * Pull a single remote note from Google Drive into Dexie.
+ * Skips pulling if the note is soft-deleted locally to prevent resurrection.
  */
-export async function executeDriveSyncSession({
-  token,
-  folderId,
-  workspaceName,
-  currentWorkspaceId,
-  onProgress,
-  onProgressState,
-}: DriveSyncRunnerParams): Promise<DriveSyncStatus> {
+export async function pullRemoteNote(
+  token: string,
+  remote: RemoteDriveFile,
+  workspaceId: string
+): Promise<VaultFile | null> {
+  const reconstructedPath = remote.relativePath.includes('___')
+    ? remote.relativePath.replace(/___/g, '/')
+    : remote.relativePath;
+
+  // Double-check existing note: if soft-deleted, skip pulling/overwriting
+  const existing = await db.files.get(reconstructedPath);
+  if (existing?.isDeleted || existing?.isTrash) {
+    return null;
+  }
+
+  const fileName = reconstructedPath.split('/').pop() || reconstructedPath;
+  const title = fileName.replace(/\.[^/.]+$/, '');
+  const extension = fileName.split('.').pop()?.toLowerCase() || 'md';
+
+  const isBinary =
+    imageExtensions.has(extension) ||
+    pdfExtensions.has(extension) ||
+    !['md', 'markdown', 'txt', 'json', 'yaml', 'yml'].includes(extension);
+
+  const remoteModifiedMs = new Date(remote.modifiedTime).getTime();
+  let textContent = '';
+  let binaryBlob: Blob | undefined = undefined;
+  let parsedFrontmatter: Record<string, any> = {};
+  let tags: string[] = ['drive-synced'];
+  let size = 0;
+
+  if (isBinary) {
+    const { arrayBuffer, mimeType } = await downloadRemoteBinary(token, remote.id);
+    binaryBlob = new Blob([arrayBuffer], { type: mimeType });
+    size = binaryBlob.size;
+  } else {
+    textContent = await downloadRemoteFile(token, remote.id);
+    size = textContent.length;
+
+    if (extension === 'md' || extension === 'markdown') {
+      const parsed = parseFrontmatter(textContent);
+      parsedFrontmatter = parsed;
+      if (parsed.tags && Array.isArray(parsed.tags)) {
+        tags = Array.from(new Set([...tags, ...parsed.tags]));
+      }
+    }
+  }
+
+  const record: VaultFile = {
+    id: reconstructedPath,
+    path: reconstructedPath,
+    name: fileName,
+    title: (parsedFrontmatter.title as string) || title,
+    extension,
+    content: textContent,
+    frontmatter: parsedFrontmatter,
+    tags,
+    eisenhower: normalizeEisenhower(parsedFrontmatter.eisenhower),
+    isBinary,
+    blob: binaryBlob,
+    mimeType: binaryBlob?.type,
+    size,
+    createdAt: remoteModifiedMs,
+    updatedAt: remoteModifiedMs,
+    vaultId: workspaceId,
+    driveFileId: remote.id,
+  };
+
+  await db.files.put(record);
+  return record;
+}
+
+/**
+ * runDriveSyncCycle
+ * Executes the full bidirectional delta synchronization sequence between
+ * local Dexie database notes (both active and trashed) and remote Google Drive files.
+ */
+export async function runDriveSyncCycle(
+  workspaceId: string,
+  params?: Partial<DriveSyncRunnerParams>
+): Promise<DriveSyncStatus> {
+  const token = params?.token || (await DriveAuthService.getValidToken());
+  let folderId = params?.folderId;
+  const workspaceName = params?.workspaceName || 'Vault';
+  const { onProgress, onProgressState } = params || {};
+
+  if (!folderId) {
+    const { GoogleDriveSyncService } = await import('../googleDriveSync');
+    folderId = await GoogleDriveSyncService.getOrCreateWorkspaceFolder(workspaceName);
+  }
+
   const stats = { uploaded: 0, downloaded: 0, skipped: 0 };
 
   onProgress?.('Scanning Google Drive for remote files...');
   const remoteMap = await listAllRemoteFiles(token, folderId);
+  const remoteFiles = Array.from(remoteMap.values());
 
   onProgress?.('Analyzing local workspace notes...');
-  const allLocal = await db.files.toArray();
-  const localFiles =
-    currentWorkspaceId === 'default-vault'
-      ? allLocal.filter((f) => !f.vaultId || f.vaultId === 'default-vault')
-      : allLocal.filter((f) => f.vaultId === currentWorkspaceId);
+  const [activeNotes, trashedNotes] = await Promise.all([
+    getAllNotes(workspaceId),
+    getTrashedNotes(workspaceId),
+  ]);
+  const localNotes = [...activeNotes, ...trashedNotes];
 
-  const localMap = new Map<string, VaultFile>();
-  for (const local of localFiles) {
-    if (local.isTrash) continue;
-    const normalizedLocalPath = local.path.replace(/\\/g, '/').replace(/^\/+/, '');
-    localMap.set(normalizedLocalPath, local);
-  }
-
-  const plan = DriveReconciler.reconcile(localMap, remoteMap, 2000);
-  const { uploadTasks, downloadTasks, skippedCount } = plan;
-  stats.skipped += skippedCount;
-
-  const totalFiles = downloadTasks.length + uploadTasks.length;
+  const actions = reconcileDriveState(localNotes, remoteFiles);
+  const activeActions = actions.filter((a) => a.type !== 'noop');
+  const totalFiles = activeActions.length;
   let processedFiles = 0;
 
   if (totalFiles > 0) {
@@ -65,43 +152,80 @@ export async function executeDriveSyncSession({
     onProgressState?.(syncProgressEmitter.getState());
   }
 
-  // Execute downloads
-  stats.downloaded += await executeDownloadBatch(
-    token,
-    downloadTasks,
-    currentWorkspaceId,
-    onProgress,
-    (fileName) => {
-      processedFiles++;
-      syncProgressEmitter.emit({
-        status: 'syncing',
-        currentAction: 'downloading',
-        currentFileName: fileName,
-        totalFiles,
-        processedFiles,
-      });
-      onProgressState?.(syncProgressEmitter.getState());
+  for (const action of actions) {
+    if (action.type === 'noop') {
+      stats.skipped++;
+      continue;
     }
-  );
 
-  // Execute uploads
-  stats.uploaded += await executeUploadBatch(
-    token,
-    uploadTasks,
-    folderId,
-    onProgress,
-    (fileName) => {
+    if (action.type === 'delete_remote') {
+      if (action.remoteFileId) {
+        onProgress?.(`Trashing remote file ${action.path}...`);
+        await trashRemoteFile(action.remoteFileId, token);
+      }
       processedFiles++;
       syncProgressEmitter.emit({
         status: 'syncing',
         currentAction: 'uploading',
-        currentFileName: fileName,
+        currentFileName: action.path,
         totalFiles,
         processedFiles,
       });
       onProgressState?.(syncProgressEmitter.getState());
+      continue;
     }
-  );
+
+    if (action.type === 'pull' && action.remote) {
+      onProgress?.(`Downloading ${action.path}...`);
+      const pulled = await pullRemoteNote(token, action.remote, workspaceId);
+      if (pulled) {
+        stats.downloaded++;
+      } else {
+        stats.skipped++;
+      }
+      processedFiles++;
+      syncProgressEmitter.emit({
+        status: 'syncing',
+        currentAction: 'downloading',
+        currentFileName: action.path,
+        totalFiles,
+        processedFiles,
+      });
+      onProgressState?.(syncProgressEmitter.getState());
+      continue;
+    }
+
+    if (action.type === 'push' && action.local) {
+      onProgress?.(`Uploading ${action.path}...`);
+      const driveFileName = action.path.replace(/\//g, '___');
+      const fileBlob = getFileBlob(action.local);
+      const metadata = {
+        name: driveFileName,
+        mimeType: action.local.mimeType || fileBlob.type,
+      };
+      const remoteId = await syncFileToDrive(
+        token,
+        metadata,
+        fileBlob,
+        action.remoteFileId ? undefined : folderId,
+        action.remoteFileId
+      );
+      if (remoteId && action.local.id) {
+        await db.files.update(action.local.id, { driveFileId: remoteId }).catch(() => {});
+      }
+      stats.uploaded++;
+      processedFiles++;
+      syncProgressEmitter.emit({
+        status: 'syncing',
+        currentAction: 'uploading',
+        currentFileName: action.path,
+        totalFiles,
+        processedFiles,
+      });
+      onProgressState?.(syncProgressEmitter.getState());
+      continue;
+    }
+  }
 
   syncProgressEmitter.emit({
     status: 'completed',
@@ -123,3 +247,14 @@ export async function executeDriveSyncSession({
     stats,
   };
 }
+
+/**
+ * executeDriveSyncSession
+ * Backwards compatibility wrapper delegating to runDriveSyncCycle.
+ */
+export async function executeDriveSyncSession(
+  params: DriveSyncRunnerParams
+): Promise<DriveSyncStatus> {
+  return runDriveSyncCycle(params.currentWorkspaceId, params);
+}
+

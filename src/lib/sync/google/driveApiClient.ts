@@ -15,6 +15,21 @@ export interface RemoteDriveFile {
   size?: number;
 }
 
+export type DriveRemoteFile = RemoteDriveFile;
+
+export const DRIVE_API = 'https://www.googleapis.com/drive/v3';
+
+export function getHeaders(contentType = 'application/json', token?: string): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (contentType) {
+    headers['Content-Type'] = contentType;
+  }
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
 export interface DriveSyncStatus {
   isConnected: boolean;
   isSyncing: boolean;
@@ -225,3 +240,41 @@ export async function uploadSmallFile(
 }
 
 export const uploadSimpleFile = uploadSmallFile;
+
+/**
+ * Move a remote file on Google Drive to Trash
+ */
+export async function trashRemoteFile(fileId: string, token?: string): Promise<void> {
+  if (!fileId) return;
+
+  let accessToken = token;
+  if (!accessToken) {
+    const { DriveAuthService } = await import('./driveAuthService');
+    accessToken = (await DriveAuthService.getValidToken().catch(() => null)) || undefined;
+  }
+
+  if (!accessToken) {
+    console.warn('Cannot trash remote file: no active Google Drive access token.');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${DRIVE_API}/files/${fileId}`, {
+      method: 'PATCH',
+      headers: getHeaders('application/json', accessToken),
+      body: JSON.stringify({ trashed: true }),
+    });
+
+    if (res.status === 404) {
+      // Remote file was already removed or trashed; ignore safely
+      return;
+    }
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.warn(`Google Drive API error trashing file ${fileId} (${res.status}): ${errText}`);
+    }
+  } catch (err) {
+    console.warn(`Network error trashing remote file ${fileId}:`, err);
+  }
+}

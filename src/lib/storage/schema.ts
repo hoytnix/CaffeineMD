@@ -160,6 +160,7 @@ export interface VaultFile {
   isDeleted?: boolean;
   deletedAt?: number;
   originalPath?: string;
+  driveFileId?: string;
   deployMeta?: {
     netlifySiteId?: string;
     netlifyUrl?: string;
