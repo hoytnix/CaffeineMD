@@ -100,7 +100,7 @@ Start writing here...
   return (
     <div
       style={{ backgroundColor: 'var(--theme-bg-primary-glass, var(--theme-bg-primary))', color: 'var(--theme-text-primary)' }}
-      className="flex-1 flex flex-col h-full overflow-y-auto p-8"
+      className="flex-1 flex flex-col h-full overflow-y-auto p-4 sm:p-6 md:p-8"
     >
       <DatabaseToolbar
         databaseViewMode={currentMode}
@@ -108,7 +108,6 @@ Start writing here...
           setDatabaseViewMode(m);
           setActiveView(m);
         }}
-        onCreateNewRow={handleCreateNewNote}
         searchFilter={searchFilter}
         onSearchChange={setSearchFilter}
         filterFolder={filterFolder}

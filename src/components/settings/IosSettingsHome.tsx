@@ -42,7 +42,7 @@ export function IosSettingsHome({
   hasGeminiKey,
 }: IosSettingsHomeProps) {
   const isDriveConnected = Boolean(googleDriveUser);
-  const displayName = googleDriveUser?.displayName || 'Michael Hoyt';
+  const displayName = googleDriveUser?.displayName || 'User';
   const displayEmail = googleDriveUser?.email || 'Google Account, Cloud Sync, and more';
   const initials = displayName
     .split(' ')
@@ -50,7 +50,7 @@ export function IosSettingsHome({
     .map((n) => n[0])
     .join('')
     .slice(0, 2)
-    .toUpperCase() || 'MH';
+    .toUpperCase() || 'U';
 
   const SETTINGS_ROWS = [
     {

@@ -21,6 +21,7 @@
 ### 4. Knowledge Graph & Database Views
 - [x] **Bi-directional Knowledge Graph**: D3 force physics simulator, 2D HTML5 canvas renderer, zoom/pan controls, and theme palette adaptation.
 - [x] **Frontmatter Databases**: Notion-style Table, Kanban board (Eisenhower matrix), List view, and Tag Cloud view.
+- [x] **Database Space-Saving UI**: Collapsible filter spoiler, active count badge, compact switcher, and stripped redundant top header block.
 - [x] **Backlinks & Unlinked Mentions**: Real-time reference indexing and collapsible mentions panel.
 
 ### 5. Export, Synthesis & Cloud Deployment
