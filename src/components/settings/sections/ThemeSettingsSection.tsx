@@ -30,7 +30,7 @@ export function ThemeSettingsSection({
   return (
     <div className="space-y-8">
       {/* Background / Theme Opacity Slider */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-[var(--theme-bg-card-glass,var(--card))] border border-[var(--border)] shadow-sm">
+      <div className="p-4 sm:p-5 rounded-2xl bg-[var(--bg-secondary)] border border-[var(--border)] shadow-sm">
         <div className="flex items-center justify-between gap-4 mb-3">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
@@ -39,7 +39,7 @@ export function ThemeSettingsSection({
             <div>
               <h3 className="text-sm font-semibold text-[var(--foreground)]">Background / Theme Opacity</h3>
               <p className="text-xs text-neutral-400">
-                Adjust the surface opacity to control theme background image visibility
+                Adjust theme background image opacity across all views
               </p>
             </div>
           </div>

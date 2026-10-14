@@ -345,7 +345,7 @@ export function IosLinkPreviewCard({ editor }: { editor?: Editor | null }) {
       ref={cardRef}
       onMouseEnter={clearTimer}
       onMouseLeave={() => closeWithDelay(180)}
-      style={{ left, top, backgroundColor: 'var(--theme-bg-card-glass, var(--theme-bg-card))', borderColor: 'var(--theme-border)' }}
+      style={{ left, top, backgroundColor: 'var(--card)', borderColor: 'var(--theme-border)' }}
       className={`fixed z-[99999] ${data.type === 'external' ? 'w-80' : 'w-72'} rounded-2xl border shadow-2xl backdrop-blur-xl overflow-hidden text-[var(--theme-text-primary,var(--foreground))] animate-in fade-in zoom-in-95 duration-150 select-none group`}
     >
       {data.type === 'external' ? (

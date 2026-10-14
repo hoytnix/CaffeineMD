@@ -16,7 +16,7 @@ export function ListView({ files }: ListViewProps) {
   if (files.length === 0) {
     return (
       <div
-        style={{ backgroundColor: 'var(--theme-bg-sidebar-glass, var(--theme-bg-sidebar))', borderColor: 'var(--theme-border)' }}
+        style={{ backgroundColor: 'var(--bg-secondary, var(--theme-bg-sidebar))', borderColor: 'var(--theme-border)' }}
         className="border rounded-lg p-8 text-center text-xs text-neutral-400"
       >
         No records match the current filters.
@@ -26,7 +26,7 @@ export function ListView({ files }: ListViewProps) {
 
   return (
     <div
-      style={{ backgroundColor: 'var(--theme-bg-sidebar-glass, var(--theme-bg-sidebar))', borderColor: 'var(--theme-border)' }}
+      style={{ backgroundColor: 'var(--bg-secondary, var(--theme-bg-sidebar))', borderColor: 'var(--theme-border)' }}
       className="border rounded-lg divide-y"
     >
       {files.map((file) => {

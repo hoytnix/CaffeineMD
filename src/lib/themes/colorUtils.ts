@@ -167,6 +167,8 @@ export function applyThemeToDocument(colors: ThemeColors | ThemeDefinition): voi
   root.style.setProperty('--theme-bg-primary', bgPrimary);
   root.style.setProperty('--theme-bg-sidebar', bgSidebar);
   root.style.setProperty('--theme-bg-card', bgCard);
+  root.style.setProperty('--bg-primary', bgPrimary);
+  root.style.setProperty('--bg-secondary', bgSidebar);
   root.style.setProperty('--theme-border', colors.border);
   root.style.setProperty('--theme-text-primary', colors.foreground);
   root.style.setProperty('--theme-text-secondary', colors.foreground);
@@ -197,10 +199,10 @@ export function applyThemeToDocument(colors: ThemeColors | ThemeDefinition): voi
   root.style.setProperty('--theme-opacity', String(themeOpacity));
   root.style.setProperty('--bg-image-opacity', String(themeOpacity));
 
-  // Set translucent glassmorphic CSS variables
-  root.style.setProperty('--theme-bg-primary-glass', hexToRgba(bgPrimary, themeOpacity));
-  root.style.setProperty('--theme-bg-sidebar-glass', hexToRgba(bgSidebar, Math.min(1, themeOpacity + 0.05)));
-  root.style.setProperty('--theme-bg-card-glass', hexToRgba(bgCard, Math.min(1, themeOpacity + 0.08)));
+  // Solid fallbacks for legacy glass variables so UI surfaces never turn transparent
+  root.style.setProperty('--theme-bg-primary-glass', bgPrimary);
+  root.style.setProperty('--theme-bg-sidebar-glass', bgSidebar);
+  root.style.setProperty('--theme-bg-card-glass', bgCard);
 
   // Guarantee universal color emoji font fallback across all themes
   const withEmojiFallback = (font: string): string => {

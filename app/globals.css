@@ -18,6 +18,9 @@
   --theme-bg-primary: var(--background);
   --theme-bg-sidebar: var(--card);
   --theme-bg-card: var(--card);
+  --bg-primary: var(--theme-bg-primary);
+  --bg-secondary: var(--theme-bg-sidebar);
+  --theme-opacity: 0.15;
   --theme-border: var(--border);
   --theme-text-primary: var(--foreground);
   --theme-text-secondary: color-mix(in srgb, var(--foreground) 75%, transparent);
@@ -36,14 +39,23 @@
 
 body {
   background-color: var(--theme-bg-primary);
+  color: var(--theme-text-primary);
+  font-family: var(--theme-font-family, var(--font-sans));
+  font-variant-ligatures: none;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background-image: var(--theme-bg-image, none);
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
   background-repeat: no-repeat;
-  color: var(--theme-text-primary);
-  font-family: var(--theme-font-family, var(--font-sans));
-  font-variant-ligatures: none;
+  opacity: var(--theme-opacity, 0.15);
 }
 
 input,
@@ -583,35 +595,9 @@ code [data-wikilink] {
   border-color: color-mix(in srgb, var(--theme-accent) 30%, transparent) !important;
 }
 
-/* =========================================================================
-   Glassmorphic Overrides when Theme Background Image is Active
-   ========================================================================= */
-html[data-has-bg-image="true"] .bg-slate-950,
-html[data-has-bg-image="true"] .bg-slate-950\/80,
-html[data-has-bg-image="true"] .bg-slate-950\/60,
-html[data-has-bg-image="true"] .bg-slate-950\/50 {
-  background-color: var(--theme-bg-primary-glass) !important;
-}
-
-html[data-has-bg-image="true"] .bg-slate-900,
-html[data-has-bg-image="true"] .bg-slate-900\/90,
-html[data-has-bg-image="true"] .bg-slate-900\/80,
-html[data-has-bg-image="true"] .bg-slate-900\/60,
-html[data-has-bg-image="true"] .bg-slate-900\/50,
-html[data-has-bg-image="true"] .bg-slate-900\/40 {
-  background-color: var(--theme-bg-sidebar-glass) !important;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-html[data-has-bg-image="true"] .bg-slate-800,
-html[data-has-bg-image="true"] .bg-slate-800\/80,
-html[data-has-bg-image="true"] .bg-slate-800\/60 {
-  background-color: var(--theme-bg-card-glass) !important;
-}
-
 @media (max-width: 768px) {
-  body {
+  body,
+  body::before {
     background-attachment: scroll !important;
   }
 }

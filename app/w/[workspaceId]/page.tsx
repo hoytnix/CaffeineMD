@@ -141,8 +141,8 @@ export default function WorkspacePage() {
 
   return (
     <div
-      style={{ backgroundColor: 'var(--theme-bg-primary-glass, var(--theme-bg-primary))' }}
-      className="flex flex-col h-[100dvh] w-screen overflow-hidden bg-[var(--background)] text-[var(--foreground)] relative"
+      style={{ backgroundColor: 'var(--bg-primary, var(--theme-bg-primary))' }}
+      className="flex flex-col h-[100dvh] w-screen overflow-hidden bg-[var(--bg-primary)] text-[var(--foreground)] relative"
     >
       {/* Ambient Theme Background Image Layer (Mobile and Desktop) */}
       {bgImageUrl && (
@@ -150,7 +150,7 @@ export default function WorkspacePage() {
           aria-hidden="true"
           style={{
             backgroundImage: `url("${bgImageUrl}")`,
-            opacity: Math.max(0.08, 1 - (themeOpacity * 0.75)),
+            opacity: themeOpacity,
           }}
           className="fixed inset-0 pointer-events-none bg-cover bg-center bg-no-repeat z-0"
         />
@@ -160,20 +160,20 @@ export default function WorkspacePage() {
       {!isFocusMode && <WorkspaceHeader />}
 
       {/* 2. Main Split View (Sidebar + Canvas) */}
-      <div className="flex-1 flex overflow-hidden min-h-0">
+      <div className="flex-1 flex overflow-hidden min-h-0 relative z-10 bg-transparent">
         {/* Sidebar (Hidden in Focus Mode) */}
         {!sidebarCollapsed && !isFocusMode && activeView !== 'settings' && activeTab !== 'settings' && (
           <FileTree />
         )}
 
         {/* Dynamic Center Canvas View */}
-        <main className="flex-1 flex flex-col overflow-hidden relative min-h-0 min-w-0">
+        <main className="flex-1 flex flex-col overflow-hidden relative min-h-0 min-w-0 bg-transparent">
           {activeView === 'editor' && activeTab !== 'settings' && (
             <>
               {activeFilePath ? (
                 <SplitPaneContainer primaryFilePath={activeFilePath} />
               ) : (
-                <div className="flex-1 flex flex-col items-center justify-center p-12 text-center text-neutral-500">
+                <div className="flex-1 flex flex-col items-center justify-center p-12 text-center text-neutral-500 bg-transparent">
                   <FileText className="w-12 h-12 text-neutral-300 dark:text-neutral-700 mb-3" />
                   <h3 className="text-base font-semibold text-neutral-800 dark:text-neutral-200">
                     No note open
@@ -201,7 +201,7 @@ export default function WorkspacePage() {
           {activeView === 'tags' && activeTab !== 'settings' && <TagCloudView />}
 
           {(activeView === 'settings' || activeTab === 'settings') && (
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto bg-transparent">
               <SettingsView onBack={() => setActiveTab('editor')} />
             </div>
           )}

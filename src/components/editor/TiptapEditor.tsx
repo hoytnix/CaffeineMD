@@ -196,8 +196,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
         }
       }}
       onDrop={() => setIsDraggingOver(false)}
-      style={{ backgroundColor: 'var(--theme-bg-primary-glass, var(--theme-bg-primary))' }}
-      className="flex-1 flex flex-col h-full overflow-hidden min-w-0 text-[var(--foreground)] relative"
+      className="flex-1 flex flex-col h-full overflow-hidden min-w-0 text-[var(--foreground)] relative bg-transparent"
     >
       <EditorDragOverlay
         isDraggingOver={isDraggingOver}
@@ -221,7 +220,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
       />
 
       {/* Body container: holds the vertical side toolbar and document workspace */}
-      <div className="flex-1 flex flex-row overflow-hidden relative min-h-0">
+      <div className="flex-1 flex flex-row overflow-hidden relative min-h-0 bg-transparent">
         {/* Left Toolbar Dock */}
         {editorMode === 'richtext' && editor && !editor.isDestroyed && toolboxPosition === 'left' && (
           <div className="flex flex-col justify-center pl-3 py-4 shrink-0 z-30 animate-in fade-in slide-in-from-left-2">
@@ -238,7 +237,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
               ? { paddingBottom: `${keyboardOffset + 70}px` }
               : undefined
           }
-          className="flex-1 flex flex-col h-full overflow-y-auto overflow-x-hidden min-w-0 relative"
+          className="flex-1 flex flex-col h-full overflow-y-auto overflow-x-hidden min-w-0 relative bg-transparent"
         >
           {/* Top Toolbar Dock */}
           {editorMode === 'richtext' && editor && !editor.isDestroyed && toolboxPosition === 'top' && (
@@ -247,7 +246,7 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
             </div>
           )}
 
-          <div className="max-w-4xl w-full mx-auto px-4 pt-4 sm:pt-6 md:pt-8 pb-8 sm:px-6 md:px-10 flex-1">
+          <div className="max-w-4xl w-full mx-auto px-4 pt-4 sm:pt-6 md:pt-8 pb-8 sm:px-6 md:px-10 flex-1 bg-transparent">
             {editorMode === 'richtext' ? (
               <>
                 {editor && !editor.isDestroyed && <BlockHandle editor={editor} />}

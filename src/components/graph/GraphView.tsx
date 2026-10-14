@@ -201,8 +201,8 @@ export function GraphView() {
 
   return (
     <div
-      style={{ backgroundColor: 'var(--theme-bg-primary-glass, var(--theme-bg-primary))', color: 'var(--theme-text-primary)' }}
-      className="relative w-full h-full overflow-hidden flex flex-col select-none"
+      style={{ color: 'var(--theme-text-primary)' }}
+      className="relative w-full h-full overflow-hidden flex flex-col select-none bg-transparent"
     >
       <GraphControls
         filterTag={filterTag}

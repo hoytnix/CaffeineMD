@@ -107,8 +107,8 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
 
   return (
     <div
-      style={{ backgroundColor: 'var(--theme-bg-primary-glass, var(--theme-bg-primary))' }}
-      className="min-h-screen bg-[var(--background)] text-[var(--foreground)] flex flex-col transition-colors duration-200 relative"
+      style={{ backgroundColor: 'var(--bg-primary, var(--theme-bg-primary))' }}
+      className="min-h-screen bg-[var(--bg-primary)] text-[var(--foreground)] flex flex-col transition-colors duration-200 relative"
     >
       {/* Ambient Theme Background Image Layer (Adjustable Opacity) */}
       {bgImageUrl && (
@@ -116,7 +116,7 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
           aria-hidden="true"
           style={{
             backgroundImage: `url("${bgImageUrl}")`,
-            opacity: Math.max(0.08, 1 - (themeOpacity * 0.75)),
+            opacity: themeOpacity,
           }}
           className="fixed inset-0 pointer-events-none bg-cover bg-center bg-no-repeat z-0"
         />
@@ -129,7 +129,7 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
       />
 
       {/* Main Settings Content */}
-      <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 pb-20">
+      <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 pb-20 relative z-10 bg-transparent">
         {activeScreen === 'home' && (
           <IosSettingsHome
             onSelectScreen={setActiveScreen}

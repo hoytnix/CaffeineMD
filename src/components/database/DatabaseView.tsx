@@ -105,8 +105,8 @@ Start writing here...
 
   return (
     <div
-      style={{ backgroundColor: 'var(--theme-bg-primary-glass, var(--theme-bg-primary))', color: 'var(--theme-text-primary)' }}
-      className="flex-1 flex flex-col h-full overflow-y-auto p-4 sm:p-6 md:p-8"
+      style={{ color: 'var(--theme-text-primary)' }}
+      className="flex-1 flex flex-col h-full overflow-y-auto p-4 sm:p-6 md:p-8 bg-transparent"
     >
       <DatabaseToolbar
         databaseViewMode={currentMode}

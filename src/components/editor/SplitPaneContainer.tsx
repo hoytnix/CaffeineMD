@@ -35,11 +35,11 @@ export function SplitPaneContainer({ primaryFilePath }: SplitPaneContainerProps)
     <div
       className={`flex-1 flex ${
         isVertical ? 'flex-row' : 'flex-col'
-      } h-full w-full overflow-hidden min-w-0 min-h-0 relative`}
+      } h-full w-full overflow-hidden min-w-0 min-h-0 relative bg-transparent`}
     >
       {/* Pane 1 (Primary) */}
-      <div className="flex-1 flex flex-col h-full w-full overflow-hidden min-w-0 min-h-0 relative border-r border-b border-[var(--border)]">
-        <div className="flex items-center justify-between px-3 py-1 bg-[var(--card)]/40 border-b border-[var(--border)] text-[11px] text-neutral-400 select-none">
+      <div className="flex-1 flex flex-col h-full w-full overflow-hidden min-w-0 min-h-0 relative border-r border-b border-[var(--border)] bg-transparent">
+        <div className="flex items-center justify-between px-3 py-1 bg-[var(--bg-secondary)]/80 backdrop-blur-sm border-b border-[var(--border)] text-[11px] text-neutral-400 select-none">
           <span className="font-semibold text-[var(--foreground)] truncate">Pane 1: {primaryFilePath}</span>
           <div className="flex items-center gap-1">
             <button
@@ -60,7 +60,7 @@ export function SplitPaneContainer({ primaryFilePath }: SplitPaneContainerProps)
             </button>
           </div>
         </div>
-        <div className="flex-1 overflow-hidden relative">
+        <div className="flex-1 overflow-hidden relative bg-transparent">
           <TiptapEditor key={`p1-${primaryFilePath}`} filePath={primaryFilePath} />
         </div>
       </div>
@@ -68,7 +68,7 @@ export function SplitPaneContainer({ primaryFilePath }: SplitPaneContainerProps)
       {/* Pane 2 (Secondary) */}
       <div className="flex-1 flex flex-col h-full w-full overflow-hidden min-w-0 min-h-0 relative bg-transparent">
         {/* Pane 2 Document Selector Bar */}
-        <div className="flex items-center justify-between px-3 py-1 bg-[var(--card)]/40 border-b border-[var(--border)] text-[11px] text-neutral-400 select-none">
+        <div className="flex items-center justify-between px-3 py-1 bg-[var(--bg-secondary)]/80 backdrop-blur-sm border-b border-[var(--border)] text-[11px] text-neutral-400 select-none">
           <div className="flex items-center gap-1.5 min-w-0">
             <FileText className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" />
             <select
@@ -95,7 +95,7 @@ export function SplitPaneContainer({ primaryFilePath }: SplitPaneContainerProps)
             </button>
           </div>
         </div>
-        <div className="flex-1 overflow-hidden relative">
+        <div className="flex-1 overflow-hidden relative bg-transparent">
           <TiptapEditor key={`p2-${activeSecondaryPath}`} filePath={activeSecondaryPath} />
         </div>
       </div>

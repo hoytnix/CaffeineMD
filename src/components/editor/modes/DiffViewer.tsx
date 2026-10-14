@@ -32,7 +32,7 @@ export function DiffViewer({
   const splitLines = useMemo(() => computeSplitLines(changes), [changes]);
 
   return (
-    <div className="flex flex-col space-y-2 sm:space-y-4">
+    <div className="flex flex-col space-y-2 sm:space-y-4 bg-transparent">
       {/* Top Diff Micro-Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 pb-2 sm:pb-3 border-b border-[var(--border)]">
         <div className="flex items-center gap-2.5 flex-wrap">
@@ -120,8 +120,7 @@ export function DiffViewer({
 
       {/* Main Diff Display Container */}
       <div
-        style={{ backgroundColor: 'var(--theme-bg-card-glass, var(--theme-bg-card))' }}
-        className="relative flex flex-col rounded-xl border border-[var(--border)] overflow-hidden shadow-2xs backdrop-blur-md h-[550px] sm:h-[680px] max-h-[calc(100vh-220px)] min-h-[350px] sm:min-h-[480px]"
+        className="relative flex flex-col rounded-xl border border-[var(--border)] overflow-hidden shadow-2xs backdrop-blur-md h-[550px] sm:h-[680px] max-h-[calc(100vh-220px)] min-h-[350px] sm:min-h-[480px] bg-transparent"
       >
         {viewMode === 'unified' ? (
           /* Unified View */
@@ -161,8 +160,7 @@ export function DiffViewer({
           <div className="flex-1 flex flex-col min-h-0">
             {/* Split Headers */}
             <div
-              style={{ backgroundColor: 'var(--theme-bg-sidebar-glass, var(--theme-bg-sidebar))' }}
-              className="grid grid-cols-2 border-b border-[var(--border)] text-[11px] font-mono text-neutral-400 shrink-0 select-none backdrop-blur-sm"
+              className="grid grid-cols-2 border-b border-[var(--border)] text-[11px] font-mono text-neutral-400 shrink-0 select-none bg-[var(--bg-secondary)]/80 backdrop-blur-sm"
             >
               <div className="px-3 py-1.5 border-r border-[var(--border)] font-semibold flex items-center justify-between">
                 <span>Saved Baseline</span>
