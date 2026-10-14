@@ -38,12 +38,21 @@
 - [x] **Adjustable Theme Opacity**: Added 10%–100% theme background opacity slider in Theme Settings Section, dynamically tuning ambient background image opacity across all views.
 - [x] **Ambient Theme Background Image Layer Isolation**: Rendered backdrop image layers across Workspace, Settings, Split Pane, Editor, Diff, Plaintext, Database, Graph, and Tags views, with mobile-safe `background-attachment: scroll`, keeping cards, buttons, modals, and toolbars completely solid.
 - [x] **External Link Tap/Click Preview**: Configured `@tiptap/extension-link` with `openOnClick: false` and `target: null` to suppress native iOS WebKit link navigation. Intercepted `click` and `touchend` events in capture phase (`{ capture: true }`) with touch scroll rejection, pinned previews opened via click/tap against mouseout, provided 280ms hover preview on desktop, and kept the "Open" button navigating in a new tab (`target="_blank"`).
-- [x] **Production Maintainer Documentation Suite**: Authored 8 production-grade maintainer documentation files inside `/docs` covering Quick-Start, Architecture & State, Storage & Sync, Editor & Markdown, WASM Sandbox, Themes & Opacity Isolation, Databases & Graph, and Maintenance Playbooks.
+- [x] **Production Maintainer Documentation Suite**: Authored 8 production-grade maintainer documentation files inside `/docs`.
 - [x] **Branding & Responsive UX**: "A TehWiz Production." link in settings footer, touch/mobile close file tab accessibility, and root welcome note seeding.
 - [x] **Customizable Keyboard Shortcuts**: Key combo recorder, conflict detection, and global accelerator dispatch.
+
+### 7. Strategic Modular Refactoring (100–250 LOC Target)
+- [x] **1. Emoji Dataset Deconstruction**: Split `emojiData.ts` (184 LOC) and `emojiObjectsSymbols.ts` (75 LOC).
+- [x] **2. Zustand God-Store Slicing**: Sliced `workspaceStore.ts` (197 LOC) into `tabsSlice.ts` (174 LOC), `themeStorageSlice.ts` (229 LOC), `themeStorageUtils.ts` (85 LOC), `trashSlice.ts` (191 LOC), and `uiOverlaySlice.ts` (131 LOC).
+- [x] **3. Editor Host Decomposition**: Refactored `TiptapEditor.tsx` (249 LOC) by extracting `EditorBody.tsx` (153 LOC) and `EditorOverlays.tsx` (56 LOC).
+- [x] **4. Settings View & Hook Extraction**: Refactored `SettingsView.tsx` (125 LOC) by extracting `useSettingsState.ts` (93 LOC).
+- [x] **5. Workspace Creation Separation**: Refactored `CreateWorkspaceModal.tsx` (143 LOC) by extracting `useCreateWorkspace.ts` (137 LOC) and `WorkspaceStorageSelector.tsx` (143 LOC).
+- [x] **6. Tag Cloud Modularization**: Refactored `TagCloudView.tsx` (134 LOC) by extracting `TagCloudHeader.tsx` (114 LOC), `TagNoteCard.tsx` (110 LOC), and `excerpt.ts` (44 LOC).
+- [x] **7. Global CSS Decomposition**: Modularized `globals.css` (150 LOC) by extracting `prosemirror.css` (191 LOC), `editor-lists.css` (140 LOC), and `syntax.css` (133 LOC).
 
 ## Verification Status
 - Production Build: Passing cleanly (`pnpm run build`).
 - ESLint: Passing cleanly with 0 errors and 0 warnings (`pnpm run lint`).
 - TypeScript: Passing cleanly (`tsc --noEmit`).
-- Tiered LOC Limits: 100% compliant (<250 LOC per file across modified modules).
+- Tiered LOC Limits: 100% compliant (<250 LOC per file across all touched modules).

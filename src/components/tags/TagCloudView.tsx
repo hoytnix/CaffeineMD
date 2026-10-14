@@ -1,55 +1,14 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { db, VaultFile, EisenhowerQuadrant, EISENHOWER_CONFIG } from '@/src/lib/storage/db';
+import { db } from '@/src/lib/storage/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
-import { Tag, Search, FileText, Calendar, Hash, ArrowRight, Filter } from 'lucide-react';
+import { Hash } from 'lucide-react';
+import { TagCloudHeader } from './TagCloudHeader';
+import { TagNoteCard } from './TagNoteCard';
 
-/**
- * Strips markdown and frontmatter syntax to create a clean plaintext excerpt
- */
-export function extractCleanExcerpt(content: string, maxLength = 400): string {
-  if (!content) return '';
-
-  // 1. Strip YAML frontmatter
-  let clean = content.replace(/^---[\s\S]*?---\r?\n?/g, '');
-
-  // 2. Strip fenced code blocks
-  clean = clean.replace(/```[\s\S]*?```/g, '');
-
-  // 3. Strip inline code
-  clean = clean.replace(/`[^`\n]+`/g, '');
-
-  // 4. Strip markdown image tags
-  clean = clean.replace(/!\[([^\]]*)\]\([^)]*\)/g, '');
-
-  // 5. Convert markdown links [text](url) -> text
-  clean = clean.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1');
-
-  // 6. Convert WikiLinks [[Target|Alias]] -> Alias or Target
-  clean = clean.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, target, alias) => alias || target);
-
-  // 7. Strip headings, blockquotes, list markers
-  clean = clean.replace(/^#{1,6}\s+/gm, '');
-  clean = clean.replace(/^>\s+/gm, '');
-  clean = clean.replace(/^-\s+\[[ xX]\]\s+/gm, '');
-  clean = clean.replace(/^[-*]\s+/gm, '');
-  clean = clean.replace(/^\d+\.\s+/gm, '');
-
-  // 8. Strip emphasis formatting
-  clean = clean.replace(/\*\*(.*?)\*\*/g, '$1');
-  clean = clean.replace(/\*(.*?)\*/g, '$1');
-  clean = clean.replace(/~~(.*?)~~/g, '$1');
-
-  // 9. Normalize whitespace
-  clean = clean.replace(/\s+/g, ' ').trim();
-
-  if (clean.length > maxLength) {
-    return clean.slice(0, maxLength).trim() + '...';
-  }
-  return clean;
-}
+export { extractCleanExcerpt } from '@/src/lib/markdown/excerpt';
 
 export function TagCloudView() {
   const {
@@ -89,7 +48,7 @@ export function TagCloudView() {
       .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
   }, [files]);
 
-  // Active selected tag (defaults to store's selectedTagFilter or first popular tag or 'all')
+  // Active selected tag (defaults to store's selectedTagFilter or 'all')
   const activeTag = selectedTagFilter || 'all';
 
   // Filter notes by active tag and search query
@@ -120,90 +79,14 @@ export function TagCloudView() {
       className="flex-1 flex flex-col h-full overflow-y-auto bg-transparent"
     >
       {/* Header Bar */}
-      <div
-        style={{ borderColor: 'var(--theme-border)' }}
-        className="sticky top-0 z-20 px-8 py-5 backdrop-blur-sm border-b flex flex-col gap-4 bg-[var(--bg-secondary)]/80"
-      >
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <div
-              style={{ backgroundColor: 'var(--theme-bg-card)', color: 'var(--theme-accent)' }}
-              className="p-2 rounded-xl"
-            >
-              <Tag className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold tracking-tight">Tag Cloud & Note Registry</h1>
-              <p
-                style={{ color: 'var(--theme-text-muted)' }}
-                className="text-xs"
-              >
-                Browse notes grouped by taxonomic hashtags across your entire vault
-              </p>
-            </div>
-          </div>
-
-          {/* Search within filtered tag view */}
-          <div className="relative w-64">
-            <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Search notes in tags..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                backgroundColor: 'var(--theme-bg-card)',
-                borderColor: 'var(--theme-border)',
-                color: 'var(--theme-text-primary)',
-              }}
-              className="w-full pl-8 pr-3 py-1.5 rounded-lg border text-xs placeholder-neutral-400 outline-none focus:ring-1 focus:ring-indigo-500"
-            />
-          </div>
-        </div>
-
-        {/* Top Tag Navigation Pill Cloud with Note Count Badges */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
-          <button
-            onClick={() => setSelectedTagFilter(null)}
-            style={
-              activeTag === 'all'
-                ? { backgroundColor: 'var(--theme-accent)', color: '#ffffff' }
-                : {
-                    backgroundColor: 'var(--theme-bg-card)',
-                    borderColor: 'var(--theme-border)',
-                    color: 'var(--theme-text-secondary)',
-                  }
-            }
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-colors shrink-0 border cursor-pointer"
-          >
-            <span>All Tags</span>
-            <span className="font-mono text-[11px] opacity-70 tabular-nums">({files.length})</span>
-          </button>
-
-          {tagCounts.map((t) => {
-            const isSelected = activeTag.toLowerCase() === t.name.toLowerCase();
-            return (
-              <button
-                key={t.name}
-                onClick={() => setSelectedTagFilter(t.name)}
-                style={
-                  isSelected
-                    ? { backgroundColor: 'var(--theme-accent)', color: '#ffffff' }
-                    : {
-                        backgroundColor: 'var(--theme-bg-card)',
-                        borderColor: 'var(--theme-border)',
-                        color: 'var(--theme-text-secondary)',
-                      }
-                }
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-colors shrink-0 border cursor-pointer hover:border-[var(--theme-accent)]"
-              >
-                <span>#{t.name}</span>
-                <span className="font-mono text-[11px] opacity-75 tabular-nums">({t.count})</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <TagCloudHeader
+        totalNotes={files.length}
+        activeTag={activeTag}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        tagCounts={tagCounts}
+        onSelectTag={setSelectedTagFilter}
+      />
 
       {/* Main Notes Grid */}
       <div className="p-8 max-w-7xl w-full mx-auto flex-1">
@@ -234,98 +117,15 @@ export function TagCloudView() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredNotes.map((note) => {
-              const rawQuadrant = (note.eisenhower || note.frontmatter?.eisenhower) as EisenhowerQuadrant | undefined;
-              const eisenhowerOpt = rawQuadrant && EISENHOWER_CONFIG[rawQuadrant] ? EISENHOWER_CONFIG[rawQuadrant] : null;
-              const excerpt = extractCleanExcerpt(note.content || '', 400);
-
-              return (
-                <div
-                  key={note.path}
-                  onClick={() => openFileTab(note.path, note.title)}
-                  style={{
-                    backgroundColor: 'var(--theme-bg-sidebar)',
-                    borderColor: 'var(--theme-border)',
-                  }}
-                  className="group flex flex-col justify-between p-5 rounded-xl border hover:shadow-md transition-all cursor-pointer"
-                >
-                  {/* Top Note Metadata Header */}
-                  <div>
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-2 truncate">
-                        {eisenhowerOpt && (
-                          <span
-                            className={`w-2 h-2 rounded-full shrink-0 ${eisenhowerOpt.dotBg}`}
-                            title={`Eisenhower: ${eisenhowerOpt.label}`}
-                          />
-                        )}
-                        <FileText className="w-4 h-4 text-indigo-500 shrink-0" />
-                        <h3 className="font-semibold text-sm text-neutral-900 dark:text-neutral-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
-                          {note.title || note.name}
-                        </h3>
-                      </div>
-
-                      {eisenhowerOpt && (
-                        <span
-                          className={`text-[10px] font-medium px-2 py-0.5 rounded-md border shrink-0 ${eisenhowerOpt.badgeClass}`}
-                          title={eisenhowerOpt.label}
-                        >
-                          {eisenhowerOpt.shortLabel}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-2 text-[11px] text-neutral-400 font-mono mb-3 truncate">
-                      <span className="truncate">{note.path}</span>
-                      <span>·</span>
-                      <span className="shrink-0 tabular-nums">
-                        {new Date(note.updatedAt).toLocaleDateString()}
-                      </span>
-                    </div>
-
-                    {/* 400-Character Plaintext Excerpt Preview */}
-                    <p className="text-xs text-neutral-600 dark:text-neutral-300 leading-relaxed line-clamp-5">
-                      {excerpt || <span className="italic text-neutral-400">Empty note body</span>}
-                    </p>
-                  </div>
-
-                  {/* Bottom Secondary Tags List */}
-                  <div className="mt-4 pt-3 border-t border-neutral-100 dark:border-neutral-800/80 flex items-center justify-between gap-2">
-                    <div className="flex flex-wrap gap-1 items-center overflow-hidden">
-                      {note.tags && note.tags.length > 0 ? (
-                        note.tags.map((t) => {
-                          const cleanTag = t.replace(/^#/, '');
-                          const isTagActive = activeTag.toLowerCase() === cleanTag.toLowerCase();
-                          return (
-                            <button
-                              key={cleanTag}
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedTagFilter(cleanTag);
-                              }}
-                              className={`text-[10px] px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
-                                isTagActive
-                                  ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 font-semibold'
-                                  : 'text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-                              }`}
-                            >
-                              #{cleanTag}
-                            </button>
-                          );
-                        })
-                      ) : (
-                        <span className="text-[11px] text-neutral-400 italic">No tags</span>
-                      )}
-                    </div>
-
-                    <span className="opacity-0 group-hover:opacity-100 transition-opacity text-indigo-500">
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
+            {filteredNotes.map((note) => (
+              <TagNoteCard
+                key={note.path}
+                note={note}
+                activeTag={activeTag}
+                onOpenNote={openFileTab}
+                onSelectTag={setSelectedTagFilter}
+              />
+            ))}
           </div>
         )}
       </div>

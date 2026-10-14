@@ -1,0 +1,133 @@
+/* =========================================================================
+   Theme-Aware Code Blocks, Syntax Highlighting & Inline Monospace
+   ========================================================================= */
+
+.ProseMirror pre,
+pre {
+  background-color: var(--syntax-bg, var(--card));
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.875rem 1.125rem;
+  margin: 1rem 0;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.ProseMirror pre code,
+pre code {
+  background-color: transparent !important;
+  color: inherit !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  font-family: var(--font-mono) !important;
+  font-size: inherit !important;
+}
+
+/* HLJS Syntax Token Mappings to Theme CSS Variables */
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-subst,
+.hljs-tag,
+.hljs-name {
+  color: var(--syntax-keyword);
+  font-weight: 600;
+}
+
+.hljs-string,
+.hljs-attribute,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition,
+.hljs-doctag {
+  color: var(--syntax-string);
+}
+
+.hljs-title,
+.hljs-title.function_,
+.hljs-function,
+.hljs-title.class_,
+.hljs-section {
+  color: var(--syntax-function);
+}
+
+.hljs-comment,
+.hljs-quote,
+.hljs-meta {
+  color: var(--syntax-comment);
+  font-style: italic;
+}
+
+.hljs-variable,
+.hljs-template-variable,
+.hljs-attr,
+.hljs-params {
+  color: var(--syntax-variable);
+}
+
+.hljs-number,
+.hljs-literal {
+  color: var(--syntax-number);
+}
+
+.hljs-operator,
+.hljs-punctuation {
+  color: var(--syntax-operator);
+}
+
+.hljs-built_in,
+.hljs-type,
+.hljs-class {
+  color: var(--syntax-function);
+}
+
+.hljs-deletion {
+  color: #ef4444;
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: 700;
+}
+
+/* Inline Code & Monospace Elements */
+.ProseMirror :not(pre) > code,
+code:not(pre code),
+kbd {
+  background-color: var(--card);
+  color: var(--accent);
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.875em;
+  font-family: var(--font-mono);
+}
+
+/* Prevent WikiLinks from being prettified inside code blocks or inline code */
+.ProseMirror pre .wiki-link,
+.ProseMirror pre [data-wikilink],
+.ProseMirror code .wiki-link,
+.ProseMirror code [data-wikilink],
+pre .wiki-link,
+pre [data-wikilink],
+code .wiki-link,
+code [data-wikilink] {
+  display: inline !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  color: inherit !important;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  text-decoration: none !important;
+  cursor: inherit !important;
+  box-shadow: none !important;
+}

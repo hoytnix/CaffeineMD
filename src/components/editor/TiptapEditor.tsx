@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { EditorContent } from '@tiptap/react';
 import { db, VaultFile } from '@/src/lib/storage/db';
 import {
   parseFrontmatter,
@@ -11,8 +10,6 @@ import {
   DEFAULT_NOTE_PROPERTIES,
 } from '@/src/lib/markdown/serializer';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
-import { BlockHandle } from './extensions/BlockHandle';
-import { BacklinksPanel } from './BacklinksPanel';
 import { useEditorDropUpload } from '@/src/hooks/useEditorDropUpload';
 import { useEditorSuggestions } from '@/src/hooks/useEditorSuggestions';
 import { useTiptapInit } from './hooks/useTiptapInit';
@@ -20,15 +17,9 @@ import { useEditorAutosave } from './hooks/useEditorAutosave';
 import { EditorDragOverlay } from './components/EditorDragOverlay';
 import { EditorHeader } from './EditorHeader';
 import { BinaryAssetPreview } from './BinaryAssetPreview';
-import { PlaintextMarkdownEditor } from './modes/PlaintextMarkdownEditor';
-import { DiffViewer } from './modes/DiffViewer';
-import { FloatingToolbarHost } from './FloatingToolbarHost';
-import { EditorBottomToolbar } from './EditorBottomToolbar';
-import { DocumentOutlineHud } from './components/DocumentOutlineHud';
-import { EditorMinimap } from './components/EditorMinimap';
 import { DocumentTabBar } from './DocumentTabBar';
-import { EditorContextMenu } from './EditorContextMenu';
-import { IosLinkPreviewCard } from './components/IosLinkPreviewCard';
+import { EditorBody } from './components/EditorBody';
+import { EditorOverlays } from './components/EditorOverlays';
 import { useContextMenu } from '@/src/hooks/useContextMenu';
 import { useKeyboardOffset } from '@/src/hooks/useKeyboardOffset';
 import { FileQuestion } from 'lucide-react';
@@ -50,8 +41,8 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
   const {
     file, setFile, setTitle, isSaving, saveSuccess, loading,
     rawMarkdown, setRawMarkdown, editorMode,
-    handleSave, handleSaveRaw, updateProperties, isDirty,
-    switchToPlaintext, switchToRichText, switchToDiff, handleRevert, handleManualSave,
+    handleSave, handleSaveRaw, isDirty,
+    handleRevert, handleManualSave,
   } = useEditorAutosave({ filePath });
 
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -219,124 +210,39 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
         isDirty={isDirty}
       />
 
-      {/* Body container: holds the vertical side toolbar and document workspace */}
-      <div className="flex-1 flex flex-row overflow-hidden relative min-h-0 bg-transparent">
-        {/* Left Toolbar Dock */}
-        {editorMode === 'richtext' && editor && !editor.isDestroyed && toolboxPosition === 'left' && (
-          <div className="flex flex-col justify-center pl-3 py-4 shrink-0 z-30 animate-in fade-in slide-in-from-left-2">
-            <EditorBottomToolbar editor={editor} position="left" />
-          </div>
-        )}
+      {/* Body container: holds the vertical side toolbar, document workspace, outline, and minimap */}
+      <EditorBody
+        editor={editor}
+        file={file}
+        rawMarkdown={rawMarkdown}
+        editorMode={editorMode}
+        toolboxPosition={toolboxPosition}
+        scrollContainerRef={scrollContainerRef}
+        gutterRef={gutterRef}
+        textareaRef={textareaRef}
+        isKeyboardOpen={isKeyboardOpen}
+        keyboardOffset={keyboardOffset}
+        openContextMenu={openContextMenu}
+        effectiveFontFamily={effectiveFontFamily}
+        fontClass={fontClass}
+        onSaveRaw={handleSaveRaw}
+        onManualSave={handleManualSave}
+        onRevert={handleRevert}
+        onUpdateProperties={handleUpdateProperties}
+      />
 
-        {/* Main Note Scrollable Container */}
-        <div
-          ref={scrollContainerRef}
-          onContextMenu={openContextMenu}
-          style={
-            isKeyboardOpen
-              ? { paddingBottom: `${keyboardOffset + 70}px` }
-              : undefined
-          }
-          className="flex-1 flex flex-col h-full overflow-y-auto overflow-x-hidden min-w-0 relative bg-transparent"
-        >
-          {/* Top Toolbar Dock */}
-          {editorMode === 'richtext' && editor && !editor.isDestroyed && toolboxPosition === 'top' && (
-            <div className="sticky top-3 z-30 w-full flex justify-center px-4 pt-1 pb-2 shrink-0 animate-in fade-in slide-in-from-top-2">
-              <EditorBottomToolbar editor={editor} position="top" />
-            </div>
-          )}
-
-          <div className="max-w-4xl w-full mx-auto px-4 pt-4 sm:pt-6 md:pt-8 pb-8 sm:px-6 md:px-10 flex-1 bg-transparent">
-            {editorMode === 'richtext' ? (
-              <>
-                {editor && !editor.isDestroyed && <BlockHandle editor={editor} />}
-                {editor && !editor.isDestroyed ? (
-                  <EditorContent
-                    editor={editor}
-                    style={{ fontFamily: effectiveFontFamily }}
-                    className={`min-h-[280px] sm:min-h-[400px] caffeine-editor-content pt-1 sm:pt-2 first:mt-0 [&>*:first-child]:mt-0 [&_.ProseMirror>*:first-child]:mt-0 [&_.tiptap>*:first-child]:mt-0 ${fontClass}`}
-                  />
-                ) : (
-                  <div className="min-h-[280px] sm:min-h-[400px] flex items-center justify-center text-neutral-400 animate-pulse text-xs font-mono">
-                    Loading note content...
-                  </div>
-                )}
-              </>
-            ) : editorMode === 'plaintext' ? (
-              <PlaintextMarkdownEditor
-                rawMarkdown={rawMarkdown}
-                onMarkdownChange={(val) => {
-                  handleSaveRaw(val, file);
-                }}
-                onSaveTrigger={(val) => {
-                  handleSaveRaw(val, file);
-                }}
-                gutterRef={gutterRef}
-                textareaRef={textareaRef}
-              />
-            ) : (
-              <DiffViewer
-                savedContent={file.content || ''}
-                unsavedContent={rawMarkdown}
-                onSave={() => handleManualSave(editor)}
-                onRevert={() => handleRevert(editor)}
-              />
-            )}
-
-            <BacklinksPanel
-              currentFile={file}
-              editor={editor}
-              rawMarkdown={rawMarkdown}
-              editorMode={editorMode}
-              onUpdateFile={handleUpdateProperties}
-            />
-          </div>
-
-          {/* Bottom Toolbar Dock */}
-          {editorMode === 'richtext' && editor && !editor.isDestroyed && toolboxPosition === 'bottom' && (
-            <EditorBottomToolbar editor={editor} position="bottom" />
-          )}
-        </div>
-
-        {/* Document Outline HUD */}
-        <DocumentOutlineHud
-          editor={editor}
-          rawMarkdown={rawMarkdown}
-          editorMode={editorMode}
-        />
-
-        {/* Editor Minimap */}
-        <EditorMinimap
-          containerRef={scrollContainerRef}
-          content={rawMarkdown || file?.content || ''}
-        />
-
-        {/* Right Toolbar Dock */}
-        {editorMode === 'richtext' && editor && !editor.isDestroyed && toolboxPosition === 'right' && (
-          <div className="flex flex-col justify-center pr-3 py-4 shrink-0 z-30 animate-in fade-in slide-in-from-right-2">
-            <EditorBottomToolbar editor={editor} position="right" />
-          </div>
-        )}
-      </div>
-
-      <FloatingToolbarHost
+      {/* Overlays: Slash/Wiki popups, iOS Link preview, Editor context menu */}
+      <EditorOverlays
+        editor={editor}
+        filePath={filePath}
         slashMenu={slashMenu}
         wikiMenu={wikiMenu}
         filteredCommands={filteredCommands}
         onExecuteCommand={(item) => executeCommand(item, editor)}
         onExecuteWikiLink={(sugg) => executeWikiLink(sugg, editor)}
-      />
-
-      {/* iOS-styled Link Preview Card for External Links and [[WikiLinks]] */}
-      <IosLinkPreviewCard editor={editor} />
-
-      {/* Unified Glassmorphic Editor Context Menu */}
-      <EditorContextMenu
-        editor={editor}
-        filePath={filePath}
-        isOpen={isContextMenuOpen}
-        onClose={closeContextMenu}
-        position={contextMenuPos}
+        isContextMenuOpen={isContextMenuOpen}
+        contextMenuPos={contextMenuPos}
+        onCloseContextMenu={closeContextMenu}
       />
     </div>
   );

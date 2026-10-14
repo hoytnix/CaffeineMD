@@ -1,15 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React from 'react';
 import { CreateWorkspaceModal } from '@/src/components/workspace/CreateWorkspaceModal';
-import { db } from '@/src/lib/storage/db';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { useWorkspaceStore } from '@/src/stores/workspaceStore';
-import { THEME_PRESETS } from '@/src/lib/themes/themeDefinitions';
-import { getCurrentUser, initAuth } from '@/src/lib/firebase/client';
-import { getGeminiApiKey } from '@/src/lib/export/geminiTemplateGenerator';
-import { IosSettingsHome, SettingsScreen, GoogleDriveUserInfo } from './IosSettingsHome';
+import { IosSettingsHome } from './IosSettingsHome';
 import { SettingsHeader } from './SettingsHeader';
 import { GoogleDriveSyncSection } from './sections/GoogleDriveSyncSection';
 import { GeminiSettingsCard } from './sections/GeminiSettingsCard';
@@ -18,92 +11,22 @@ import { ThemeSettingsSection } from './sections/ThemeSettingsSection';
 import { StorageSettingsSection } from './sections/StorageSettingsSection';
 import { EditorSettingsSection } from './sections/EditorSettingsSection';
 import { KeyboardShortcutsSection } from './sections/KeyboardShortcutsSection';
+import { useSettingsState } from './useSettingsState';
 
 export function SettingsView({ onBack }: { onBack?: () => void }) {
-  const router = useRouter();
-  const [activeScreen, setActiveScreen] = useState<SettingsScreen>('home');
   const {
-    activeWorkspaceId,
-    activeView,
-    setActiveView,
-    themeId,
-    setTheme,
-    customTheme,
-    updateCustomTheme,
-    hydrateThemeFromStorage,
-    toolboxPosition,
-    setToolboxPosition,
-    autosaveInterval,
-    setAutosaveInterval,
-    vaultName,
-    trashRetentionDays,
-    setTrashRetentionDays,
-    emptyTrashAll,
-    setActiveWorkspaceId,
-    setMountedMode,
-    showToast,
-    setCreateWorkspaceModalOpen,
-    editorFontSize,
-    themeOpacity,
-  } = useWorkspaceStore();
-
-  useEffect(() => {
-    hydrateThemeFromStorage();
-  }, [hydrateThemeFromStorage]);
-
-  const [googleDriveUser, setGoogleDriveUser] = useState<GoogleDriveUserInfo | null>(() => {
-    const user = getCurrentUser();
-    return user ? { displayName: user.displayName, email: user.email, photoUrl: user.photoURL } : null;
-  });
-
-  useEffect(() => {
-    const unsubscribe = initAuth(
-      (user) => {
-        if (user) {
-          setGoogleDriveUser({ displayName: user.displayName, email: user.email, photoUrl: user.photoURL });
-        } else {
-          setGoogleDriveUser(null);
-        }
-      },
-      () => setGoogleDriveUser(null)
-    );
-    return () => unsubscribe();
-  }, []);
-
-  const [geminiApiKey, setGeminiApiKey] = useState(() => getGeminiApiKey());
-  useEffect(() => {
-    const handleKeyUpdate = () => setGeminiApiKey(getGeminiApiKey());
-    window.addEventListener('caffeinemd-gemini-key-updated', handleKeyUpdate);
-    window.addEventListener('storage', handleKeyUpdate);
-    return () => {
-      window.removeEventListener('caffeinemd-gemini-key-updated', handleKeyUpdate);
-      window.removeEventListener('storage', handleKeyUpdate);
-    };
-  }, []);
-
-  const handleBackToWorkspace = () => {
-    if (activeView === 'settings') setActiveView('editor');
-    if (onBack) {
-      onBack();
-      return;
-    }
-    router.push(`/w/${activeWorkspaceId || 'default-workspace'}`);
-  };
-
-  const rawFiles = useLiveQuery(() => db.files.toArray());
-  const trashCount = rawFiles?.filter((f) => f.isTrash).length || 0;
-  const [wizardOverride, setWizardOverride] = useState<boolean | null>(null);
-  const showCustomWizard = wizardOverride !== null ? wizardOverride : themeId === 'custom';
-  const setShowCustomWizard = (show: boolean | ((prev: boolean) => boolean)) => {
-    setWizardOverride(typeof show === 'function' ? show(showCustomWizard) : show);
-  };
-
-  const activeThemePreset = THEME_PRESETS.find((t) => t.id === themeId);
-  const themeName = activeThemePreset?.name || (themeId === 'custom' ? customTheme?.name || 'Custom' : themeId);
-  const bgImageUrl =
-    (themeId === 'custom'
-      ? customTheme?.backgroundImageUrl || customTheme?.bgImageUrl
-      : activeThemePreset?.backgroundImageUrl || activeThemePreset?.bgImageUrl) || '';
+    activeScreen,
+    setActiveScreen,
+    googleDriveUser,
+    geminiApiKey,
+    handleBackToWorkspace,
+    trashCount,
+    showCustomWizard,
+    setShowCustomWizard,
+    themeName,
+    bgImageUrl,
+    store,
+  } = useSettingsState(onBack);
 
   return (
     <div
@@ -116,7 +39,7 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
           aria-hidden="true"
           style={{
             backgroundImage: `url("${bgImageUrl}")`,
-            opacity: themeOpacity,
+            opacity: store.themeOpacity,
           }}
           className="fixed inset-0 pointer-events-none bg-cover bg-center bg-no-repeat z-0"
         />
@@ -135,17 +58,17 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
             onSelectScreen={setActiveScreen}
             googleDriveUser={googleDriveUser}
             themeName={themeName}
-            editorFontSize={editorFontSize}
+            editorFontSize={store.editorFontSize}
             hasGeminiKey={Boolean(geminiApiKey?.trim())}
           />
         )}
         {activeScreen === 'profile' && (
           <GoogleDriveSyncSection
-            vaultName={vaultName}
-            showToast={showToast}
-            setActiveWorkspaceId={setActiveWorkspaceId}
-            setMountedMode={setMountedMode}
-            setCreateWorkspaceModalOpen={setCreateWorkspaceModalOpen}
+            vaultName={store.vaultName}
+            showToast={store.showToast}
+            setActiveWorkspaceId={store.setActiveWorkspaceId}
+            setMountedMode={store.setMountedMode}
+            setCreateWorkspaceModalOpen={store.setCreateWorkspaceModalOpen}
           />
         )}
         {activeScreen === 'apiKeys' && (
@@ -156,29 +79,29 @@ export function SettingsView({ onBack }: { onBack?: () => void }) {
         )}
         {activeScreen === 'themes' && (
           <ThemeSettingsSection
-            themeId={themeId}
-            setTheme={setTheme}
-            customTheme={customTheme}
-            updateCustomTheme={updateCustomTheme}
+            themeId={store.themeId}
+            setTheme={store.setTheme}
+            customTheme={store.customTheme}
+            updateCustomTheme={store.updateCustomTheme}
             showCustomWizard={showCustomWizard}
             setShowCustomWizard={setShowCustomWizard}
           />
         )}
         {activeScreen === 'editor' && (
           <EditorSettingsSection
-            toolboxPosition={toolboxPosition}
-            setToolboxPosition={setToolboxPosition}
-            autosaveInterval={autosaveInterval}
-            setAutosaveInterval={setAutosaveInterval}
-            showToast={showToast}
+            toolboxPosition={store.toolboxPosition}
+            setToolboxPosition={store.setToolboxPosition}
+            autosaveInterval={store.autosaveInterval}
+            setAutosaveInterval={store.setAutosaveInterval}
+            showToast={store.showToast}
           />
         )}
         {activeScreen === 'keyboard' && <KeyboardShortcutsSection />}
         {activeScreen === 'storage' && (
           <StorageSettingsSection
-            trashRetentionDays={trashRetentionDays}
-            setTrashRetentionDays={setTrashRetentionDays}
-            emptyTrashAll={emptyTrashAll}
+            trashRetentionDays={store.trashRetentionDays}
+            setTrashRetentionDays={store.setTrashRetentionDays}
+            emptyTrashAll={store.emptyTrashAll}
             trashCount={trashCount}
           />
         )}
