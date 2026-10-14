@@ -90,18 +90,22 @@ export function PlaintextContextMenu({
       disabled: !hasSelection,
       onClick: () => replaceSelection(`[[${selectedText}]]`),
     },
-    {
-      label: 'Evaluate Math Expression',
-      icon: <Calculator className="w-3.5 h-3.5 text-emerald-400" />,
-      disabled: !hasSelection,
-      onClick: async () => {
-        const res = await wasmSandbox.runCode('math', selectedText.trim());
-        const resultText = res.outputs.map((o) => o.text).join(' ');
-        if (resultText) {
-          replaceSelection(`${selectedText} = ${resultText}`);
-        }
-      },
-    },
+    ...(useWorkspaceStore.getState().codeExecutionSandboxEnabled
+      ? [
+          {
+            label: 'Evaluate Math Expression',
+            icon: <Calculator className="w-3.5 h-3.5 text-emerald-400" />,
+            disabled: !hasSelection,
+            onClick: async () => {
+              const res = await wasmSandbox.runCode('math', selectedText.trim());
+              const resultText = res.outputs.map((o) => o.text).join(' ');
+              if (resultText) {
+                replaceSelection(`${selectedText} = ${resultText}`);
+              }
+            },
+          },
+        ]
+      : []),
     { isDivider: true },
     {
       label: 'Export Document',

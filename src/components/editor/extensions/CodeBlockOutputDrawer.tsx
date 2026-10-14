@@ -86,6 +86,14 @@ export function CodeBlockOutputDrawer({
                 item.text.toLowerCase().includes('initialized') ||
                 item.text.toLowerCase().includes('ready');
 
+              // If execution is already done and real outputs exist, hide stale downloading/loading statuses
+              if (item.text.toLowerCase().includes('download') || item.text.toLowerCase().includes('loading')) {
+                const hasSubsequentOutputs = outputs.slice(idx + 1).some((o) => o.type !== 'status');
+                if (hasSubsequentOutputs) {
+                  return null;
+                }
+              }
+
               return (
                 <div
                   key={idx}

@@ -5,12 +5,14 @@ import { NodeViewWrapper, NodeViewContent, NodeViewProps } from '@tiptap/react';
 import { Copy, Check, Play, Loader2 } from 'lucide-react';
 import { wasmSandbox } from '@/src/lib/sandbox/wasmSandbox';
 import { ExecutionOutputItem, SupportedSandboxLang } from '@/src/lib/sandbox/types';
+import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { CodeBlockOutputDrawer } from './CodeBlockOutputDrawer';
 import { RUNNABLE_LANGUAGES, LANGUAGES, normalizeSandboxLang } from './codeBlockLanguages';
 
 export { RUNNABLE_LANGUAGES, LANGUAGES, normalizeSandboxLang };
 
 export function CodeBlockView({ node, editor, getPos, updateAttributes }: NodeViewProps) {
+  const codeExecutionSandboxEnabled = useWorkspaceStore((s) => s.codeExecutionSandboxEnabled);
   const [copied, setCopied] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [outputs, setOutputs] = useState<ExecutionOutputItem[]>([]);
@@ -20,7 +22,7 @@ export function CodeBlockView({ node, editor, getPos, updateAttributes }: NodeVi
   const rawLanguage = node.attrs?.language || '';
   const detectedLang = normalizeSandboxLang(rawLanguage);
   const activeLang: SupportedSandboxLang = detectedLang || 'javascript';
-  const isExecutable = Boolean(detectedLang);
+  const isExecutable = codeExecutionSandboxEnabled && Boolean(detectedLang);
 
   const handleCopy = (e: React.MouseEvent) => {
     e.preventDefault();

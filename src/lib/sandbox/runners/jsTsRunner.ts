@@ -1,4 +1,5 @@
 import { RunnerContext, RunnerResult } from './types';
+import { fetchWithRuntimeCache } from '../runtimeCache';
 
 let tsInstance: any = null;
 let tsPromise: Promise<any> | null = null;
@@ -11,7 +12,7 @@ async function getTsCompiler(ctx: RunnerContext): Promise<any> {
 
   tsPromise = (async () => {
     try {
-      const resp = await fetch('https://cdn.jsdelivr.net/npm/typescript@5.6.3/lib/typescript.min.js');
+      const resp = await fetchWithRuntimeCache('https://cdn.jsdelivr.net/npm/typescript@5.6.3/lib/typescript.min.js');
       const text = await resp.text();
       const mod = { exports: {} as any };
       // Evaluate within worker global context

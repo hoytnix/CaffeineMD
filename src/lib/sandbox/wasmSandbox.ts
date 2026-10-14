@@ -86,10 +86,15 @@ class WasmSandboxManager {
 
           const executionTimeMs = Math.round(performance.now() - req.startTime);
           this.pendingRequests.delete(id);
+
+          // Once execution finishes, dismiss transient "compiler is downloading / loading" status banners
+          // so they don't persist in the UI alongside final execution outputs.
+          const cleanedOutputs = req.outputs.filter((o) => o.type !== 'status');
+
           req.resolve({
             id,
             success: Boolean(payload?.success),
-            outputs: req.outputs,
+            outputs: cleanedOutputs.length > 0 ? cleanedOutputs : req.outputs,
             executionTimeMs,
             htmlPreview: payload?.htmlPreview,
           });

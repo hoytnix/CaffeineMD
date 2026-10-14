@@ -101,19 +101,25 @@ export function EditorContextMenu({
 
   if (isCodeBlock) {
     // Inside Code Block Context Menu
+    const codeExecutionSandboxEnabled = useWorkspaceStore.getState().codeExecutionSandboxEnabled;
+
     menuItems = [
-      {
-        label: 'Run in WASM Sandbox',
-        icon: <Play className="w-3.5 h-3.5 text-emerald-400 fill-current" />,
-        shortcut: '⇧↵',
-        onClick: async () => {
-          const code = editor.state.selection.$from.parent.textContent;
-          showToast('Running in WASM sandbox...');
-          const res = await wasmSandbox.runCode('javascript', code);
-          const out = res.outputs.map((o) => o.text).join('\n');
-          showToast(out ? `Result: ${out}` : `Completed in ${res.executionTimeMs}ms`);
-        },
-      },
+      ...(codeExecutionSandboxEnabled
+        ? [
+            {
+              label: 'Run in WASM Sandbox',
+              icon: <Play className="w-3.5 h-3.5 text-emerald-400 fill-current" />,
+              shortcut: '⇧↵',
+              onClick: async () => {
+                const code = editor.state.selection.$from.parent.textContent;
+                showToast('Running in WASM sandbox...');
+                const res = await wasmSandbox.runCode('javascript', code);
+                const out = res.outputs.map((o) => o.text).join('\n');
+                showToast(out ? `Result: ${out}` : `Completed in ${res.executionTimeMs}ms`);
+              },
+            },
+          ]
+        : []),
       {
         label: 'Copy Code Block Content',
         icon: <Copy className="w-3.5 h-3.5" />,
@@ -123,17 +129,21 @@ export function EditorContextMenu({
           showToast('Code copied to clipboard');
         },
       },
-      { isDivider: true },
-      {
-        label: 'Insert Execution Output Below',
-        icon: <Terminal className="w-3.5 h-3.5 text-indigo-400" />,
-        onClick: async () => {
-          const code = editor.state.selection.$from.parent.textContent;
-          const res = await wasmSandbox.runCode('javascript', code);
-          const out = res.outputs.map((o) => o.text).join('\n');
-          editor.chain().focus().insertContent(`\n> Output: ${out || 'None'}\n`).run();
-        },
-      },
+      ...(codeExecutionSandboxEnabled
+        ? [
+            { isDivider: true as const },
+            {
+              label: 'Insert Execution Output Below',
+              icon: <Terminal className="w-3.5 h-3.5 text-indigo-400" />,
+              onClick: async () => {
+                const code = editor.state.selection.$from.parent.textContent;
+                const res = await wasmSandbox.runCode('javascript', code);
+                const out = res.outputs.map((o) => o.text).join('\n');
+                editor.chain().focus().insertContent(`\n> Output: ${out || 'None'}\n`).run();
+              },
+            },
+          ]
+        : []),
     ];
   } else if (!empty) {
     // With Text Selection Context Menu
@@ -227,12 +237,16 @@ export function EditorContextMenu({
         icon: <CheckSquare className="w-3.5 h-3.5 text-emerald-400" />,
         onClick: () => editor.chain().focus().toggleTaskList().run(),
       },
-      { isDivider: true },
-      {
-        label: 'Run Expression / Math Sandbox',
-        icon: <Calculator className="w-3.5 h-3.5 text-amber-400" />,
-        onClick: handleRunMath,
-      },
+      ...(useWorkspaceStore.getState().codeExecutionSandboxEnabled
+        ? [
+            { isDivider: true as const },
+            {
+              label: 'Run Expression / Math Sandbox',
+              icon: <Calculator className="w-3.5 h-3.5 text-amber-400" />,
+              onClick: handleRunMath,
+            },
+          ]
+        : []),
     ];
   } else {
     // Caret in Prose (No Selection) Context Menu

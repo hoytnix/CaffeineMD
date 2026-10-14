@@ -1,13 +1,21 @@
 # Active Context: CaffeineMD
 
 ## Current Focus
-- **Comprehensive CRUD Auto-Sync**: Expanded automatic background Google Drive sync (`triggerAutoSync()`) from just note updates/saves to include note & folder creation (`create`), movement & relocation (`move`), duplication, renaming, and trashing (`delete` / `trash`). Structural vault changes immediately trigger Google Drive delta reconciliation.
-- **Google Drive Durable Persistence & Auto-Sync**: Configured `access_type: 'offline'` and `prompt: 'consent'` with localStorage token metadata fallback so sessions persist across browser restarts; wired silent background auto-sync (`triggerAutoSync()`).
-- **Settings Footer Deduplication**: Removed redundant footer from `IosSettingsHome` so `"A TehWiz Production."` appears cleanly once at the bottom of `SettingsView`.
-- **Database Space-Saving & Spoilers**: Collapsible filter spoiler hidden by default (`filtersOpen`), sleek filter toggle button with active badge count, and removed redundant "Vault Database" top header to maximize vertical screen real estate on mobile/compact viewports.
-- **Strict LOC Enforcement**: All settings and editor subcomponents decomposed under strict LOC limits.
+- **Code Execution Sandbox Settings & Runtime Caching**: Added `codeExecutionSandboxEnabled` boolean setting defaulting to `false` for instant initial app startup without long runtime downloading. Placed the Code Execution Sandbox setting card immediately following Editor Display & Behavior in the Settings tab.
+- **WASM Runner Status Fix**: Dismissed transient "compiler is downloading" status messages once execution finishes, and filtered out downloading/loading statuses in the output drawer when subsequent outputs exist.
+- **One-Time Compiler & WASM Caching**: Integrated the browser Cache API in `runtimeCache.ts` and runner modules (`jsTsRunner`, `sqlRunner`, `luaRunner`) so that when the sandbox setting is enabled, binaries and WASM runtimes are downloaded and cached once instead of on every code execution.
+- **Comprehensive CRUD Auto-Sync**: Expanded automatic background Google Drive sync (`triggerAutoSync()`) across note & folder creation, movement, duplication, renaming, and trashing.
+- **Strict LOC Enforcement**: All new and modified settings and editor subcomponents decomposed under strict LOC limits.
 
 ## Architecture & Recent Changes
+1. **Code Execution Sandbox & Runtime Caching**:
+   - [workspaceStore.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/workspaceStore.ts): Added `codeExecutionSandboxEnabled` state, `setCodeExecutionSandboxEnabled()`, and `toggleCodeExecutionSandbox()`, defaulting to `false` and persisted via `caffeinemd-code-execution-sandbox`.
+   - [runtimeCache.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sandbox/runtimeCache.ts): Created Cache API manager providing `fetchWithRuntimeCache()`, `preloadSandboxRuntimes()`, `isRuntimeCached()`, and `clearSandboxRuntimeCache()`.
+   - [CodeExecutionSandboxSection.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/settings/sections/CodeExecutionSandboxSection.tsx): Implemented dedicated setting card with toggle, one-time runtime download progress indicator, and manual cache management.
+   - [EditorSettingsSection.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/settings/sections/EditorSettingsSection.tsx): Positioned `CodeExecutionSandboxSection` immediately after `EditorDisplayBehaviorGroup`.
+   - [wasmSandbox.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sandbox/wasmSandbox.ts) & [CodeBlockOutputDrawer.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/extensions/CodeBlockOutputDrawer.tsx): Fixed persistent "compiler is downloading" messages by cleaning transient status messages on completion and hiding stale downloading statuses when subsequent results are rendered.
+   - [jsTsRunner.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sandbox/runners/jsTsRunner.ts), [sqlRunner.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sandbox/runners/sqlRunner.ts), [luaRunner.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sandbox/runners/luaRunner.ts): Routed runtime script and WASM binary fetches through `fetchWithRuntimeCache()`.
+   - [CodeBlockView.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/extensions/CodeBlockView.tsx), [EditorContextMenu.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/EditorContextMenu.tsx), [PlaintextContextMenu.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/modes/PlaintextContextMenu.tsx): Conditioned sandbox execution actions and Run buttons on `codeExecutionSandboxEnabled`.
 1. **Comprehensive CRUD Auto-Sync**:
    - [syncAutoTrigger.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sync/syncAutoTrigger.ts): Created dynamic asynchronous trigger helper to dispatch `triggerAutoSync()` safely from lower-level storage repositories without circular imports.
    - [useNotePersistence.ts](file:///home/oloty/Dev/CaffeineMD/src/hooks/useNotePersistence.ts): Dispatches silent `triggerAutoSync()` on editor saves as well as initial frontmatter migration.

@@ -19,6 +19,7 @@
 - [x] **Multi-Language Runner Engine**: Isolated Web Worker with captured stdout/stderr and 5000ms watchdog.
 - [x] **Supported Runtimes**: Python (Pyodide WASM + auto package install), JS/TS (transpiler + AsyncFunction), SQLite (`sql.js`), Lua (Fengari 5.3), POSIX Shell, JSON/HTML preview iframe, and Compiler Explorer (Rust/Go/C/C++).
 - [x] **Interactive CodeBlock UI**: Language dropdown, run status, duration pills, output drawer, and insert-into-note actions.
+- [x] **Instant Startup Sandbox Setting & One-Time Caching**: `codeExecutionSandboxEnabled` store state defaulting to `false` for instant initial launch, settings toggle card placed right after Editor Display & Behavior, browser Cache API integration (`fetchWithRuntimeCache()`), and automatic dismissal of transient compiler downloading messages.
 
 ### 4. Knowledge Graph & Database Views
 - [x] **Bi-directional Knowledge Graph**: D3 force physics simulator, 2D HTML5 canvas renderer, zoom/pan controls, and theme palette adaptation.

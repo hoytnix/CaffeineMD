@@ -1,4 +1,5 @@
 import { RunnerContext, RunnerResult } from './types';
+import { fetchWithRuntimeCache } from '../runtimeCache';
 
 let fengariModule: any = null;
 let fengariPromise: Promise<any> | null = null;
@@ -10,7 +11,7 @@ async function getFengari(ctx: RunnerContext): Promise<any> {
   ctx.progress('runtime-loading', 'Loading Fengari Lua 5.3 runtime (~800KB)...');
 
   fengariPromise = (async () => {
-    const resp = await fetch('https://cdn.jsdelivr.net/npm/fengari-web@0.1.4/dist/fengari-web.js');
+    const resp = await fetchWithRuntimeCache('https://cdn.jsdelivr.net/npm/fengari-web@0.1.4/dist/fengari-web.js');
     const text = await resp.text();
     const sandboxContext: Record<string, any> = {
       window: self,

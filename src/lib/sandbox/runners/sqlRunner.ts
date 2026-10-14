@@ -1,4 +1,5 @@
 import { RunnerContext, RunnerResult } from './types';
+import { fetchWithRuntimeCache } from '../runtimeCache';
 
 let sqlJsModule: any = null;
 let sqlInitPromise: Promise<any> | null = null;
@@ -11,13 +12,24 @@ async function getSqlDb(ctx: RunnerContext): Promise<any> {
     if (!sqlInitPromise) {
       ctx.progress('runtime-loading', 'Downloading SQLite WASM runtime (~1.5MB)...');
       sqlInitPromise = (async () => {
-        const resp = await fetch('https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js');
+        const resp = await fetchWithRuntimeCache('https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js');
         const text = await resp.text();
         const mod = { exports: {} as any };
         const fn = new Function('module', 'exports', 'window', 'self', text);
         fn(mod, mod.exports, self, self);
         const initSqlJs = mod.exports;
+
+        // Preload binary via cached fetch
+        let wasmBinary: ArrayBuffer | undefined;
+        try {
+          const wasmResp = await fetchWithRuntimeCache('https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.wasm');
+          if (wasmResp.ok) {
+            wasmBinary = await wasmResp.arrayBuffer();
+          }
+        } catch {}
+
         const SQL = await initSqlJs({
+          wasmBinary,
           locateFile: (file: string) => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}`,
         });
         sqlJsModule = SQL;

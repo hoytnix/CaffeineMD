@@ -9,6 +9,7 @@ import {
 } from '@/src/stores/workspaceStore';
 import { ToolboxPlacementCards } from './ToolboxPlacementCards';
 import { EditorDisplayBehaviorGroup } from './EditorDisplayBehaviorGroup';
+import { CodeExecutionSandboxSection } from './CodeExecutionSandboxSection';
 
 export interface EditorSettingsSectionProps {
   toolboxPosition: ToolboxPosition;
@@ -110,6 +111,9 @@ export function EditorSettingsSection({
 
       {/* Editor Display & Behavior (Font size slider, Minimap, Typewriter, Spellcheck) */}
       <EditorDisplayBehaviorGroup />
+
+      {/* Code Execution Sandbox (WASM & Runtimes Cache) */}
+      <CodeExecutionSandboxSection />
     </div>
   );
 }

@@ -141,6 +141,11 @@ export interface WorkspaceState {
   setSpellcheck: (val: boolean) => void;
   toggleSpellcheck: () => void;
 
+  // Code Execution Sandbox
+  codeExecutionSandboxEnabled: boolean;
+  setCodeExecutionSandboxEnabled: (enabled: boolean) => void;
+  toggleCodeExecutionSandbox: () => void;
+
   // Editor Toolbox Placement
   toolboxPosition: ToolboxPosition;
   setToolboxPosition: (position: ToolboxPosition) => void;
@@ -257,6 +262,11 @@ const getInitialStoredEditorFontSize = (): number => {
 const getInitialStoredSpellcheck = (): boolean => {
   if (typeof window === 'undefined') return true;
   return localStorage.getItem('caffeinemd-spellcheck') !== 'false';
+};
+
+const getInitialStoredSandboxEnabled = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem('caffeinemd-code-execution-sandbox') === 'true';
 };
 
 const getInitialStoredShortcuts = (): Record<ShortcutActionId, string> => {
@@ -558,6 +568,21 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   toggleSpellcheck: () => {
     const nextVal = !get().spellcheck;
     get().setSpellcheck(nextVal);
+  },
+
+  // Code Execution Sandbox (default false for instant startup)
+  codeExecutionSandboxEnabled: getInitialStoredSandboxEnabled(),
+  setCodeExecutionSandboxEnabled: (enabled: boolean) => {
+    set({ codeExecutionSandboxEnabled: enabled });
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('caffeinemd-code-execution-sandbox', String(enabled));
+      } catch {}
+    }
+  },
+  toggleCodeExecutionSandbox: () => {
+    const nextVal = !get().codeExecutionSandboxEnabled;
+    get().setCodeExecutionSandboxEnabled(nextVal);
   },
 
   // Editor Toolbox Placement
