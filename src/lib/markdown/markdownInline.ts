@@ -93,6 +93,12 @@ export function formatInline(text: string): string {
   res = res.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
   // Strikethrough ~~text~~
   res = res.replace(/~~(.+?)~~/g, '<s>$1</s>');
+  // Highlight ==text== and restore escaped &lt;mark&gt;
+  res = res.replace(/==(.+?)==/g, '<mark>$1</mark>');
+  res = res.replace(/&lt;mark&gt;(.*?)&lt;\/mark&gt;/gi, '<mark>$1</mark>');
+  // Underline <u>text</u> - restore &lt;u&gt;...&lt;/u&gt; and preserve <u>...</u>
+  res = res.replace(/&lt;u&gt;(.*?)&lt;\/u&gt;/gi, '<u>$1</u>');
+  res = res.replace(/<u>(.*?)<\/u>/gi, '<u>$1</u>');
   // Markdown links [label](url)
   res = res.replace(
     /\[([^\]]+)\]\(([^)]+)\)/g,
@@ -107,3 +113,5 @@ export function formatInline(text: string): string {
 
   return res;
 }
+
+export const parseInline = formatInline;

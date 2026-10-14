@@ -24,6 +24,10 @@ export function editorHtmlToMarkdown(html: string): string {
       .replace(/<p[^>]*>(.*?)<\/p>/gi, '$1\n\n')
       .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**')
       .replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*')
+      .replace(/<u[^>]*>(.*?)<\/u>/gi, '___U_OPEN___$1___U_CLOSE___')
+      .replace(/<mark[^>]*>(.*?)<\/mark>/gi, '==$1==')
+      .replace(/<s[^>]*>(.*?)<\/s>/gi, '~~$1~~')
+      .replace(/<del[^>]*>(.*?)<\/del>/gi, '~~$1~~')
       .replace(/<code[^>]*>(.*?)<\/code>/gi, '`$1`')
       .replace(/<br\s*\/?>/gi, '\n')
       .replace(/<span[^>]*data-wikilink="([^"]+)"[^>]*>.*?<\/span>/gi, '[[$1]]')
@@ -38,6 +42,8 @@ export function editorHtmlToMarkdown(html: string): string {
         return title ? `![${alt}](${src} "${title}")` : `![${alt}](${src})`;
       })
       .replace(/<[^>]+>/g, '')
+      .replace(/___U_OPEN___/g, '<u>')
+      .replace(/___U_CLOSE___/g, '</u>')
       .trim();
   }
 
@@ -116,6 +122,8 @@ export function editorHtmlToMarkdown(html: string): string {
         return `~~${childrenText}~~`;
       case 'u':
         return `<u>${childrenText}</u>`;
+      case 'mark':
+        return `==${childrenText}==`;
       case 'code':
         if (el.parentElement?.tagName.toLowerCase() === 'pre') {
           return el.textContent || '';

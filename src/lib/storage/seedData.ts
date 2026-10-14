@@ -1,97 +1,102 @@
 import { VaultFile } from './schema';
+import { WELCOME_NOTE_CONTENT } from './welcomeNoteContent';
 
 export const INITIAL_VAULT_NOTES: Array<Omit<VaultFile, 'id'> & { id?: string }> = [
   {
-    path: 'Welcome to CaffeineMD.md',
-    name: 'Welcome to CaffeineMD.md',
-    title: 'Welcome to CaffeineMD',
+    path: '/Welcome to CaffeineMD ☕.md',
+    name: 'Welcome to CaffeineMD ☕.md',
+    title: 'Welcome to CaffeineMD ☕',
     extension: 'md',
-    content: `---
-title: Welcome to CaffeineMD
-tags: [getting-started, guide]
-status: Doing
-priority: High
-eisenhower: urgent_not_immediate
-author: CaffeineMD Team
----
-
-# Welcome to CaffeineMD
-
-## Welcome to CaffeineMD Workspace ☕
-
-CaffeineMD is a high-performance, local-first knowledge management workspace modeled after Obsidian and Notion, powered by Tiptap, IndexedDB, and the File System Access API.
-
-## Core Capabilities
-
-- **Local Directory Binding**: Mount local disk folders directly via the native File System Access API or import entire directories via drag-and-drop.
-- **Bidirectional Linking**: Type \`[[\` anywhere to link notes like [[Product Roadmap 2026]] or [[Architecture Decisions]].
-- **Slash Commands**: Type \`/\` to quickly insert Headings, Callouts, Tasks, Code blocks, and Database views.
-- **Knowledge Graph**: Visualize document connections and clusters in real-time in the interactive 2D graph view.
-- **Notion-style Inline Databases**: Switch between **Table**, **Board (Kanban)**, and **List** views driven by frontmatter metadata.
-- **Draggable Block Handles**: Reorder content blocks seamlessly.
-
-### Quick Links & References
-
-Check out our [[Architecture Decisions]] and see the current [[Product Roadmap 2026]].`,
+    content: WELCOME_NOTE_CONTENT,
     frontmatter: {
-      title: 'Welcome to CaffeineMD',
-      tags: ['getting-started', 'guide'],
-      status: 'Doing',
+      title: 'Welcome to CaffeineMD ☕',
+      status: 'Active',
+      category: 'Documentation',
       priority: 'High',
-      eisenhower: 'urgent_not_immediate',
-      author: 'CaffeineMD Team',
+      tags: ['welcome', 'showcase', 'pwa', 'wasm', 'markdown'],
     },
-    tags: ['getting-started', 'guide'],
-    eisenhower: 'urgent_not_immediate',
+    tags: ['welcome', 'showcase', 'pwa', 'wasm', 'markdown'],
     isBinary: false,
-    size: 1024,
+    size: WELCOME_NOTE_CONTENT.length,
     createdAt: Date.now() - 86400000 * 2,
     updatedAt: Date.now() - 86400000 * 2,
     vaultId: 'default-vault',
   },
   {
-    path: 'Projects/Product Roadmap 2026.md',
-    name: 'Product Roadmap 2026.md',
-    title: 'Product Roadmap 2026',
+    path: 'Project Alpha.md',
+    name: 'Project Alpha.md',
+    title: 'Project Alpha',
     extension: 'md',
     content: `---
-title: Product Roadmap 2026
-tags: [project, roadmap, q1]
-status: Someday / Maybe
-priority: Critical
+title: Project Alpha
+tags: [project, alpha, roadmap]
+status: Doing
+priority: High
 eisenhower: urgent_immediate
-targetDate: 2026-11-15
-assignee: Sarah Connor
 ---
 
-# Product Roadmap 2026
+# Project Alpha
 
-Quarterly objectives and milestones for the Antigravity Knowledge Base runtime.
+Core development tracker and architecture milestone roadmap for Project Alpha.
 
 ## Core Milestones
-- [x] IndexedDB batch transaction engine
-- [x] Drag & drop folder parsing with recursive webkitDirectory
-- [ ] Real-time CRDT sync bridge
+- [x] IndexedDB batch transaction engine & folder mounting
+- [x] Sandboxed polyglot WASM execution environment
+- [ ] Real-time local-first sync bridge
 - [ ] Offline semantic search embedding cache
 
-### Connected Notes
-- See architectural foundations in [[Architecture Decisions]].
-- Return to the main hub at [[Welcome to CaffeineMD]].`,
+### Connected Hubs
+- Return to the main hub at [[Welcome to CaffeineMD ☕]].
+- Explore related brainstorming in [[Ideas]].`,
     frontmatter: {
-      title: 'Product Roadmap 2026',
-      tags: ['project', 'roadmap', 'q1'],
-      status: 'Someday / Maybe',
-      priority: 'Critical',
+      title: 'Project Alpha',
+      tags: ['project', 'alpha', 'roadmap'],
+      status: 'Doing',
+      priority: 'High',
       eisenhower: 'urgent_immediate',
-      targetDate: '2026-11-15',
-      assignee: 'Sarah Connor',
     },
-    tags: ['project', 'roadmap', 'q1'],
+    tags: ['project', 'alpha', 'roadmap'],
     eisenhower: 'urgent_immediate',
     isBinary: false,
-    size: 890,
+    size: 780,
     createdAt: Date.now() - 86400000,
     updatedAt: Date.now() - 86400000,
+    vaultId: 'default-vault',
+  },
+  {
+    path: 'Ideas.md',
+    name: 'Ideas.md',
+    title: 'Ideas',
+    extension: 'md',
+    content: `---
+title: Ideas
+tags: [ideas, brainstorm]
+status: Someday / Maybe
+priority: Medium
+eisenhower: not_urgent_not_immediate
+---
+
+# Ideas & Brainstorming
+
+Explorations and emergent concepts for upcoming iterations of CaffeineMD.
+
+## Concepts Under Evaluation
+- Edge-rendered static site publishing with Jinja templates
+- In-browser SQLite query workbench with interactive chart visualizers
+- Deep-linking backlinks connecting [[Project Alpha]] and [[Welcome to CaffeineMD ☕]]`,
+    frontmatter: {
+      title: 'Ideas',
+      tags: ['ideas', 'brainstorm'],
+      status: 'Someday / Maybe',
+      priority: 'Medium',
+      eisenhower: 'not_urgent_not_immediate',
+    },
+    tags: ['ideas', 'brainstorm'],
+    eisenhower: 'not_urgent_not_immediate',
+    isBinary: false,
+    size: 620,
+    createdAt: Date.now() - 64800000,
+    updatedAt: Date.now() - 64800000,
     vaultId: 'default-vault',
   },
   {
@@ -119,7 +124,7 @@ All note metadata is preserved via YAML frontmatter headers at the top of markdo
 ### ADR-03: Real-Time Backlink Indexing
 When any note is modified or imported, outgoing \`[[WikiLinks]]\` are parsed and indexed in IndexedDB for instant sub-millisecond reverse lookups.
 
-Referenced by [[Welcome to CaffeineMD]] and [[Product Roadmap 2026]].`,
+Referenced by [[Welcome to CaffeineMD ☕]] and [[Project Alpha]].`,
     frontmatter: {
       title: 'Architecture Decisions',
       tags: ['engineering', 'architecture'],
@@ -159,7 +164,7 @@ Local-first software prioritizes user agency, zero network latency, and data own
 2. User retains custody of raw text files.
 3. Network is an optional sync channel, never a blocker.
 
-Related work discussed in [[Architecture Decisions]].`,
+Related work discussed in [[Architecture Decisions]] and [[Welcome to CaffeineMD ☕]].`,
     frontmatter: {
       title: 'Local-First Computing',
       tags: ['research', 'architecture'],
