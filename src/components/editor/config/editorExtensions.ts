@@ -56,7 +56,7 @@ export function getEditorExtensions(callbacks: EditorExtensionCallbacks): AnyExt
       defaultProtocol: 'https',
       HTMLAttributes: {
         rel: 'noopener noreferrer',
-        target: '_blank',
+        target: null,
       },
     }),
     TaskList,

@@ -1,7 +1,14 @@
 # Active Context: CaffeineMD
 
 ## Current Focus
-- **External Link Preview on Tap/Click**: Configured `@tiptap/extension-link` with `openOnClick: false`, intercepted external link clicks/taps via `handleExternalLinkDomClick()`, and wired `IosLinkPreviewCard` to anchor to the tapped link, dismiss on outside clicks or Escape, and provided an explicit "Open" button navigating in a new tab (`target="_blank"`).
+- **External Link Preview on Tap/Click (iOS/Mobile & Desktop)**:
+  - Eliminated native browser link navigation on iOS Safari and desktop within `contenteditable` by setting `target: null` in `@tiptap/extension-link`.
+  - Registered `click` and `touchend` listeners in the capture phase (`{ capture: true }`) on the editor container in [IosLinkPreviewCard.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/components/IosLinkPreviewCard.tsx) to intercept taps before ProseMirror or native navigation.
+  - Added drag/scroll guards on mobile `touchend` (<10px displacement) to distinguish taps from scrolls, calling `preventDefault()`, `stopPropagation()`, and `stopImmediatePropagation()`.
+  - Pinned previews opened via click/tap against mouseout dismissal until clicking outside, pressing Escape, or hovering out of the card.
+  - Retained desktop hover preview with 280ms delay.
+  - Added `mousedown` and `touchstart` handling in ProseMirror's `handleDOMEvents` dispatching `caffeinemd:preview-link` to ensure links never navigate directly on tap or click.
+  - Decomposed `ExternalCardContent` into [ExternalCardContent.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/components/ExternalCardContent.tsx) with explicit "Open" link button in a new tab (`target="_blank"`), keeping all files strictly <250 LOC.
 - **Theme Background Image Layer & Opacity Slider Isolation**:
   - Ensured only the background image layer is affected by the opacity slider (cards, buttons, inputs, modals, and toolbars remain 100% solid and crisp).
   - Maintained solid `--bg-primary` and `--bg-secondary` colors across all states in `globals.css` and `colorUtils.ts`.

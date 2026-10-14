@@ -1,7 +1,7 @@
 import { db, VaultFile } from '@/src/lib/storage/db';
 import { detectCodeLanguage } from '@/src/lib/markdown/markdownToHtml';
 
-export function handleExternalLinkDomClick(event: MouseEvent): boolean {
+export function handleExternalLinkDomClick(event: MouseEvent | TouchEvent): boolean {
   const target = event.target as HTMLElement;
   if (!target) return false;
   const linkEl = target.closest('a[href]:not([data-wikilink])') as HTMLAnchorElement | null;
@@ -11,9 +11,27 @@ export function handleExternalLinkDomClick(event: MouseEvent): boolean {
   if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
     event.preventDefault();
     event.stopPropagation();
+    if ('stopImmediatePropagation' in event) {
+      event.stopImmediatePropagation();
+    }
+    linkEl.dispatchEvent(
+      new CustomEvent('caffeinemd:preview-link', {
+        bubbles: true,
+        cancelable: true,
+        detail: { href, anchor: linkEl },
+      })
+    );
     return true;
   }
   return false;
+}
+
+export function handleExternalLinkDomTouch(event: TouchEvent): boolean {
+  return handleExternalLinkDomClick(event);
+}
+
+export function handleExternalLinkDomMouseDown(event: MouseEvent): boolean {
+  return handleExternalLinkDomClick(event);
 }
 
 export function handleWikiLinkDomClick(

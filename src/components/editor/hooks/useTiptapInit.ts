@@ -65,6 +65,14 @@ export function useTiptapInit({
             'focus:outline-none min-h-[280px] sm:min-h-[500px] text-[15px] leading-[1.8] text-neutral-800 dark:text-neutral-200 first:mt-0 [&>*:first-child]:mt-0',
         },
         handleDOMEvents: {
+          mousedown: (_view, event) => {
+            if (handleExternalLinkDomClick(event)) return true;
+            return false;
+          },
+          touchstart: (_view, event) => {
+            if (handleExternalLinkDomClick(event)) return true;
+            return false;
+          },
           click: (_view, event) => {
             if (handleExternalLinkDomClick(event)) return true;
             return handleWikiLinkDomClick(event, openFileTab, activeWorkspaceId || 'default-vault');
