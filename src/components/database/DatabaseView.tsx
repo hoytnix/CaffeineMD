@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { db, VaultFile } from '@/src/lib/storage/db';
+import { executeVaultMutation } from '@/src/lib/storage/vaultMutationService';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { TableView } from './TableView';
@@ -93,13 +94,7 @@ Start writing here...
       vaultId: activeWorkspaceId || 'default-vault',
     };
 
-    await db.files.put(newNote);
-    try {
-      const { triggerAutoSync } = await import('@/src/lib/sync/googleDriveSync');
-      triggerAutoSync();
-    } catch (err) {
-      console.warn('Auto-sync trigger skipped:', err);
-    }
+    await executeVaultMutation(() => db.files.put(newNote));
     openFileTab(fullPath, newNote.title);
   };
 

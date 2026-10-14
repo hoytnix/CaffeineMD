@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { db, VaultFile } from '@/src/lib/storage/db';
-import { NativeFileSystemAdapter } from '@/src/lib/storage/fileSystem';
+import { executeVaultMutation } from '@/src/lib/storage/vaultMutationService';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
-import { Zap, Users, FolderKanban, BookOpen, X, Sparkles } from 'lucide-react';
+import { Zap, Users, FolderKanban, BookOpen, Sparkles } from 'lucide-react';
+import { ModalShell } from '@/src/components/common/ModalShell';
 
 interface TemplateDef {
   id: string;
@@ -58,27 +59,27 @@ function buildTemplateFile(templateId: string, workspaceId: string): VaultFile {
       break;
 
     case 'meeting':
-      title = `Meeting - ${dateStr}`;
-      path = `meetings/Meeting - ${dateStr}.md`;
-      content = `---\ntitle: "${title}"\ntags: ["meeting", "work"]\nstatus: "In Progress"\nauthor: ""\neisenhower: "Urgent & Immediate"\n---\n\n# ${title}\n\n**Date:** ${dateStr}\n**Attendees:** \n\n## 📋 Agenda\n1. \n\n## 📝 Discussion\n\n## ✅ Action Items\n- [ ] `;
+      title = `Meeting ${dateStr}`;
+      path = `meetings/${dateStr}-${title.toLowerCase().replace(/\s+/g, '-')}.md`;
+      content = `---\ntitle: "${title}"\ntags: ["meeting"]\nstatus: "Doing"\nauthor: ""\neisenhower: "Urgent & Important"\n---\n\n# ${title}\n\n## 👥 Attendees\n- \n\n## 🎯 Agenda\n1. \n\n## 📝 Discussion\n- \n\n## ✅ Action Items\n- [ ] `;
       break;
 
     case 'project-spec':
-      title = `Project Specification`;
-      path = `projects/Project Spec - ${dateStr}.md`;
-      content = `---\ntitle: "${title}"\ntags: ["project", "spec"]\nstatus: "Draft"\nauthor: ""\neisenhower: "Urgent & Not Immediate"\n---\n\n# ${title}\n\n## 🎯 Overview & Objectives\n\n## 🛠 Architecture & Tech Stack\n\n## 🚀 Milestones & Tasks\n- [ ] Initial scaffolding\n- [ ] Core business logic\n- [ ] Verification suite`;
+      title = `Project Spec ${dateStr}`;
+      path = `projects/${dateStr}-spec.md`;
+      content = `---\ntitle: "${title}"\ntags: ["project", "spec"]\nstatus: "Draft"\nauthor: ""\neisenhower: "Important & Not Immediate"\n---\n\n# ${title}\n\n## 📌 Executive Summary\n\n## 🎯 Goals & Scope\n- Goal 1\n\n## 🏗️ Architecture & Stack\n- \n\n## 🚀 Milestones\n- [ ] Milestone 1\n`;
       break;
 
     case 'journal':
-      title = `Daily Journal - ${dateStr}`;
-      path = `journal/Daily - ${dateStr}.md`;
-      content = `---\ntitle: "${title}"\ntags: ["journal", "reflection"]\nstatus: "Completed"\nauthor: ""\neisenhower: "Not Urgent & Immediate"\n---\n\n# ${title}\n\n### 🌟 Top 3 Priorities\n1. \n2. \n3. \n\n### 💡 Morning Intentions\n\n### 🌙 Evening Reflection`;
+      title = `Journal ${dateStr}`;
+      path = `journal/${dateStr}.md`;
+      content = `---\ntitle: "${title}"\ntags: ["journal", "reflection"]\nstatus: "Done"\nauthor: ""\neisenhower: "Not Urgent & Not Immediate"\n---\n\n# ${title} ☕\n\n## 🌅 Morning Intentions\n- What is the most important thing today?\n\n## 💡 Insights & Notes\n- \n\n## 🌙 Evening Reflection\n- What went well today?\n`;
       break;
 
     default:
-      title = `Note - ${dateStr}`;
+      title = `Note ${dateStr}`;
       path = `notes/${dateStr}.md`;
-      content = `# ${title}\n\n`;
+      content = `---\ntitle: "${title}"\n---\n\n# ${title}\n`;
   }
 
   return {
@@ -88,30 +89,36 @@ function buildTemplateFile(templateId: string, workspaceId: string): VaultFile {
     title,
     extension: 'md',
     content,
-    frontmatter: { title, status: 'Draft' },
-    tags: [],
+    frontmatter: {
+      title,
+      tags: [templateId],
+      status: 'Draft',
+    },
+    tags: [templateId],
     isBinary: false,
     size: content.length,
     createdAt: timestamp,
     updatedAt: timestamp,
-    vaultId: workspaceId || 'default-vault',
+    vaultId: workspaceId,
   };
 }
 
 export function TemplateSelectorModal() {
-  const { isTemplateModalOpen, setTemplateModalOpen, openFileTab, activeWorkspaceId, showToast } =
-    useWorkspaceStore();
+  const {
+    isTemplateModalOpen,
+    setTemplateModalOpen,
+    activeWorkspaceId,
+    openFileTab,
+    showToast,
+  } = useWorkspaceStore();
+
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  // Global hotkey: Cmd+Shift+N / Ctrl+Shift+N
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'n') {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'N' || e.key === 'n')) {
         e.preventDefault();
         setTemplateModalOpen(!isTemplateModalOpen);
-      }
-      if (e.key === 'Escape' && isTemplateModalOpen) {
-        setTemplateModalOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -121,8 +128,10 @@ export function TemplateSelectorModal() {
   const handleApplyTemplate = async (tmpl: TemplateDef) => {
     try {
       const newFile = buildTemplateFile(tmpl.id, activeWorkspaceId || 'default-vault');
-      await db.files.put(newFile);
-      await NativeFileSystemAdapter.writeBackToFile(newFile.path, newFile.content);
+      await executeVaultMutation(
+        () => db.files.put(newFile),
+        { syncDiskNote: { path: newFile.path, content: newFile.content } }
+      );
       openFileTab(newFile.path, newFile.title);
       showToast(`Created note from ${tmpl.name}`);
       setTemplateModalOpen(false);
@@ -135,65 +144,52 @@ export function TemplateSelectorModal() {
   if (!isTemplateModalOpen) return null;
 
   return (
-    <div
-      onClick={() => setTemplateModalOpen(false)}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-2xl bg-[var(--card)] border border-[var(--border)] shadow-2xl overflow-hidden flex flex-col text-[var(--foreground)] animate-in zoom-in-95 duration-150"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)] bg-[var(--background)]/40">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[var(--accent)]" />
-            <h2 className="text-sm font-semibold">Choose Note Template</h2>
-          </div>
-          <button
-            onClick={() => setTemplateModalOpen(false)}
-            className="p-1 rounded-lg text-neutral-400 hover:text-[var(--foreground)] hover:bg-[var(--foreground)]/10 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
+    <ModalShell
+      isOpen={isTemplateModalOpen}
+      onClose={() => setTemplateModalOpen(false)}
+      size="lg"
+      title={
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-[var(--accent)]" />
+          <span>Choose Note Template</span>
         </div>
-
-        {/* Templates Grid */}
-        <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto">
-          {TEMPLATES.map((tmpl, idx) => {
-            const Icon = tmpl.icon;
-            const isSelected = idx === selectedIndex;
-            return (
-              <button
-                key={tmpl.id}
-                type="button"
-                onClick={() => handleApplyTemplate(tmpl)}
-                onMouseEnter={() => setSelectedIndex(idx)}
-                className={`flex flex-col text-left p-3.5 rounded-xl border transition-all cursor-pointer ${
-                  isSelected
-                    ? 'border-[var(--accent)] bg-[var(--accent)]/10 shadow-xs'
-                    : 'border-[var(--border)] hover:border-[var(--border)]/80 bg-[var(--background)]/40'
-                }`}
-              >
-                <div className="flex items-center gap-2.5 mb-1.5">
-                  <div className="p-2 rounded-lg bg-[var(--card)] border border-[var(--border)] text-[var(--accent)]">
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-semibold">{tmpl.name}</span>
-                </div>
-                <p className="text-[11px] text-neutral-400 leading-relaxed">
-                  {tmpl.description}
-                </p>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between px-5 py-3 border-t border-[var(--border)] text-xs text-neutral-400 bg-[var(--background)]/20">
+      }
+      footer={
+        <div className="flex items-center justify-between w-full text-xs text-neutral-400">
           <span>Shortcut: ⌘⇧N / Ctrl+Shift+N</span>
           <span>Press Esc to close</span>
         </div>
+      }
+    >
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto">
+        {TEMPLATES.map((tmpl, idx) => {
+          const Icon = tmpl.icon;
+          const isSelected = idx === selectedIndex;
+          return (
+            <button
+              key={tmpl.id}
+              type="button"
+              onClick={() => handleApplyTemplate(tmpl)}
+              onMouseEnter={() => setSelectedIndex(idx)}
+              className={`flex flex-col text-left p-3.5 rounded-xl border transition-all cursor-pointer ${
+                isSelected
+                  ? 'border-[var(--accent)] bg-[var(--accent)]/10 shadow-xs'
+                  : 'border-[var(--border)] hover:border-[var(--border)]/80 bg-[var(--background)]/40'
+              }`}
+            >
+              <div className="flex items-center gap-2.5 mb-1.5">
+                <div className="p-2 rounded-lg bg-[var(--card)] border border-[var(--border)] text-[var(--accent)]">
+                  <Icon className="w-4 h-4" />
+                </div>
+                <span className="text-xs font-semibold">{tmpl.name}</span>
+              </div>
+              <p className="text-[11px] text-neutral-400 leading-relaxed">
+                {tmpl.description}
+              </p>
+            </button>
+          );
+        })}
       </div>
-    </div>
+    </ModalShell>
   );
 }

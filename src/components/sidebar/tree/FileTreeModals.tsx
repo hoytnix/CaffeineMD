@@ -3,7 +3,8 @@
 import React from 'react';
 import { TreeNode } from '@/src/hooks/useTreeStructure';
 import { FileActionMenu } from '../FileActionMenu';
-import { RenameModal, MoveModal } from '../FileModals';
+import { RenameModal } from '../RenameModal';
+import { MoveModal } from '../MoveModal';
 
 export interface FileTreeModalsProps {
   activeMenuNode: TreeNode | null;

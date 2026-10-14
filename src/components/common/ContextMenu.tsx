@@ -24,68 +24,31 @@ export interface ContextMenuProps {
   items: ContextMenuElement[];
 }
 
+import { useFloatingDismiss } from '@/src/hooks/useContextMenu';
+
 export function ContextMenu({
   isOpen,
   onClose,
   position,
   items,
 }: ContextMenuProps) {
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [adjustedPos, setAdjustedPos] = useState({ top: position.y, left: position.x });
+  const { ref: menuRef, coords } = useFloatingDismiss<HTMLDivElement>(
+    isOpen,
+    onClose,
+    position,
+    10
+  );
   const [activeSubmenuIdx, setActiveSubmenuIdx] = useState<number | null>(null);
 
-  // Reposition inside viewport boundaries
-  useLayoutEffect(() => {
-    if (!isOpen) return;
-
-    const el = menuRef.current;
-    const width = el?.offsetWidth || 210;
-    const height = el?.offsetHeight || 260;
-
-    const padding = 10;
-    let left = position.x;
-    let top = position.y;
-
-    if (left + width > window.innerWidth - padding) {
-      left = Math.max(padding, position.x - width);
-    }
-    if (top + height > window.innerHeight - padding) {
-      top = Math.max(padding, position.y - height);
-    }
-
-    setAdjustedPos({ top, left });
-  }, [isOpen, position.x, position.y, items]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        onClose();
-      }
-    };
-
-    const handleMouseDown = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown, true);
-    window.addEventListener('mousedown', handleMouseDown, true);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown, true);
-      window.removeEventListener('mousedown', handleMouseDown, true);
-    };
-  }, [isOpen, onClose]);
-
   if (!isOpen || typeof document === 'undefined') return null;
+
+  const top = coords?.top ?? position.y;
+  const left = coords?.left ?? position.x;
 
   return createPortal(
     <div
       ref={menuRef}
-      style={{ top: `${adjustedPos.top}px`, left: `${adjustedPos.left}px` }}
+      style={{ top: `${top}px`, left: `${left}px` }}
       role="menu"
       className="fixed z-50 min-w-[200px] p-1.5 bg-zinc-950/90 backdrop-blur-xl border border-white/10 shadow-2xl rounded-xl text-xs text-zinc-300 animate-in fade-in zoom-in-95 duration-100 select-none"
       onClick={(e) => e.stopPropagation()}

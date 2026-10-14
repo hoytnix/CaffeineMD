@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { db, VaultFile } from '@/src/lib/storage/db';
-import { NativeFileSystemAdapter } from '@/src/lib/storage/fileSystem';
+import { executeVaultMutation } from '@/src/lib/storage/vaultMutationService';
 import {
   parseMarkdownContent,
   serializeMarkdownWithFrontmatter,
@@ -58,14 +58,10 @@ export function useNotePersistence({ filePath }: UseNotePersistenceOptions) {
                 eisenhower: parsed.eisenhower,
                 updatedAt: record.updatedAt || Date.now(),
               };
-              await db.files.put(updatedRecord);
-              await NativeFileSystemAdapter.writeBackToFile(updatedRecord.path, fullSerialized);
-              try {
-                const { triggerAutoSync } = await import('@/src/lib/sync/googleDriveSync');
-                triggerAutoSync();
-              } catch (err) {
-                console.warn('Auto-sync trigger skipped:', err);
-              }
+              await executeVaultMutation(
+                () => db.files.put(updatedRecord),
+                { syncDiskNote: { path: updatedRecord.path, content: fullSerialized } }
+              );
               record = updatedRecord;
             }
           }
@@ -113,32 +109,23 @@ export function useNotePersistence({ filePath }: UseNotePersistenceOptions) {
         updatedAt: Date.now(),
       };
 
-      // 1. Save to IndexedDB
-      await db.files.put(updatedFile);
-
-      // 2. Update Backlinks
-      await db.backlinks.where('sourcePath').equals(updatedFile.path).delete();
-      for (const wl of parsed.wikiLinks) {
-        await db.backlinks.put({
-          id: `${updatedFile.path}::${wl.target}`,
-          sourcePath: updatedFile.path,
-          sourceTitle: updatedFile.title,
-          targetTitle: wl.target,
-          snippet: wl.raw,
-          vaultId: updatedFile.vaultId,
-        });
-      }
-
-      // 3. Write back to disk if native folder is bound
-      await NativeFileSystemAdapter.writeBackToFile(updatedFile.path, fullContent);
-
-      // 4. Trigger silent background auto-sync to Google Drive if connected
-      try {
-        const { triggerAutoSync } = await import('@/src/lib/sync/googleDriveSync');
-        triggerAutoSync();
-      } catch (err) {
-        console.warn('Auto-sync trigger skipped:', err);
-      }
+      await executeVaultMutation(
+        async () => {
+          await db.files.put(updatedFile);
+          await db.backlinks.where('sourcePath').equals(updatedFile.path).delete();
+          for (const wl of parsed.wikiLinks) {
+            await db.backlinks.put({
+              id: `${updatedFile.path}::${wl.target}`,
+              sourcePath: updatedFile.path,
+              sourceTitle: updatedFile.title,
+              targetTitle: wl.target,
+              snippet: wl.raw,
+              vaultId: updatedFile.vaultId,
+            });
+          }
+        },
+        { syncDiskNote: { path: updatedFile.path, content: fullContent } }
+      );
 
       setFile(updatedFile);
       setRawMarkdown(fullContent);

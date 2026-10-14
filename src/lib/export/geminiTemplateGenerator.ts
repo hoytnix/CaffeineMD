@@ -4,6 +4,8 @@ import {
   sanitizeThemeTokens,
   buildAuditedThemeTemplate,
 } from './themeTokens';
+import { generateStructuredGeminiOutput, DEFAULT_GEMINI_MODELS } from '@/src/lib/ai/geminiClient';
+import { storageRegistry, STORAGE_KEYS } from '@/src/lib/config/storageRegistry';
 
 export type { ThemeDesignTokens };
 export {
@@ -13,8 +15,7 @@ export {
 };
 
 export function getGeminiApiKey(): string {
-  if (typeof window === 'undefined') return '';
-  return localStorage.getItem('caffeinemd-gemini-api-key') || '';
+  return storageRegistry.getItem(STORAGE_KEYS.GEMINI_API_KEY);
 }
 
 export interface GenerateThemeOptions {
@@ -24,24 +25,9 @@ export interface GenerateThemeOptions {
   isMultiPage?: boolean;
 }
 
-export const GEMINI_CANDIDATE_MODELS = [
-  'gemini-3.5-flash-lite',
-  'gemini-3.8-flash',
-  'gemini-3.7-flash',
-  'gemini-3.6-flash',
-  'gemini-3.5-flash',
-];
+export const GEMINI_CANDIDATE_MODELS = DEFAULT_GEMINI_MODELS;
 
-export async function generateThemeTokensWithGemini(
-  options: GenerateThemeOptions
-): Promise<ThemeDesignTokens> {
-  const { apiKey, prompt, themeStyle = 'modern dark glassmorphism' } = options;
-
-  if (!apiKey || !apiKey.trim()) {
-    throw new Error('Please provide a valid Gemini API key.');
-  }
-
-  const systemInstruction = `You are an elite color theory and UI design specialist.
+const GEMINI_THEME_SYSTEM_INSTRUCTION = `You are an elite color theory and UI design specialist.
 Given a design style request, return a strict JSON object specifying theme color and design tokens.
 DO NOT generate raw HTML, CSS style blocks, or explanatory text.
 DO NOT use exotic serif fonts (such as Zen Old Mincho or decorative typefaces).
@@ -64,62 +50,28 @@ Required JSON Schema:
   "fontMono": string (monospace stack, must default to "'JetBrains Mono', monospace")
 }`;
 
-  let lastError: Error | null = null;
+export async function generateThemeTokensWithGemini(
+  options: GenerateThemeOptions
+): Promise<ThemeDesignTokens> {
+  const { apiKey, prompt, themeStyle = 'modern dark glassmorphism' } = options;
 
-  for (const model of GEMINI_CANDIDATE_MODELS) {
-    try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(
-        apiKey.trim()
-      )}`;
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: `${systemInstruction}\n\nDesign Style: ${themeStyle}\nUser Prompt: ${prompt}` }],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.6,
-            responseMimeType: 'application/json',
-            maxOutputTokens: 2048,
-          },
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const message = errorData.error?.message || `Gemini API error: ${response.status} (${model})`;
-        throw new Error(message);
-      }
-
-      const data = await response.json();
-      let rawJsonText: string = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-      if (!rawJsonText) {
-        throw new Error(`Empty response returned from ${model}`);
-      }
-
-      rawJsonText = rawJsonText
-        .replace(/^```(?:json)?\s*\n?/i, '')
-        .replace(/\n?```\s*$/i, '')
-        .trim();
-
-      const parsed = JSON.parse(rawJsonText);
-      return sanitizeThemeTokens(parsed);
-    } catch (err: any) {
-      lastError = err instanceof Error ? err : new Error(String(err));
-      if (err.message && (err.message.includes('API_KEY_INVALID') || err.message.includes('API key not valid'))) {
-        throw lastError;
-      }
-      continue;
-    }
+  if (!apiKey || !apiKey.trim()) {
+    throw new Error('Please provide a valid Gemini API key.');
   }
 
-  throw lastError || new Error('Failed to generate theme design tokens with Gemini');
+  const result = await generateStructuredGeminiOutput<Record<string, unknown>>({
+    apiKey,
+    prompt: `Design Style: ${themeStyle}\nUser Prompt: ${prompt}`,
+    systemInstruction: GEMINI_THEME_SYSTEM_INSTRUCTION,
+    candidateModels: GEMINI_CANDIDATE_MODELS,
+    temperature: 0.6,
+  });
+
+  if (result.error || !result.data) {
+    throw new Error(result.error || 'Failed to generate theme design tokens with Gemini');
+  }
+
+  return sanitizeThemeTokens(result.data);
 }
 
 export async function generateJinjaThemeWithGemini(

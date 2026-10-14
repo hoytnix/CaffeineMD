@@ -2,6 +2,10 @@ import { VaultFile } from '@/src/lib/storage/db';
 import { getNotesByWorkspace } from '@/src/lib/storage/repositories/noteRepository';
 import { buildStandaloneHtml, buildFolderStandaloneHtml } from './standaloneHtmlBuilder';
 import { generatePwaZipBundle, slugify } from './pwaExporter';
+import { parseFrontmatter } from '@/src/lib/markdown/frontmatter';
+import { markdownToHtml } from '@/src/lib/markdown/markdownToHtml';
+import { buildVaultSearchIndex } from './vaultSearchIndex';
+import { buildVaultGraphData } from './canvasGraphHud';
 
 export function normalizeFolderPath(path?: string): string {
   return (path || '')
@@ -39,6 +43,92 @@ export function triggerBrowserDownload(blob: Blob, filename: string): void {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+}
+
+export interface CompiledExportNote {
+  id: string;
+  title: string;
+  slug: string;
+  htmlBody: string;
+  frontmatter: Record<string, unknown>;
+  tags: string[];
+  updatedAt: number;
+}
+
+export interface CompiledVaultExportContext {
+  notes: CompiledExportNote[];
+  searchIndexJson: string;
+  graphPayloadJson: string;
+}
+
+export async function compileVaultExportContext(
+  rawNotes: Array<{
+    id?: string;
+    path: string;
+    name?: string;
+    title?: string;
+    content: string;
+    tags?: string[];
+    frontmatter?: Record<string, any>;
+    updatedAt?: number;
+    isTrash?: boolean;
+    isBinary?: boolean;
+  }>
+): Promise<CompiledVaultExportContext> {
+  const filtered = rawNotes.filter((n) => !n.isTrash && !n.isBinary);
+  const compiledNotes: CompiledExportNote[] = await Promise.all(
+    filtered.map(async (note) => {
+      const { data: frontmatter, content } = parseFrontmatter(note.content || '');
+      const htmlBody = await markdownToHtml(content);
+      const noteTitle =
+        note.title || (frontmatter.title as string) || note.name?.replace(/\.[^/.]+$/, '') || 'Untitled';
+      const rawSlug =
+        note.path
+          .replace(/\.[^/.]+$/, '')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '') || 'note';
+      const tags =
+        Array.isArray(note.tags) && note.tags.length > 0
+          ? note.tags
+          : Array.isArray(frontmatter.tags)
+          ? (frontmatter.tags as string[])
+          : [];
+
+      return {
+        id: note.id || note.path,
+        title: noteTitle,
+        slug: rawSlug,
+        htmlBody,
+        frontmatter,
+        tags,
+        updatedAt: note.updatedAt || Date.now(),
+      };
+    })
+  );
+
+  const mappedNotes = filtered.map((n) => ({
+    id: n.id || n.path,
+    title: n.title || n.name?.replace(/\.[^/.]+$/, '') || 'Untitled',
+    slug:
+      n.path
+        .replace(/\.[^/.]+$/, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '') || 'note',
+    content: n.content || '',
+    tags: n.tags,
+    frontmatter: n.frontmatter,
+  }));
+
+  const searchItems = buildVaultSearchIndex(mappedNotes);
+  const graphPayload = buildVaultGraphData(mappedNotes);
+
+  return {
+    notes: compiledNotes,
+    searchIndexJson: JSON.stringify(searchItems),
+    graphPayloadJson: JSON.stringify(graphPayload),
+  };
 }
 
 export interface ExecuteExportParams {

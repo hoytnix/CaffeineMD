@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react';
 import { db, VaultFile } from '@/src/lib/storage/db';
-import { NativeFileSystemAdapter } from '@/src/lib/storage/fileSystem';
+import { executeVaultMutation } from '@/src/lib/storage/vaultMutationService';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
+import { ModalShell } from '@/src/components/common/ModalShell';
 
 interface NewNoteModalProps {
   isOpen: boolean;
@@ -59,47 +60,50 @@ Start writing here...`;
       vaultId: activeWorkspaceId || 'default-vault',
     };
 
-    await db.files.put(newNote);
-    await NativeFileSystemAdapter.createNewFileOnDisk(path, newNote.content);
-    try {
-      const { triggerAutoSync } = await import('@/src/lib/sync/googleDriveSync');
-      triggerAutoSync();
-    } catch (err) {
-      console.warn('Auto-sync trigger skipped:', err);
-    }
+    await executeVaultMutation(
+      () => db.files.put(newNote),
+      { syncDiskNote: { path, content: newNote.content } }
+    );
     openFileTab(path, title);
     setNewNoteName('');
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-sm p-4 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-xl">
-        <h4 className="text-xs font-semibold mb-2">Create New Note</h4>
-        <input
-          type="text"
-          placeholder="e.g. Daily Standup or Projects/Alpha.md"
-          value={newNoteName}
-          onChange={(e) => setNewNoteName(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleCreateNewNote()}
-          autoFocus
-          className="w-full px-2.5 py-1.5 text-xs rounded-md bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 outline-none focus:border-indigo-500 mb-3"
-        />
-        <div className="flex justify-end gap-2 text-xs">
+    <ModalShell
+      isOpen={isOpen}
+      onClose={onClose}
+      size="sm"
+      title="Create New Note"
+      footer={
+        <>
           <button
+            type="button"
             onClick={onClose}
-            className="px-3 py-1 text-neutral-500 hover:text-neutral-700 cursor-pointer"
+            className="px-3 py-1.5 rounded-lg text-xs font-medium text-neutral-400 hover:text-white transition-colors cursor-pointer"
           >
             Cancel
           </button>
           <button
+            type="button"
             onClick={handleCreateNewNote}
-            className="px-3 py-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 font-medium cursor-pointer"
+            disabled={!newNoteName.trim()}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors cursor-pointer"
           >
             Create
           </button>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+    >
+      <input
+        type="text"
+        placeholder="e.g. Daily Standup or Projects/Alpha.md"
+        value={newNoteName}
+        onChange={(e) => setNewNoteName(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && handleCreateNewNote()}
+        autoFocus
+        className="w-full px-3 py-2 text-xs rounded-lg bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] outline-none focus:border-indigo-500"
+      />
+    </ModalShell>
   );
 }

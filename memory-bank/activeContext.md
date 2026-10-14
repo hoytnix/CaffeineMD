@@ -1,33 +1,32 @@
 # Active Context: CaffeineMD
 
 ## Current Focus
-- **Strategic Modular Refactoring (100–250 LOC Architecture Target)**:
-  - Executed full decomposition across the Top 7 largest and most complex files in the codebase, bringing 100% of target files comfortably into the 100–250 LOC sweet spot.
-  - Decomposed files and extracted components:
-    1. **Emoji Dataset**: [emojiData.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/emoji/emojiData.ts) (184 LOC) with [emojiObjectsSymbols.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/emoji/emojiObjectsSymbols.ts) (75 LOC).
-    2. **Zustand Root Store**: [workspaceStore.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/workspaceStore.ts) (197 LOC) sliced into [tabsSlice.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/slices/tabsSlice.ts) (174 LOC), [themeStorageSlice.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/slices/themeStorageSlice.ts) (229 LOC), [themeStorageUtils.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/slices/themeStorageUtils.ts) (85 LOC), [trashSlice.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/slices/trashSlice.ts) (191 LOC), and [uiOverlaySlice.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/slices/uiOverlaySlice.ts) (131 LOC).
-    3. **Tiptap Tri-Mode Editor**: [TiptapEditor.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/TiptapEditor.tsx) (249 LOC) decomposed with [EditorBody.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/components/EditorBody.tsx) (153 LOC) and [EditorOverlays.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/components/EditorOverlays.tsx) (56 LOC).
-    4. **Settings Orchestrator**: [SettingsView.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/settings/SettingsView.tsx) (125 LOC) decomposed with [useSettingsState.ts](file:///home/oloty/Dev/CaffeineMD/src/components/settings/useSettingsState.ts) (93 LOC).
-    5. **Workspace Modal**: [CreateWorkspaceModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/workspace/CreateWorkspaceModal.tsx) (143 LOC) decomposed with [useCreateWorkspace.ts](file:///home/oloty/Dev/CaffeineMD/src/components/workspace/useCreateWorkspace.ts) (137 LOC) and [WorkspaceStorageSelector.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/workspace/WorkspaceStorageSelector.tsx) (143 LOC).
-    6. **Tag Cloud & Note Registry**: [TagCloudView.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/tags/TagCloudView.tsx) (134 LOC) decomposed with [TagCloudHeader.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/tags/TagCloudHeader.tsx) (114 LOC), [TagNoteCard.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/tags/TagNoteCard.tsx) (110 LOC), and [excerpt.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/markdown/excerpt.ts) (44 LOC).
-    7. **Styling & Prose Sheets**: [globals.css](file:///home/oloty/Dev/CaffeineMD/app/globals.css) (150 LOC) decomposed into [prosemirror.css](file:///home/oloty/Dev/CaffeineMD/app/prosemirror.css) (191 LOC), [editor-lists.css](file:///home/oloty/Dev/CaffeineMD/app/editor-lists.css) (140 LOC), and [syntax.css](file:///home/oloty/Dev/CaffeineMD/app/syntax.css) (133 LOC).
-- **Production-Grade Maintainer Documentation Suite (`/docs`)**:
-  - Authored a comprehensive 8-document technical documentation suite covering architecture, state, storage, indexing, Tiptap extensions, WASM sandbox, themes, databases, 2D force graph, and maintainer playbooks.
-- **External Link Preview on Tap/Click (iOS/Mobile & Desktop)**:
-  - Eliminated native browser link navigation on iOS Safari and desktop within `contenteditable` by setting `target: null` in `@tiptap/extension-link`.
-  - Registered `click` and `touchend` listeners in the capture phase (`{ capture: true }`) on the editor container in [IosLinkPreviewCard.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/components/IosLinkPreviewCard.tsx).
-- **Theme Background Image Layer & Opacity Slider Isolation**:
-  - Ensured only the background image layer is affected by the opacity slider (cards, buttons, inputs, modals, and toolbars remain 100% solid and crisp).
+- **Architectural Consolidation & 7-Vector Next.js DRY Audit (Phases 1 & 3)**:
+  - **Leaf Type, Hook & Storage Consolidation (`DRY-07`, `DRY-08`, `DRY-09`)**:
+    - Created canonical [utils.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/utils.ts) and [use-mobile.ts](file:///home/oloty/Dev/CaffeineMD/src/hooks/use-mobile.ts) with root re-exports to eliminate alias mismatch and duplicate mobile breakpoint checks.
+    - Unified sandbox runner types (`EmitFn`, `ProgressFn`, `RunnerContext`, `RunnerResult`) in canonical [types.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sandbox/types.ts) and re-exported from [runners/types.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sandbox/runners/types.ts).
+    - Introduced canonical typed, SSR-guarded [storageRegistry.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/config/storageRegistry.ts) with `STORAGE_KEYS` registry and migrated [themeStorageUtils.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/slices/themeStorageUtils.ts), [firebase/client.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/firebase/client.ts), [geminiTemplateGenerator.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/geminiTemplateGenerator.ts), and [trashSlice.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/slices/trashSlice.ts).
+  - **Client Interaction Hooks (`DRY-03`, `DRY-06`)**:
+    - Extracted canonical zero-allocation [usePointerResize.ts](file:///home/oloty/Dev/CaffeineMD/src/hooks/usePointerResize.ts) hook handling mouse and touch pointer events, cursor styling, and cleanup. Consumed in [useSidebarResize.ts](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/hooks/useSidebarResize.ts) and enhanced [useColumnResize.ts](file:///home/oloty/Dev/CaffeineMD/src/hooks/useColumnResize.ts).
+    - Upgraded [useContextMenu.ts](file:///home/oloty/Dev/CaffeineMD/src/hooks/useContextMenu.ts) to provide shared `useFloatingDismiss` with viewport boundary clamping, outside click dismissal, and Escape-key handling; wired into [ContextMenu.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/common/ContextMenu.tsx).
+  - **UI Shell Primitives (`DRY-01`)**:
+    - Created accessible, composable [ModalShell.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/common/ModalShell.tsx) with `cva` sizing (`sm`, `md`, `lg`, `xl`), backdrop overlay, escape key dismissal, and header/footer chrome.
+    - Migrated [RenameModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/RenameModal.tsx), [MoveModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/MoveModal.tsx), [NewNoteModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/NewNoteModal.tsx), [DeleteConfirmModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/common/DeleteConfirmModal.tsx), [CreateWorkspaceModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/workspace/CreateWorkspaceModal.tsx), [InstallModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/landing/InstallModal.tsx), [TemplateSelectorModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/TemplateSelectorModal.tsx), [VaultFindReplaceModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/search/VaultFindReplaceModal.tsx), and [ExportPwaModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/export/ExportPwaModal.tsx).
+    - Removed redundant wrapper `FileModals.tsx` in favor of direct imports in [FileTreeModals.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/tree/FileTreeModals.tsx).
+  - **Gemini AI Service & Route Handler Unification (`DRY-04`)**:
+    - Built isomorphic [geminiClient.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/ai/geminiClient.ts) (`generateStructuredGeminiOutput`) with model cascade fallback, markdown fence stripping, JSON parsing, and Zod validator integration.
+    - Refactored [route.ts](file:///home/oloty/Dev/CaffeineMD/app/api/theme/generate/route.ts), [aiThemeService.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/themes/aiThemeService.ts), and [geminiTemplateGenerator.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/geminiTemplateGenerator.ts).
+  - **Export Pre-Compiler & Vault Mutation DAL (`DRY-02`, `DRY-05`)**:
+    - Added `compileVaultExportContext()` to [exportBundleService.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/export/exportBundleService.ts) unifying frontmatter parsing, markdown-to-HTML compilation, search indexing, and graph payload generation.
+    - Created [vaultMutationService.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/vaultMutationService.ts) with `executeVaultMutation()` unifying Dexie IndexedDB writes, disk folder synchronization, and debounced Google Drive auto-sync across [useNotePersistence.ts](file:///home/oloty/Dev/CaffeineMD/src/hooks/useNotePersistence.ts), [trashSlice.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/slices/trashSlice.ts), [DatabaseView.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/database/DatabaseView.tsx), and [useFileTreeActions.ts](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/useFileTreeActions.ts).
 
 ## Architecture & Recent Changes
-1. **Modular Zustand Store Slicing**:
-   - Decomposed monolithic store in `workspaceStore.ts` into individual domain slices in `src/stores/slices/` without breaking any public interfaces or re-exported types (`TabItem`, `ToolboxPosition`, `EditorFontFamily`, `DEFAULT_AUTOSAVE_INTERVAL`).
-2. **Editor Workspace & Overlays Separation**:
-   - `TiptapEditor.tsx` acts as a clean top-level coordinator delegating the document scroll area and toolbars to `EditorBody.tsx` and all floating modals/menus to `EditorOverlays.tsx`.
-3. **Settings State & Sub-components**:
-   - `SettingsView.tsx` coordinates screens via `useSettingsState.ts`, which encapsulates auth listeners, Gemini key events, and theme preset resolution.
-4. **CSS Architecture**:
-   - Separated global CSS into modular stylesheets (`globals.css`, `prosemirror.css`, `editor-lists.css`, `syntax.css`) preserving exact typography, table styles, task list alignment, and HLJS token highlighting.
+1. **Unified Storage & Env Registry**:
+   - `storageRegistry.ts` centralizes string/JSON localStorage reads/writes with SSR protection and Zod schema safety.
+2. **Canonical Modal Shell Architecture**:
+   - `ModalShell.tsx` centralizes backdrop overlay, Escape listener, card sizing, and click-outside dismissal across 9 modals.
+3. **Transactional Mutation Service**:
+   - `vaultMutationService.ts` ensures all note/folder mutations propagate to local disk and background cloud sync without duplicate dynamic imports.
 
 ## Next Steps
 - Maintain strict <250 LOC per file across all modules.

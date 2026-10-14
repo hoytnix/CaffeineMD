@@ -1,4 +1,5 @@
-import { GoogleGenAI, Type } from '@google/genai';
+import { Type } from '@google/genai';
+import { generateStructuredGeminiOutput, DEFAULT_GEMINI_MODELS } from '@/src/lib/ai/geminiClient';
 
 export interface GeneratedThemePalette {
   name: string;
@@ -66,14 +67,7 @@ export const THEME_RESPONSE_SCHEMA = {
   required: ['name', 'background', 'foreground', 'card', 'accent', 'border', 'fontFamily'],
 };
 
-export const AI_THEME_CANDIDATE_MODELS = [
-  'gemini-3.5-flash-lite',
-  'gemini-3.8-flash',
-  'gemini-3.7-flash',
-  'gemini-3.6-flash',
-  'gemini-3.5-flash',
-  'gemini-3.1-pro',
-];
+export const AI_THEME_CANDIDATE_MODELS = DEFAULT_GEMINI_MODELS;
 
 export async function generateAiThemePalette(
   prompt: string,
@@ -89,52 +83,32 @@ export async function generateAiThemePalette(
     throw new Error('A theme description prompt is required.');
   }
 
-  let generated: GeneratedThemePalette | null = null;
+  // 1. Attempt client-side direct generation via unified geminiClient
+  const directResult = await generateStructuredGeminiOutput<GeneratedThemePalette>({
+    apiKey: trimmedKey,
+    prompt: `Design a cohesive theme palette based on this user vibe: "${trimmedPrompt}". Return JSON according to the schema.`,
+    systemInstruction: THEME_SYSTEM_INSTRUCTION,
+    responseSchema: THEME_RESPONSE_SCHEMA,
+    candidateModels: AI_THEME_CANDIDATE_MODELS,
+  });
 
-  // 1. Attempt client-side direct generation via @google/genai with cascading fallback
-  try {
-    const ai = new GoogleGenAI({ apiKey: trimmedKey });
-    for (const model of AI_THEME_CANDIDATE_MODELS) {
-      try {
-        const response = await ai.models.generateContent({
-          model,
-          contents: `Design a cohesive theme palette based on this user vibe: "${trimmedPrompt}". Return JSON according to the schema.`,
-          config: {
-            systemInstruction: THEME_SYSTEM_INSTRUCTION,
-            responseMimeType: 'application/json',
-            responseSchema: THEME_RESPONSE_SCHEMA,
-          },
-        });
-
-        const text = response.text;
-        if (text) {
-          generated = JSON.parse(text);
-          break;
-        }
-      } catch (modelErr: unknown) {
-        console.warn(`Direct model ${model} failed, trying next fallback:`, modelErr instanceof Error ? modelErr.message : modelErr);
-      }
-    }
-  } catch (directErr) {
-    console.warn('Direct client-side Gemini calls failed, attempting API route fallback:', directErr);
+  if (directResult.data) {
+    return directResult.data;
   }
 
   // 2. Fallback to /api/theme/generate route with apiKey in request body
-  if (!generated) {
-    const res = await fetch('/api/theme/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: trimmedPrompt, apiKey: trimmedKey }),
-    });
+  const res = await fetch('/api/theme/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt: trimmedPrompt, apiKey: trimmedKey }),
+  });
 
-    if (!res.ok) {
-      const errJson = await res.json().catch(() => ({}));
-      throw new Error(errJson.error || 'Failed to generate theme');
-    }
-
-    generated = await res.json();
+  if (!res.ok) {
+    const errJson = await res.json().catch(() => ({}));
+    throw new Error(errJson.error || directResult.error || 'Failed to generate theme');
   }
 
+  const generated = await res.json();
   if (!generated) {
     throw new Error('Failed to generate theme palette with Gemini.');
   }

@@ -51,8 +51,15 @@
 - [x] **6. Tag Cloud Modularization**: Refactored `TagCloudView.tsx` (134 LOC) by extracting `TagCloudHeader.tsx` (114 LOC), `TagNoteCard.tsx` (110 LOC), and `excerpt.ts` (44 LOC).
 - [x] **7. Global CSS Decomposition**: Modularized `globals.css` (150 LOC) by extracting `prosemirror.css` (191 LOC), `editor-lists.css` (140 LOC), and `syntax.css` (133 LOC).
 
+### 8. Architectural Consolidation & 7-Vector Next.js DRY Audit (Phases 1 & 3)
+- [x] **Leaf Type, Hook & Storage Consolidation (`DRY-07`, `DRY-08`, `DRY-09`)**: Consolidated root `lib/utils.ts` and `hooks/use-mobile.ts` into canonical `src/lib/utils.ts` and `src/hooks/use-mobile.ts`; merged sandbox runner types into `src/lib/sandbox/types.ts`; created canonical `src/lib/config/storageRegistry.ts`.
+- [x] **Client Interaction Hooks (`DRY-03`, `DRY-06`)**: Extracted `usePointerResize.ts` for unified pointer drag resizing across sidebars and table columns; created `useFloatingDismiss` in `useContextMenu.ts` for unified viewport boundary clamping and outside dismissal.
+- [x] **UI Shell Primitives (`DRY-01`)**: Created `ModalShell.tsx` and migrated all 9 modal dialogs, eliminating duplicate portal overlays, escape key listeners, and custom close buttons; removed redundant `FileModals.tsx`.
+- [x] **Gemini AI Service & Route Handler Unification (`DRY-04`)**: Created `src/lib/ai/geminiClient.ts` with structured generation, model fallback cascading, and markdown fence stripping across `/api/theme/generate`, `aiThemeService.ts`, and `geminiTemplateGenerator.ts`.
+- [x] **Export Pre-Compiler & Vault Mutation DAL (`DRY-02`, `DRY-05`)**: Added `compileVaultExportContext()` to `exportBundleService.ts`; created `vaultMutationService.ts` unifying mutations, disk synchronization, and background Google Drive auto-sync.
+
 ## Verification Status
-- Production Build: Passing cleanly (`pnpm run build`).
+- Production Build: Passing cleanly.
 - ESLint: Passing cleanly with 0 errors and 0 warnings (`pnpm run lint`).
-- TypeScript: Passing cleanly (`tsc --noEmit`).
+- TypeScript: Passing cleanly with 0 errors (`tsc --noEmit`).
 - Tiered LOC Limits: 100% compliant (<250 LOC per file across all touched modules).

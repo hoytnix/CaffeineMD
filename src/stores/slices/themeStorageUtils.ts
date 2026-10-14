@@ -6,6 +6,7 @@ import {
   ShortcutActionId,
   DEFAULT_SHORTCUTS,
 } from '../../lib/shortcuts/shortcutManager';
+import { storageRegistry, STORAGE_KEYS } from '../../lib/config/storageRegistry';
 
 export type ToolboxPosition = 'left' | 'right' | 'bottom' | 'top';
 export type EditorFontFamily = 'sans' | 'mono' | 'serif';
@@ -13,20 +14,18 @@ export type EditorFontFamily = 'sans' | 'mono' | 'serif';
 export const DEFAULT_AUTOSAVE_INTERVAL = 300000;
 
 export const getInitialStoredTheme = (): string => {
-  if (typeof window === 'undefined') return 'dark';
   return (
-    localStorage.getItem('caffeinemd-theme') ||
-    localStorage.getItem('kite-theme-id') ||
+    storageRegistry.getItem(STORAGE_KEYS.ACTIVE_THEME) ||
+    storageRegistry.getItem(STORAGE_KEYS.LEGACY_THEME) ||
     'dark'
   );
 };
 
 export const getInitialStoredThemeOpacity = (): number => {
-  if (typeof window === 'undefined') return 0.85;
   const raw =
-    localStorage.getItem('caffeinemd-theme-opacity') ||
-    localStorage.getItem('kite-theme-opacity');
-  if (raw !== null) {
+    storageRegistry.getItem(STORAGE_KEYS.THEME_OPACITY) ||
+    storageRegistry.getItem(STORAGE_KEYS.LEGACY_THEME_OPACITY);
+  if (raw) {
     const parsed = parseFloat(raw);
     if (!isNaN(parsed) && parsed >= 0.05 && parsed <= 1.0) {
       return parsed;
@@ -36,50 +35,51 @@ export const getInitialStoredThemeOpacity = (): number => {
 };
 
 export const getInitialStoredCustomColors = (): ThemeDefinition => {
-  if (typeof window === 'undefined') return DEFAULT_CUSTOM_THEME;
-  try {
-    const raw =
-      localStorage.getItem('caffeinemd-custom-theme-colors') ||
-      localStorage.getItem('kite-custom-theme');
-    if (raw) {
-      return { ...DEFAULT_CUSTOM_THEME, ...JSON.parse(raw), id: 'custom' };
-    }
-  } catch {}
+  const stored =
+    storageRegistry.getJson<Partial<ThemeDefinition> | null>(
+      STORAGE_KEYS.CUSTOM_THEME_COLORS,
+      null
+    ) ||
+    storageRegistry.getJson<Partial<ThemeDefinition> | null>(
+      STORAGE_KEYS.LEGACY_CUSTOM_THEME,
+      null
+    );
+
+  if (stored) {
+    return { ...DEFAULT_CUSTOM_THEME, ...stored, id: 'custom' };
+  }
   return DEFAULT_CUSTOM_THEME;
 };
 
 export const getInitialStoredEditorFont = (): EditorFontFamily => {
-  if (typeof window === 'undefined') return 'sans';
   const val =
-    localStorage.getItem('caffeinemd-editor-font') ||
-    localStorage.getItem('caffeinemd-editor-font-family') ||
-    '';
+    storageRegistry.getItem(STORAGE_KEYS.EDITOR_FONT) ||
+    storageRegistry.getItem(STORAGE_KEYS.EDITOR_FONT_FAMILY);
   return ['sans', 'mono', 'serif'].includes(val) ? (val as EditorFontFamily) : 'sans';
 };
 
 export const getInitialStoredEditorFontSize = (): number => {
-  if (typeof window === 'undefined') return 16;
-  const val = parseInt(localStorage.getItem('caffeinemd-editor-font-size') || '16', 10);
+  const raw = storageRegistry.getItem(STORAGE_KEYS.EDITOR_FONT_SIZE, '16');
+  const val = parseInt(raw, 10);
   return isNaN(val) || val < 12 || val > 24 ? 16 : val;
 };
 
 export const getInitialStoredSpellcheck = (): boolean => {
-  if (typeof window === 'undefined') return true;
-  return localStorage.getItem('caffeinemd-spellcheck') !== 'false';
+  const raw = storageRegistry.getItem(STORAGE_KEYS.SPELLCHECK, 'true');
+  return raw !== 'false';
 };
 
 export const getInitialStoredSandboxEnabled = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  return localStorage.getItem('caffeinemd-code-execution-sandbox') === 'true';
+  return storageRegistry.getItem(STORAGE_KEYS.SANDBOX_ENABLED) === 'true';
 };
 
 export const getInitialStoredShortcuts = (): Record<ShortcutActionId, string> => {
-  if (typeof window === 'undefined') return DEFAULT_SHORTCUTS;
-  try {
-    const raw = localStorage.getItem('caffeinemd-keyboard-shortcuts');
-    if (raw) {
-      return { ...DEFAULT_SHORTCUTS, ...JSON.parse(raw) };
-    }
-  } catch {}
+  const parsed = storageRegistry.getJson<Record<ShortcutActionId, string> | null>(
+    STORAGE_KEYS.SHORTCUTS,
+    null
+  );
+  if (parsed) {
+    return { ...DEFAULT_SHORTCUTS, ...parsed };
+  }
   return DEFAULT_SHORTCUTS;
 };

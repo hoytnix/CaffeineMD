@@ -28,8 +28,7 @@ provider.setCustomParameters({
   prompt: 'consent',
 });
 
-const TOKEN_STORAGE_KEY = 'kite_gdrive_access_token';
-const TOKEN_META_KEY = 'kite_gdrive_token_meta';
+import { storageRegistry, STORAGE_KEYS } from '@/src/lib/config/storageRegistry';
 
 // In-memory & storage-backed token cache
 let isSigningIn = false;
@@ -46,17 +45,17 @@ export const setAccessToken = (token: string | null, expiresInSeconds?: number) 
   if (typeof window !== 'undefined') {
     try {
       if (token) {
-        localStorage.setItem(TOKEN_STORAGE_KEY, token);
-        sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
+        storageRegistry.setItem(STORAGE_KEYS.GDRIVE_ACCESS_TOKEN, token);
+        sessionStorage.setItem(STORAGE_KEYS.GDRIVE_ACCESS_TOKEN, token);
         const meta: TokenMetadata = {
           savedAt: Date.now(),
           expiresAt: expiresInSeconds ? Date.now() + expiresInSeconds * 1000 : undefined,
         };
-        localStorage.setItem(TOKEN_META_KEY, JSON.stringify(meta));
+        storageRegistry.setJson(STORAGE_KEYS.GDRIVE_TOKEN_META, meta);
       } else {
-        localStorage.removeItem(TOKEN_STORAGE_KEY);
-        localStorage.removeItem(TOKEN_META_KEY);
-        sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+        storageRegistry.removeItem(STORAGE_KEYS.GDRIVE_ACCESS_TOKEN);
+        storageRegistry.removeItem(STORAGE_KEYS.GDRIVE_TOKEN_META);
+        sessionStorage.removeItem(STORAGE_KEYS.GDRIVE_ACCESS_TOKEN);
       }
     } catch {
       // ignore
@@ -68,7 +67,9 @@ export const getAccessToken = async (): Promise<string | null> => {
   if (cachedAccessToken) return cachedAccessToken;
   if (typeof window !== 'undefined') {
     try {
-      const stored = localStorage.getItem(TOKEN_STORAGE_KEY) || sessionStorage.getItem(TOKEN_STORAGE_KEY);
+      const stored =
+        storageRegistry.getItem(STORAGE_KEYS.GDRIVE_ACCESS_TOKEN) ||
+        sessionStorage.getItem(STORAGE_KEYS.GDRIVE_ACCESS_TOKEN);
       if (stored) {
         cachedAccessToken = stored;
         return stored;

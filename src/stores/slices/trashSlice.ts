@@ -6,8 +6,9 @@ import {
   purgeExpiredTrash as dbPurgeExpiredTrash,
   softDeleteFolder,
 } from '../../lib/storage/db';
-import { NativeFileSystemAdapter } from '../../lib/storage/fileSystem';
+import { executeVaultMutation } from '../../lib/storage/vaultMutationService';
 import { triggerBackgroundAutoSync } from '../../lib/sync/syncAutoTrigger';
+import { storageRegistry, STORAGE_KEYS } from '../../lib/config/storageRegistry';
 
 export interface TrashSlice {
   isDeleteModalOpen: boolean;
@@ -27,7 +28,10 @@ export interface TrashSlice {
 export const createTrashSlice = (set: any, get: any): TrashSlice => ({
   isDeleteModalOpen: false,
   deleteModalTarget: null,
-  trashRetentionDays: typeof window !== 'undefined' ? parseInt(localStorage.getItem('kite-trash-retention-days') || '30', 10) : 30,
+  trashRetentionDays: parseInt(
+    storageRegistry.getItem(STORAGE_KEYS.TRASH_RETENTION_DAYS, '30'),
+    10
+  ) || 30,
 
   promptDeleteNote: (path: string, title?: string) => {
     set({
@@ -53,7 +57,9 @@ export const createTrashSlice = (set: any, get: any): TrashSlice => ({
       const cleanPath = isFolder ? path.slice('folder:'.length) : path;
 
       if (isFolder) {
-        await softDeleteFolder(cleanPath, get().activeWorkspaceId);
+        await executeVaultMutation(
+          () => softDeleteFolder(cleanPath, get().activeWorkspaceId)
+        );
         get().removeCustomFolder(cleanPath);
 
         const state = get();
@@ -70,13 +76,14 @@ export const createTrashSlice = (set: any, get: any): TrashSlice => ({
         });
 
         state.showToast('Folder moved to Trash');
-        triggerBackgroundAutoSync();
         return true;
       }
 
-      const ok = await dbMoveToTrash(path);
+      const ok = await executeVaultMutation(() => dbMoveToTrash(path));
       if (!ok) {
-        const folderDeleted = await softDeleteFolder(path, get().activeWorkspaceId);
+        const folderDeleted = await executeVaultMutation(
+          () => softDeleteFolder(path, get().activeWorkspaceId)
+        );
         if (folderDeleted.length > 0) {
           get().removeCustomFolder(path);
           const state = get();
@@ -91,7 +98,6 @@ export const createTrashSlice = (set: any, get: any): TrashSlice => ({
             activeFilePath: nextActive,
           });
           state.showToast('Folder moved to Trash');
-          triggerBackgroundAutoSync();
           return true;
         }
 
@@ -112,7 +118,6 @@ export const createTrashSlice = (set: any, get: any): TrashSlice => ({
       });
 
       state.showToast('Note moved to Trash');
-      triggerBackgroundAutoSync();
       return true;
     } catch (err) {
       console.error('Failed to move note to trash:', err);
@@ -123,7 +128,7 @@ export const createTrashSlice = (set: any, get: any): TrashSlice => ({
 
   restoreNote: async (path: string) => {
     try {
-      const ok = await dbRestoreFromTrash(path);
+      const ok = await executeVaultMutation(() => dbRestoreFromTrash(path));
       if (ok) {
         get().showToast('Note restored from Trash');
         return true;
@@ -138,7 +143,7 @@ export const createTrashSlice = (set: any, get: any): TrashSlice => ({
 
   emptyTrashAll: async () => {
     try {
-      const count = await dbEmptyTrash();
+      const count = await executeVaultMutation(() => dbEmptyTrash());
       get().showToast(`Emptied ${count} note${count === 1 ? '' : 's'} from Trash`);
     } catch (err) {
       console.error('Failed to empty trash:', err);
@@ -147,15 +152,13 @@ export const createTrashSlice = (set: any, get: any): TrashSlice => ({
   },
 
   setTrashRetentionDays: (days: number) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('kite-trash-retention-days', days.toString());
-    }
+    storageRegistry.setItem(STORAGE_KEYS.TRASH_RETENTION_DAYS, days.toString());
     set({ trashRetentionDays: days });
   },
 
   purgeExpiredTrashNotes: async () => {
     const days = get().trashRetentionDays;
-    const purged = await dbPurgeExpiredTrash(days);
+    const purged = await executeVaultMutation(() => dbPurgeExpiredTrash(days));
     if (purged > 0) {
       get().showToast(`Purged ${purged} expired note${purged === 1 ? '' : 's'} from Trash`);
     }
@@ -164,8 +167,10 @@ export const createTrashSlice = (set: any, get: any): TrashSlice => ({
 
   deleteNote: async (path: string) => {
     try {
-      await deleteVaultFile(path);
-      await NativeFileSystemAdapter.removeFileFromDisk(path);
+      await executeVaultMutation(
+        () => deleteVaultFile(path),
+        { removeDiskPath: path }
+      );
 
       const state = get();
       const newTabs = state.openTabs.filter((t: any) => t.path !== path);
@@ -180,7 +185,6 @@ export const createTrashSlice = (set: any, get: any): TrashSlice => ({
       });
 
       state.showToast('Note permanently deleted');
-      triggerBackgroundAutoSync();
       return true;
     } catch (err) {
       console.error('Failed to delete note:', err);

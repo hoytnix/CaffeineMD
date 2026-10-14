@@ -25,6 +25,7 @@ import { AiThemePromptDrawer } from './AiThemePromptDrawer';
 import { ExportPreviewDrawer } from './ExportPreviewDrawer';
 import { ExportOptionsForm } from './ExportOptionsForm';
 import { compileExportPreviewHtml } from '@/src/lib/export/exportPreviewCompiler';
+import { ModalShell } from '@/src/components/common/ModalShell';
 
 function ExportPwaDialog() {
   const {
@@ -212,33 +213,33 @@ function ExportPwaDialog() {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/70 backdrop-blur-xs animate-in fade-in duration-150"
-      onClick={closeExportModal}
-    >
-      <div
-        className="w-full max-w-6xl max-h-[92vh] bg-[var(--card)] border border-[var(--border)] rounded-2xl shadow-2xl p-4 sm:p-6 text-[var(--foreground)] flex flex-col overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-[var(--border)] pb-3 mb-4 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)]">
-              <Download className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold">Export Document & PWA</h2>
-              <p className="text-xs text-neutral-400">Export standalone HTML or production PWA app</p>
-            </div>
+    <ModalShell
+      isOpen={true}
+      onClose={closeExportModal}
+      size="xl"
+      className="max-w-6xl max-h-[92vh] flex flex-col p-4 sm:p-6"
+      title={
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded-lg bg-[var(--accent)]/10 text-[var(--accent)]">
+            <Download className="w-5 h-5" />
           </div>
-          <button
-            type="button"
-            onClick={closeExportModal}
-            className="p-1.5 rounded-lg text-neutral-400 hover:text-[var(--foreground)] hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4" />
+          <div>
+            <h2 className="text-base font-semibold">Export Document & PWA</h2>
+            <p className="text-xs text-neutral-400">Export standalone HTML or production PWA app</p>
+          </div>
+        </div>
+      }
+      footer={
+        <div className={`flex items-center justify-end gap-2 w-full ${mobileActiveTab === 'configure' ? 'flex' : 'hidden md:flex'}`}>
+          <button type="button" onClick={closeExportModal} className="px-3.5 py-1.5 rounded-lg border border-[var(--border)] text-xs text-neutral-400 hover:text-[var(--foreground)] hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer">
+            Cancel
+          </button>
+          <button type="button" onClick={handleDownload} disabled={isExporting} className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[var(--accent)] hover:opacity-90 text-white text-xs font-medium shadow-sm transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+            {isExporting ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /><span>Exporting...</span></> : <><Download className="w-3.5 h-3.5" /><span>{outputType === 'html' ? 'Download HTML' : 'Download PWA Bundle'}</span></>}
           </button>
         </div>
+      }
+    >
 
         {/* Mobile 2-Tab Segmented Switcher (Visible on < md) */}
         <div className="flex md:hidden border-b border-slate-800/80 bg-slate-950/60 p-1.5 gap-1.5 shrink-0 rounded-xl mb-3">
@@ -355,17 +356,7 @@ function ExportPwaDialog() {
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className={`flex items-center justify-end gap-2 pt-2 border-t border-[var(--border)] ${mobileActiveTab === 'configure' ? 'flex' : 'hidden md:flex'}`}>
-          <button type="button" onClick={closeExportModal} className="px-3.5 py-1.5 rounded-lg border border-[var(--border)] text-xs text-neutral-400 hover:text-[var(--foreground)] hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer">
-            Cancel
-          </button>
-          <button type="button" onClick={handleDownload} disabled={isExporting} className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[var(--accent)] hover:opacity-90 text-white text-xs font-medium shadow-sm transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
-            {isExporting ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /><span>Exporting...</span></> : <><Download className="w-3.5 h-3.5" /><span>{outputType === 'html' ? 'Download HTML' : 'Download PWA Bundle'}</span></>}
-          </button>
-        </div>
-      </div>
-    </div>
+    </ModalShell>
   );
 }
 

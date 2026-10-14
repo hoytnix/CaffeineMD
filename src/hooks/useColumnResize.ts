@@ -18,8 +18,17 @@ export function useColumnResize() {
       const startWidth = initialWidth || columnWidths[colKey] || 140;
       setResizingCol(colKey);
 
-      const onMouseMove = (e: MouseEvent) => {
-        const delta = e.clientX - startX;
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+
+      const onMouseMove = (e: MouseEvent | TouchEvent) => {
+        const clientX =
+          'touches' in e && e.touches.length > 0
+            ? e.touches[0].clientX
+            : 'clientX' in e
+            ? (e as MouseEvent).clientX
+            : startX;
+        const delta = clientX - startX;
         const newWidth = Math.max(80, startWidth + delta);
         setColumnWidths((prev) => ({
           ...prev,
@@ -29,12 +38,18 @@ export function useColumnResize() {
 
       const onMouseUp = () => {
         setResizingCol(null);
+        document.body.style.removeProperty('cursor');
+        document.body.style.removeProperty('user-select');
         window.removeEventListener('mousemove', onMouseMove);
         window.removeEventListener('mouseup', onMouseUp);
+        window.removeEventListener('touchmove', onMouseMove);
+        window.removeEventListener('touchend', onMouseUp);
       };
 
       window.addEventListener('mousemove', onMouseMove);
       window.addEventListener('mouseup', onMouseUp);
+      window.addEventListener('touchmove', onMouseMove, { passive: false });
+      window.addEventListener('touchend', onMouseUp);
     },
     [columnWidths]
   );
