@@ -94,6 +94,12 @@ Start writing here...
     };
 
     await db.files.put(newNote);
+    try {
+      const { triggerAutoSync } = await import('@/src/lib/sync/googleDriveSync');
+      triggerAutoSync();
+    } catch (err) {
+      console.warn('Auto-sync trigger skipped:', err);
+    }
     openFileTab(fullPath, newNote.title);
   };
 

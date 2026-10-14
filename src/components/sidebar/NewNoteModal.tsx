@@ -61,6 +61,12 @@ Start writing here...`;
 
     await db.files.put(newNote);
     await NativeFileSystemAdapter.createNewFileOnDisk(path, newNote.content);
+    try {
+      const { triggerAutoSync } = await import('@/src/lib/sync/googleDriveSync');
+      triggerAutoSync();
+    } catch (err) {
+      console.warn('Auto-sync trigger skipped:', err);
+    }
     openFileTab(path, title);
     setNewNoteName('');
     onClose();

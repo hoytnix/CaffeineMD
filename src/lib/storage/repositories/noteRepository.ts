@@ -1,5 +1,6 @@
 import { db, VaultFile } from '../schema';
 import { INITIAL_VAULT_NOTES } from '../seedData';
+import { triggerBackgroundAutoSync } from '../../sync/syncAutoTrigger';
 
 /**
  * Fetch a single note by normalized path
@@ -105,6 +106,7 @@ export async function createNote(
   };
 
   await db.files.put(newNote);
+  triggerBackgroundAutoSync();
   return newNote;
 }
 
@@ -125,6 +127,7 @@ export async function updateNote(
     updatedAt: updates.updatedAt || Date.now(),
   };
   await db.files.put(updated);
+  triggerBackgroundAutoSync();
   return updated;
 }
 
@@ -156,6 +159,7 @@ export async function moveToTrash(path: string): Promise<boolean> {
     originalPath: path,
   });
 
+  triggerBackgroundAutoSync();
   return true;
 }
 

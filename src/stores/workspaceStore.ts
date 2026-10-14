@@ -21,6 +21,7 @@ import {
   ShortcutActionId,
   DEFAULT_SHORTCUTS,
 } from '../lib/shortcuts/shortcutManager';
+import { triggerBackgroundAutoSync } from '../lib/sync/syncAutoTrigger';
 
 export interface TabItem {
   path: string;
@@ -752,6 +753,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         });
 
         state.showToast('Folder moved to Trash');
+        triggerBackgroundAutoSync();
         return true;
       }
 
@@ -773,6 +775,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
             activeFilePath: nextActive,
           });
           state.showToast('Folder moved to Trash');
+          triggerBackgroundAutoSync();
           return true;
         }
 
@@ -794,6 +797,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       });
 
       state.showToast('Note moved to Trash');
+      triggerBackgroundAutoSync();
       return true;
     } catch (err) {
       console.error('Failed to move note to trash:', err);
@@ -866,6 +870,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
       // 4. Affirmative toast confirmation
       state.showToast('Note permanently deleted');
+      triggerBackgroundAutoSync();
       return true;
     } catch (err) {
       console.error('Failed to delete note:', err);

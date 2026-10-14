@@ -1,13 +1,23 @@
 # Active Context: CaffeineMD
 
 ## Current Focus
-- **Google Drive Durable Persistence & Auto-Sync**: Configured `access_type: 'offline'` and `prompt: 'consent'` with localStorage token metadata fallback so sessions persist across browser restarts; wired silent background auto-sync (`triggerAutoSync()`) on note saves.
+- **Comprehensive CRUD Auto-Sync**: Expanded automatic background Google Drive sync (`triggerAutoSync()`) from just note updates/saves to include note & folder creation (`create`), movement & relocation (`move`), duplication, renaming, and trashing (`delete` / `trash`). Structural vault changes immediately trigger Google Drive delta reconciliation.
+- **Google Drive Durable Persistence & Auto-Sync**: Configured `access_type: 'offline'` and `prompt: 'consent'` with localStorage token metadata fallback so sessions persist across browser restarts; wired silent background auto-sync (`triggerAutoSync()`).
 - **Settings Footer Deduplication**: Removed redundant footer from `IosSettingsHome` so `"A TehWiz Production."` appears cleanly once at the bottom of `SettingsView`.
 - **Database Space-Saving & Spoilers**: Collapsible filter spoiler hidden by default (`filtersOpen`), sleek filter toggle button with active badge count, and removed redundant "Vault Database" top header to maximize vertical screen real estate on mobile/compact viewports.
 - **Strict LOC Enforcement**: All settings and editor subcomponents decomposed under strict LOC limits.
 
 ## Architecture & Recent Changes
-1. **Google Drive Token Lifetime & Persistence**:
+1. **Comprehensive CRUD Auto-Sync**:
+   - [syncAutoTrigger.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sync/syncAutoTrigger.ts): Created dynamic asynchronous trigger helper to dispatch `triggerAutoSync()` safely from lower-level storage repositories without circular imports.
+   - [useNotePersistence.ts](file:///home/oloty/Dev/CaffeineMD/src/hooks/useNotePersistence.ts): Dispatches silent `triggerAutoSync()` on editor saves as well as initial frontmatter migration.
+   - [useFileTreeActions.ts](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/useFileTreeActions.ts): Wired immediate background `triggerAutoSync()` across duplicate note, rename (file & folder), move (file & folder), and trash/delete (file & folder).
+   - [noteRepository.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/repositories/noteRepository.ts): Wired `triggerBackgroundAutoSync()` on `createNote()`, `updateNote()`, and `moveToTrash()`.
+   - [fileOperations.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/repositories/fileOperations.ts): Wired `triggerBackgroundAutoSync()` on `renameVaultFile()`, `duplicateVaultFile()`, `moveVaultFile()`, `renameFolder()`, and `moveFolder()`.
+   - [NewNoteModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/NewNoteModal.tsx) & [DatabaseView.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/database/DatabaseView.tsx): Wired `triggerAutoSync()` upon note creation.
+   - [workspaceStore.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/workspaceStore.ts): Wired `triggerBackgroundAutoSync()` on `moveToTrash()` and `deleteNote()`.
+
+2. **Google Drive Token Lifetime & Persistence**:
    - [client.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/firebase/client.ts): Added `access_type: 'offline'` and `prompt: 'consent'` to GoogleAuthProvider parameters. Enhanced `setAccessToken` and `getAccessToken` to persist and rehydrate tokens and expiration metadata via `localStorage` alongside `sessionStorage`.
    - [driveAuthService.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sync/google/driveAuthService.ts): Linked `setTokenExpiry` to update persistent access token metadata.
 

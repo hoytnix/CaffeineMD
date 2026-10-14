@@ -41,6 +41,12 @@ export function useFileTreeActions({
     if (res.success && res.newPath) {
       showToast(`Duplicated note as ${res.newPath}`);
       openFileTab(res.newPath);
+      try {
+        const { triggerAutoSync } = await import('@/src/lib/sync/googleDriveSync');
+        triggerAutoSync();
+      } catch (err) {
+        console.warn('Auto-sync trigger skipped:', err);
+      }
     } else {
       showToast(res.error || 'Failed to duplicate note');
     }
@@ -62,6 +68,12 @@ export function useFileTreeActions({
         renameFileTab(f.path, renamedSubPath);
       }
       showToast(`Renamed folder to ${newName}`);
+      try {
+        const { triggerAutoSync } = await import('@/src/lib/sync/googleDriveSync');
+        triggerAutoSync();
+      } catch (err) {
+        console.warn('Auto-sync trigger skipped:', err);
+      }
     } else {
       const dir = oldPath.includes('/') ? oldPath.substring(0, oldPath.lastIndexOf('/')) : '';
       let targetName = newName;
@@ -71,6 +83,12 @@ export function useFileTreeActions({
       if (res.success) {
         renameFileTab(oldPath, newPath, newName.replace(/\.[^/.]+$/, ''));
         showToast(`Renamed note to ${newName}`);
+        try {
+          const { triggerAutoSync } = await import('@/src/lib/sync/googleDriveSync');
+          triggerAutoSync();
+        } catch (err) {
+          console.warn('Auto-sync trigger skipped:', err);
+        }
       } else {
         showToast(res.error || 'Failed to rename note');
       }
@@ -81,11 +99,23 @@ export function useFileTreeActions({
     if (node.isFolder || node.id?.startsWith('folder:')) {
       await moveFolder(node.path, targetFolder, activeWorkspaceId);
       showToast(`Moved folder to ${targetFolder || 'root'}`);
+      try {
+        const { triggerAutoSync } = await import('@/src/lib/sync/googleDriveSync');
+        triggerAutoSync();
+      } catch (err) {
+        console.warn('Auto-sync trigger skipped:', err);
+      }
     } else {
       const res = await moveVaultFile(node.path, targetFolder);
       if (res.success && res.newPath) {
         renameFileTab(node.path, res.newPath);
         showToast(`Moved note to ${targetFolder || 'root'}`);
+        try {
+          const { triggerAutoSync } = await import('@/src/lib/sync/googleDriveSync');
+          triggerAutoSync();
+        } catch (err) {
+          console.warn('Auto-sync trigger skipped:', err);
+        }
       } else {
         showToast(res.error || 'Failed to move note');
       }
@@ -105,6 +135,12 @@ export function useFileTreeActions({
           setActiveFilePath(null);
         }
         showToast('Folder moved to Trash');
+        try {
+          const { triggerAutoSync } = await import('@/src/lib/sync/googleDriveSync');
+          triggerAutoSync();
+        } catch (err) {
+          console.warn('Auto-sync trigger skipped:', err);
+        }
       } else {
         await softDeleteNote(id, activeWorkspaceId);
         closeFileTab(id);
@@ -112,6 +148,12 @@ export function useFileTreeActions({
           setActiveFilePath(null);
         }
         showToast('Note moved to Trash');
+        try {
+          const { triggerAutoSync } = await import('@/src/lib/sync/googleDriveSync');
+          triggerAutoSync();
+        } catch (err) {
+          console.warn('Auto-sync trigger skipped:', err);
+        }
       }
     } catch (err) {
       console.error('Failed to move item to trash:', err);

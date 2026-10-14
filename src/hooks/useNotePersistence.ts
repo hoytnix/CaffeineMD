@@ -60,6 +60,12 @@ export function useNotePersistence({ filePath }: UseNotePersistenceOptions) {
               };
               await db.files.put(updatedRecord);
               await NativeFileSystemAdapter.writeBackToFile(updatedRecord.path, fullSerialized);
+              try {
+                const { triggerAutoSync } = await import('@/src/lib/sync/googleDriveSync');
+                triggerAutoSync();
+              } catch (err) {
+                console.warn('Auto-sync trigger skipped:', err);
+              }
               record = updatedRecord;
             }
           }

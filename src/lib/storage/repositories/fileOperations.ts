@@ -1,6 +1,7 @@
 import { db, VaultFile } from '../schema';
 import { serializeMarkdownWithFrontmatter, parseMarkdownContent } from '../../markdown/frontmatter';
 import { NativeFileSystemAdapter } from '../fileSystem';
+import { triggerBackgroundAutoSync } from '../../sync/syncAutoTrigger';
 
 /**
  * Rename a note or folder file path
@@ -69,6 +70,7 @@ export async function renameVaultFile(
     console.warn('Could not mirror rename to local disk handle:', err);
   }
 
+  triggerBackgroundAutoSync();
   return { success: true };
 }
 
@@ -129,6 +131,7 @@ export async function duplicateVaultFile(path: string): Promise<{ success: boole
     console.warn('Could not mirror duplicate to local disk handle:', err);
   }
 
+  triggerBackgroundAutoSync();
   return { success: true, newPath: candidatePath };
 }
 
@@ -183,6 +186,7 @@ export async function moveVaultFile(
     console.warn('Could not mirror move to local disk handle:', err);
   }
 
+  triggerBackgroundAutoSync();
   return { success: true, newPath };
 }
 
@@ -306,6 +310,8 @@ export async function renameFolder(
       }
     }
   });
+
+  triggerBackgroundAutoSync();
 }
 
 /**
@@ -362,6 +368,8 @@ export async function moveFolder(
       }
     }
   });
+
+  triggerBackgroundAutoSync();
 }
 
 export { permanentlyDeleteNote, emptyTrash } from './noteRepository';

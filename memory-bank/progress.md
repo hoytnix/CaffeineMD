@@ -7,6 +7,7 @@
 - [x] **Dual Ingestion**: Native File System Access (`showDirectoryPicker`) + WebKit recursive folder drop.
 - [x] **Google Drive Sync Engine**: 5MB resumable multipart chunking, delta reconciliation, remote file trashing & anti-resurrection guards.
 - [x] **Google Drive Persistence & Auto-Sync**: Offline consent token issuance, persistent localStorage rehydration, and automatic debounced sync on note save.
+- [x] **Comprehensive CRUD Auto-Sync**: Immediate debounced sync triggering across Create, Update, Move, Rename, and Trash/Delete operations for both notes and folders.
 
 ### 2. Editor Core & UX Suite
 - [x] **Tiptap v2 Rich Text**: Slash commands (`/`), WikiLinks (`[[`), task lists, tables, drag handles, callouts, and code blocks.
