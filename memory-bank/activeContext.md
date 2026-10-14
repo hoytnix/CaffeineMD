@@ -1,19 +1,24 @@
 # Active Context: CaffeineMD
 
 ## Current Focus
+- **Google Drive Durable Persistence & Auto-Sync**: Configured `access_type: 'offline'` and `prompt: 'consent'` with localStorage token metadata fallback so sessions persist across browser restarts; wired silent background auto-sync (`triggerAutoSync()`) on note saves.
+- **Settings Footer Deduplication**: Removed redundant footer from `IosSettingsHome` so `"A TehWiz Production."` appears cleanly once at the bottom of `SettingsView`.
 - **Database Space-Saving & Spoilers**: Collapsible filter spoiler hidden by default (`filtersOpen`), sleek filter toggle button with active badge count, and removed redundant "Vault Database" top header to maximize vertical screen real estate on mobile/compact viewports.
-- **iOS Settings Experience**: Native iOS Settings navigation architecture, sticky quick-tab switcher, Dynamic SSO Account Card with clean `'User'` fallback, 5 squircle category rows, and Themes tab ordering.
-- **Branding & Mobile UX**: TehWiz production branding in settings footer, responsive tab close buttons for mobile/touch screens.
-- **Seed Note Placement**: Explicit root-level assignment (`folder: ''`, `path: '/Welcome to CaffeineMD ☕.md'`).
-- **Strict LOC Enforcement**: All settings and editor subcomponents decomposed under the strict 200/250 LOC limits.
+- **Strict LOC Enforcement**: All settings and editor subcomponents decomposed under strict LOC limits.
 
 ## Architecture & Recent Changes
-1. **Database Spoilable Filters & Streamlined Toolbar**:
-   - [DatabaseToolbar.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/database/DatabaseToolbar.tsx): Removed the redundant top header block spanning from "Vault Database" to the New Row button. Introduced collapsible `filtersOpen` toggle state, hiding search/filter/sort by default.
-   - Added compact toggle button displaying active filter count badge and chevron indicator, plus a 1-tap "Reset" button when filters are active.
-   - [DatabaseView.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/database/DatabaseView.tsx): Adjusted outer layout padding to responsive `p-4 sm:p-6 md:p-8` for compact mobile screens like iPhone SE.
+1. **Google Drive Token Lifetime & Persistence**:
+   - [client.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/firebase/client.ts): Added `access_type: 'offline'` and `prompt: 'consent'` to GoogleAuthProvider parameters. Enhanced `setAccessToken` and `getAccessToken` to persist and rehydrate tokens and expiration metadata via `localStorage` alongside `sessionStorage`.
+   - [driveAuthService.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sync/google/driveAuthService.ts): Linked `setTokenExpiry` to update persistent access token metadata.
 
-2. **Dynamic SSO Account Card & Footer Branding**:
+2. **Automatic Vault Sync on Note Save**:
+   - [googleDriveSync.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sync/googleDriveSync.ts): Added debounced `GoogleDriveSyncService.triggerAutoSync()` method with active token checking and concurrency guard.
+   - [useNotePersistence.ts](file:///home/oloty/Dev/CaffeineMD/src/hooks/useNotePersistence.ts): Dispatches silent `triggerAutoSync()` whenever a note is persisted to IndexedDB and local filesystem.
+
+3. **Settings Footer Deduplication**:
+   - [IosSettingsHome.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/settings/IosSettingsHome.tsx): Removed the duplicate branding footer block, leaving the unified footer link in [SettingsView.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/settings/SettingsView.tsx).
+
+4. **Database Spoilable Filters & Streamlined Toolbar**:
    - [IosSettingsHome.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/settings/IosSettingsHome.tsx): Dynamic profile card resolving `googleDriveUser?.displayName` (with fallback to "User" instead of hardcoded author name), real email, and dynamic initials avatar.
    - [SettingsView.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/settings/SettingsView.tsx): External link footer to `https://tehwiz.com` ("A TehWiz Production.").
 

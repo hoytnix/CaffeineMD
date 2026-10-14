@@ -210,7 +210,45 @@ export class GoogleDriveSyncService {
   public static getCachedStatus(): Partial<DriveSyncStatus> {
     return { folderId: this.cachedFolderId, lastSyncedAt: this.lastSyncTime };
   }
+
+  private static autoSyncTimeout: NodeJS.Timeout | null = null;
+  private static isSyncingInProgress = false;
+
+  /**
+   * Debounced, silent background auto-sync triggered on note saves.
+   * Only triggers if Google Drive has an active, valid token session.
+   */
+  public static triggerAutoSync(debounceMs = 1500): void {
+    if (this.autoSyncTimeout) {
+      clearTimeout(this.autoSyncTimeout);
+      this.autoSyncTimeout = null;
+    }
+
+    this.autoSyncTimeout = setTimeout(async () => {
+      try {
+        const hasToken = await DriveAuthService.hasActiveToken();
+        if (!hasToken) return;
+
+        if (this.isSyncingInProgress) return;
+        this.isSyncingInProgress = true;
+
+        const { useWorkspaceStore } = await import('@/src/stores/workspaceStore');
+        const state = useWorkspaceStore.getState();
+        const workspaceName = state.vaultName || 'CaffeineMD Vault';
+        const workspaceId = state.activeWorkspaceId || 'default-vault';
+
+        await this.syncNow(workspaceName, undefined, workspaceId);
+      } catch (err) {
+        console.warn('Background auto-sync skipped/failed:', err);
+      } finally {
+        this.isSyncingInProgress = false;
+      }
+    }, debounceMs);
+  }
 }
 
 export const syncWorkspaceWithDrive = (workspaceId: string) =>
   GoogleDriveSyncService.syncNow(workspaceId);
+
+export const triggerAutoSync = (debounceMs?: number) =>
+  GoogleDriveSyncService.triggerAutoSync(debounceMs);

@@ -174,21 +174,6 @@ export function IosSettingsHome({
           );
         })}
       </div>
-
-      {/* About CaffeineMD Footer */}
-      <div className="pt-6 border-t border-[var(--border)] text-center text-xs text-neutral-400 dark:text-neutral-500 space-y-1">
-        <p className="font-semibold text-neutral-700 dark:text-neutral-300">CaffeineMD</p>
-        <p className="text-[11px]">
-          <a
-            href="https://tehwiz.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-indigo-400 underline underline-offset-2 transition-colors cursor-pointer"
-          >
-            A TehWiz Production.
-          </a>
-        </p>
-      </div>
     </div>
   );
 }

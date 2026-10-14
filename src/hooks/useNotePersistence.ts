@@ -126,6 +126,14 @@ export function useNotePersistence({ filePath }: UseNotePersistenceOptions) {
       // 3. Write back to disk if native folder is bound
       await NativeFileSystemAdapter.writeBackToFile(updatedFile.path, fullContent);
 
+      // 4. Trigger silent background auto-sync to Google Drive if connected
+      try {
+        const { triggerAutoSync } = await import('@/src/lib/sync/googleDriveSync');
+        triggerAutoSync();
+      } catch (err) {
+        console.warn('Auto-sync trigger skipped:', err);
+      }
+
       setFile(updatedFile);
       setRawMarkdown(fullContent);
       if (finalTitle !== title) {

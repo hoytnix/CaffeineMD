@@ -63,6 +63,9 @@ export class DriveAuthService {
    */
   public static setTokenExpiry(expiresInSeconds: number): void {
     this.tokenExpiryTime = Date.now() + expiresInSeconds * 1000;
+    if (this.cachedToken) {
+      setAccessToken(this.cachedToken, expiresInSeconds);
+    }
   }
 
   /**
