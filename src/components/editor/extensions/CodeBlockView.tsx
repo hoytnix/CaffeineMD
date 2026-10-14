@@ -6,24 +6,19 @@ import { Copy, Check, Play, Loader2 } from 'lucide-react';
 import { wasmSandbox } from '@/src/lib/sandbox/wasmSandbox';
 import { ExecutionOutputItem, SupportedSandboxLang } from '@/src/lib/sandbox/types';
 import { CodeBlockOutputDrawer } from './CodeBlockOutputDrawer';
+import { RUNNABLE_LANGUAGES, LANGUAGES, normalizeSandboxLang } from './codeBlockLanguages';
 
-function resolveSandboxLanguage(rawLang: string): SupportedSandboxLang | null {
-  const l = (rawLang || '').toLowerCase().trim();
-  if (l === 'python' || l === 'py') return 'python';
-  if (l === 'javascript' || l === 'js') return 'javascript';
-  if (l === 'typescript' || l === 'ts') return 'typescript';
-  if (l === 'math') return 'math';
-  return null;
-}
+export { RUNNABLE_LANGUAGES, LANGUAGES, normalizeSandboxLang };
 
-export function CodeBlockView({ node, editor, getPos }: NodeViewProps) {
+export function CodeBlockView({ node, editor, getPos, updateAttributes }: NodeViewProps) {
   const [copied, setCopied] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [outputs, setOutputs] = useState<ExecutionOutputItem[]>([]);
+  const [htmlPreview, setHtmlPreview] = useState<string | null>(null);
   const [executionTimeMs, setExecutionTimeMs] = useState<number | null>(null);
 
   const rawLanguage = node.attrs?.language || '';
-  const detectedLang = resolveSandboxLanguage(rawLanguage);
+  const detectedLang = normalizeSandboxLang(rawLanguage);
   const activeLang: SupportedSandboxLang = detectedLang || 'javascript';
   const isExecutable = Boolean(detectedLang);
 
@@ -45,19 +40,19 @@ export function CodeBlockView({ node, editor, getPos }: NodeViewProps) {
 
     setIsRunning(true);
     setOutputs([]);
+    setHtmlPreview(null);
     setExecutionTimeMs(null);
 
     try {
       const code = node.textContent || '';
-      const response = await wasmSandbox.runCode(
-        activeLang,
-        code,
-        (streamedItem) => {
-          setOutputs((prev) => [...prev, streamedItem]);
-        }
-      );
+      const response = await wasmSandbox.runCode(activeLang, code, (streamedItem) => {
+        setOutputs((prev) => [...prev, streamedItem]);
+      });
       setOutputs(response.outputs);
       setExecutionTimeMs(response.executionTimeMs);
+      if (response.htmlPreview) {
+        setHtmlPreview(response.htmlPreview);
+      }
     } catch (err: any) {
       setOutputs([
         {
@@ -76,7 +71,6 @@ export function CodeBlockView({ node, editor, getPos }: NodeViewProps) {
     const pos = getPos();
     if (typeof pos !== 'number') return;
 
-    // Filter out raw status events from note insertion
     const filteredOutputs = outputs.filter((o) => o.type !== 'status');
     if (filteredOutputs.length === 0) return;
 
@@ -114,9 +108,22 @@ export function CodeBlockView({ node, editor, getPos }: NodeViewProps) {
         className="flex items-center justify-between px-3 py-1.5 bg-neutral-900/60 dark:bg-black/60 border-b border-[var(--border)] text-xs select-none"
       >
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[11px] text-neutral-400 uppercase tracking-wider">
-            {rawLanguage || 'plaintext'}
-          </span>
+          <select
+            value={rawLanguage.toLowerCase() || 'plaintext'}
+            onChange={(e) => {
+              if (typeof updateAttributes === 'function') {
+                updateAttributes({ language: e.target.value });
+              }
+            }}
+            className="bg-transparent text-neutral-400 hover:text-neutral-200 text-[11px] font-mono uppercase tracking-wider cursor-pointer border-none outline-none focus:ring-0 pr-1"
+          >
+            {LANGUAGES.map((lang) => (
+              <option key={lang} value={lang} className="bg-neutral-900 text-neutral-200 uppercase font-mono text-[11px]">
+                {lang}
+              </option>
+            ))}
+          </select>
+
           {isExecutable && (
             <span className="px-1.5 py-0.2 rounded bg-indigo-500/10 text-indigo-400 text-[10px] font-medium border border-indigo-500/20">
               Runnable
@@ -174,8 +181,12 @@ export function CodeBlockView({ node, editor, getPos }: NodeViewProps) {
       <CodeBlockOutputDrawer
         outputs={outputs}
         executionTimeMs={executionTimeMs}
+        htmlPreview={htmlPreview}
         onInsertIntoNote={handleInsertIntoNote}
-        onClear={() => setOutputs([])}
+        onClear={() => {
+          setOutputs([]);
+          setHtmlPreview(null);
+        }}
       />
     </NodeViewWrapper>
   );

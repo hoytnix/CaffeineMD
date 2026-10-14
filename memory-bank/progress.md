@@ -216,6 +216,12 @@
 - [x] **Duplicate `baseline` Declaration Build Error Resolution**:
   - Removed duplicate `const baseline` identifier redeclaration in `useEditorAutosave.ts` line 166.
   - Verified `pnpm run build` and `pnpm run lint` execute with 0 errors and 0 warnings.
+- [x] **Multi-Language WASM Sandbox & Warm Worker Engine Upgrade**:
+  - Fixed 5.0s WASM download timeout by maintaining a singleton `activeWorker` instance and decoupling the 60s runtime initialization grace window from the strict 5.0s execution watchdog in [wasmSandbox.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sandbox/wasmSandbox.ts).
+  - Expanded `SandboxLanguage` in [types.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sandbox/types.ts) to support Python, JavaScript, TypeScript, SQL, HTML/SVG, Lua, Bash/Shell, JSON, Rust, Go, C, C++, and Math scratchpad.
+  - Implemented modular runner suite under [runners/](file:///home/oloty/Dev/CaffeineMD/src/lib/sandbox/runners/) (<200 LOC per file) for Python (Pyodide + package auto-loading), JS/TS (official TypeScript transpiler + AsyncFunction sandbox), SQLite (sql.js + Markdown table formatting), Lua (Fengari 5.3 + print interception), POSIX Bash/Shell (variables, pipelines, loops, coreutils), JSON & HTML/SVG (live iframe preview), and Compiled Languages (Compiler Explorer Godbolt REST API).
+  - Upgraded [CodeBlockView.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/extensions/CodeBlockView.tsx) with language dropdown selector and [CodeBlockOutputDrawer.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/extensions/CodeBlockOutputDrawer.tsx) with live sandboxed `<iframe srcDoc={htmlPreview} sandbox="allow-scripts" />` visual preview.
+  - Verified 100% clean ESLint pass with 0 errors and 0 warnings.
 
 ## Verification Status
 - Production Build verification: Passing cleanly with 0 errors (`pnpm run build`).

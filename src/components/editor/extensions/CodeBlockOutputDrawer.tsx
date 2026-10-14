@@ -7,6 +7,7 @@ import { CornerDownLeft, Trash2, Clock, Loader2, CheckCircle2 } from 'lucide-rea
 interface CodeBlockOutputDrawerProps {
   outputs: ExecutionOutputItem[];
   executionTimeMs: number | null;
+  htmlPreview?: string | null;
   onInsertIntoNote: () => void;
   onClear: () => void;
 }
@@ -14,17 +15,18 @@ interface CodeBlockOutputDrawerProps {
 export function CodeBlockOutputDrawer({
   outputs,
   executionTimeMs,
+  htmlPreview,
   onInsertIntoNote,
   onClear,
 }: CodeBlockOutputDrawerProps) {
-  if (outputs.length === 0) return null;
+  if (outputs.length === 0 && !htmlPreview) return null;
 
-  const hasRealContent = outputs.some((o) => o.type !== 'status');
+  const hasRealContent = outputs.some((o) => o.type !== 'status') || Boolean(htmlPreview);
 
   return (
     <div
       contentEditable={false}
-      className="mt-2 border-t border-[var(--border)] pt-2 text-xs font-mono select-text bg-neutral-900/40 dark:bg-black/40 rounded-b-md px-3 py-2 space-y-1.5"
+      className="mt-2 border-t border-[var(--border)] pt-2 text-xs font-mono select-text bg-neutral-900/40 dark:bg-black/40 rounded-b-md px-3 py-2 space-y-2"
     >
       <div className="flex items-center justify-between text-[11px] text-neutral-400 border-b border-[var(--border)]/50 pb-1 mb-1">
         <div className="flex items-center gap-2">
@@ -59,54 +61,73 @@ export function CodeBlockOutputDrawer({
         </div>
       </div>
 
-      <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1 font-mono text-[11.5px] leading-relaxed">
-        {outputs.map((item, idx) => {
-          if (item.type === 'status') {
-            const isReady =
-              item.text.toLowerCase().includes('initialized') ||
-              item.text.toLowerCase().includes('ready');
+      {/* Live Sandboxed HTML / SVG preview */}
+      {htmlPreview && (
+        <div className="w-full my-1">
+          <div className="text-[10px] text-neutral-400 mb-1 font-sans flex items-center justify-between">
+            <span>Live Sandboxed Preview</span>
+            <span className="text-[9px] text-neutral-500 uppercase">iframe sandbox</span>
+          </div>
+          <iframe
+            srcDoc={htmlPreview}
+            sandbox="allow-scripts"
+            className="w-full h-56 bg-white rounded border border-slate-700/60 shadow-inner"
+            title="Live Code Preview"
+          />
+        </div>
+      )}
 
-            return (
-              <div
-                key={idx}
-                className={`flex items-center gap-2 px-2.5 py-1.5 rounded text-[11px] font-sans ${
-                  isReady
-                    ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
-                    : 'bg-sky-500/10 border border-sky-500/20 text-sky-400 animate-pulse'
-                }`}
-              >
-                {isReady ? (
-                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
-                ) : (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0 text-sky-400" />
-                )}
-                <span>{item.text}</span>
-              </div>
-            );
-          }
+      {/* Console and execution outputs */}
+      {outputs.length > 0 && (
+        <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1 font-mono text-[11.5px] leading-relaxed">
+          {outputs.map((item, idx) => {
+            if (item.type === 'status') {
+              const isReady =
+                item.text.toLowerCase().includes('initialized') ||
+                item.text.toLowerCase().includes('ready');
 
-          if (item.type === 'stderr' || item.type === 'error') {
+              return (
+                <div
+                  key={idx}
+                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded text-[11px] font-sans ${
+                    isReady
+                      ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
+                      : 'bg-sky-500/10 border border-sky-500/20 text-sky-400 animate-pulse'
+                  }`}
+                >
+                  {isReady ? (
+                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+                  ) : (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0 text-sky-400" />
+                  )}
+                  <span>{item.text}</span>
+                </div>
+              );
+            }
+
+            if (item.type === 'stderr' || item.type === 'error') {
+              return (
+                <div key={idx} className="text-rose-400 whitespace-pre-wrap">
+                  {item.text}
+                </div>
+              );
+            }
+            if (item.type === 'result') {
+              return (
+                <div key={idx} className="text-emerald-400 font-medium whitespace-pre-wrap">
+                  <span className="text-neutral-500 select-none">&rArr; </span>
+                  {item.text}
+                </div>
+              );
+            }
             return (
-              <div key={idx} className="text-rose-400 whitespace-pre-wrap">
+              <div key={idx} className="text-neutral-300 whitespace-pre-wrap">
                 {item.text}
               </div>
             );
-          }
-          if (item.type === 'result') {
-            return (
-              <div key={idx} className="text-emerald-400 font-medium whitespace-pre-wrap">
-                <span className="text-neutral-500 select-none">&rArr; </span>
-                {item.text}
-              </div>
-            );
-          }
-          return (
-            <div key={idx} className="text-neutral-300 whitespace-pre-wrap">
-              {item.text}
-            </div>
-          );
-        })}
-      </div>
+          })}
+        </div>
+      )}
     </div>
   );
 }
