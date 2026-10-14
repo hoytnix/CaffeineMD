@@ -181,7 +181,14 @@
   - Persisted `theme`, `customThemeColors`, and `editorFontFamily` to `localStorage` under `caffeinemd-theme`, `caffeinemd-custom-theme-colors`, and `caffeinemd-editor-font` with fallback to `kite-*` keys; added `hydrateThemeFromStorage()` and `applyThemeId()` in [workspaceStore.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/workspaceStore.ts) and [themeDefinitions.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/themes/themeDefinitions.ts), ensuring custom colors, background images, and fonts persist across browser refreshes in [page.tsx](file:///home/oloty/Dev/CaffeineMD/app/w/[workspaceId]/page.tsx) and [SettingsView.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/settings/SettingsView.tsx).
   - Replaced native prompt in [MediaSelectorPopover.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/toolbar/MediaSelectorPopover.tsx) with inline URL and Link Label inputs prefilled with selected text; normalized protocol prefixes; inserted rich `<a>` link nodes with labels or fallback URL text when selection is empty, and applied link marks when existing text is selected.
   - Added separate `linkedOpen` (default expanded) and `unlinkedOpen` (default collapsed) spoiler states in [BacklinksPanel.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/BacklinksPanel.tsx) with interactive chevron buttons, count badges (`backlinks.length`, `unlinkedNotes.length`), and active CSS theme variables (`--theme-bg-card`, `--theme-border`, `--theme-text-primary`, `--theme-accent`).
-  - Created [IosLinkPreviewCard.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/components/IosLinkPreviewCard.tsx) (140 LOC, <160 LOC limit) anchored to links and `[[WikiLinks]]` inside `.ProseMirror`; renders YouTube video thumbnails, image previews, and domain favicon headers with Open, Copy, and Unlink actions for external links, and note title, folder badge, and 3-line Markdown excerpts with "Jump to Note" navigation for internal WikiLinks; mounted directly inside [TiptapEditor.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/editor/TiptapEditor.tsx).
+- [x] **iOS Link Preview Card Above-the-Fold Website Screenshot & Metadata Fetcher**:
+  - Implemented `linkMetaCache` module-level in-memory cache for 0ms re-hover performance.
+  - Constructed primary above-the-fold 16:10 screenshot URL via `image.thum.io` with fallback cascading from live Microlink browser captures to OpenGraph images.
+  - Built mini iOS Safari browser bar overlay with colored window dots (`rose`, `amber`, `emerald`) and domain pill.
+  - Added loading shimmer pulse skeleton with `"Capturing preview..."` badge.
+  - Added graceful glassmorphic fallback with favicon and hostname pill when domains are offline or unreachable.
+  - Added real page title and 2-line description preview above URL and quick action buttons (`Open Link`, `Copy URL`, `Remove Link`).
+  - Increased external link preview card width to `w-80` (`320px`) with edge collision clamping.
 
 ## Verification Status
 - Lint verification: Passing cleanly with 0 errors and 0 warnings (`pnpm run lint`).
