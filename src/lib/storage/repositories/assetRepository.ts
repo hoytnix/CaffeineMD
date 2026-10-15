@@ -45,6 +45,7 @@ export async function storeAsset(
     assetObjectUrlMap.set(path, url);
   }
 
+  const existing = await db.files.get(path);
   const record: VaultFile = {
     id: path,
     path,
@@ -58,9 +59,13 @@ export async function storeAsset(
     blob,
     mimeType: effectiveMime,
     size: blob.size,
-    createdAt: now,
+    createdAt: existing?.createdAt || now,
     updatedAt: now,
     vaultId,
+    driveFileId: existing?.driveFileId || existing?.driveId,
+    driveId: existing?.driveId || existing?.driveFileId,
+    lastSyncedPath: existing?.lastSyncedPath,
+    previousPath: existing?.previousPath,
   };
 
   await db.files.put(record);

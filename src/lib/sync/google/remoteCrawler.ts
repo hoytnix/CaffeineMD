@@ -1,13 +1,15 @@
-import { RemoteDriveFile } from './driveApiClient';
+import { RemoteDriveFile, RemoteDriveFolder } from './driveApiClient';
 
 /**
  * Recursively scans Google Drive remote directory tree, paginating with nextPageToken,
  * and returning a flat Map<string, RemoteDriveFile> keyed by normalized relative paths.
+ * Optionally records remote folder nodes into folderMap.
  */
 export async function crawlRemoteDirectory(
   accessToken: string,
   rootFolderId: string,
-  currentPath = ''
+  currentPath = '',
+  folderMap?: Map<string, RemoteDriveFolder>
 ): Promise<Map<string, RemoteDriveFile>> {
   const fileMap = new Map<string, RemoteDriveFile>();
 
@@ -39,6 +41,12 @@ export async function crawlRemoteDirectory(
         if (f.mimeType === 'application/vnd.google-apps.folder') {
           // Recursive subfolder traverse
           const nextPrefix = prefix ? `${prefix}/${f.name}` : f.name;
+          folderMap?.set(nextPrefix, {
+            id: f.id,
+            name: f.name,
+            relativePath: nextPrefix,
+            parentId: parentFolderId,
+          });
           await traverse(f.id, nextPrefix);
         } else {
           // Support both nested paths and legacy flat ___ encoded paths
@@ -55,6 +63,7 @@ export async function crawlRemoteDirectory(
             mimeType: f.mimeType,
             md5Checksum: f.md5Checksum,
             size: f.size ? parseInt(f.size, 10) : undefined,
+            parentId: parentFolderId,
           });
         }
       }
@@ -70,16 +79,18 @@ export const listAllRemoteFiles = crawlRemoteDirectory;
 export interface RemoteWorkspaceCrawlResult {
   files: Map<string, RemoteDriveFile>;
   trashedPaths: Map<string, RemoteDriveFile>;
+  folders: Map<string, RemoteDriveFolder>;
 }
 
 /**
- * Crawls active remote workspace files and queries trashed remote workspace files.
+ * Crawls active remote workspace files, remote folders, and queries trashed remote workspace files.
  */
 export async function crawlRemoteWorkspace(
   accessToken: string,
   rootFolderId: string
 ): Promise<RemoteWorkspaceCrawlResult> {
-  const files = await crawlRemoteDirectory(accessToken, rootFolderId);
+  const folders = new Map<string, RemoteDriveFolder>();
+  const files = await crawlRemoteDirectory(accessToken, rootFolderId, '', folders);
   const trashedPaths = new Map<string, RemoteDriveFile>();
 
   try {
@@ -112,6 +123,7 @@ export async function crawlRemoteWorkspace(
     console.warn('Failed to crawl trashed files from remote workspace:', err);
   }
 
-  return { files, trashedPaths };
+  return { files, trashedPaths, folders };
 }
+
 

@@ -121,6 +121,9 @@ export async function executeDownloadBatch(
       updatedAt: remoteModifiedMs,
       vaultId: currentWorkspaceId,
       driveFileId: remote.id,
+      driveId: remote.id,
+      lastSyncedPath: reconstructedPath,
+      lastSyncedAt: Date.now(),
     });
 
     onFileProcessed?.(fileName, 'downloading');
@@ -170,7 +173,15 @@ export async function executeUploadBatch(
       task.remoteId
     );
     if (remoteId && task.local.path) {
-      await db.files.update(task.local.path, { driveFileId: remoteId }).catch(() => {});
+      await db.files
+        .update(task.local.path, {
+          driveFileId: remoteId,
+          driveId: remoteId,
+          lastSyncedPath: task.local.path,
+          previousPath: undefined,
+          lastSyncedAt: Date.now(),
+        })
+        .catch(() => {});
     }
     count++;
     const friendlyName = task.driveFileName.includes('___')

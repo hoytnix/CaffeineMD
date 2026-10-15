@@ -7,10 +7,11 @@ import {
   downloadRemoteFile,
   downloadRemoteBinary,
   trashRemoteFile,
+  moveOrRenameDriveFile,
 } from './driveApiClient';
 import { DriveAuthService } from './driveAuthService';
 import { crawlRemoteWorkspace } from './remoteCrawler';
-import { reconcileDriveState } from './driveReconciler';
+import { reconcileDriveState, DriveSyncAction } from './driveReconciler';
 import { syncFileToDrive } from './resumableChunkUploader';
 import { getFileBlob } from '../syncExecutor';
 import { getAllNotes, getTrashedNotes } from '@/src/lib/storage/repositories/noteRepository';
@@ -18,6 +19,12 @@ import { softDeleteNote } from '@/src/lib/storage/repositories/fileOperations';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { parseFrontmatter, normalizeEisenhower } from '@/src/lib/markdown/frontmatter';
 import { SyncProgressState, syncProgressEmitter } from '../syncProgress';
+import {
+  syncPendingFolderMoves,
+  ensureRemoteFolderPath,
+  pruneEmptiedRemoteFolders,
+  moveRemoteNote,
+} from './driveFolderSync';
 
 const imageExtensions = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico']);
 const pdfExtensions = new Set(['pdf']);
@@ -101,6 +108,9 @@ export async function pullRemoteNote(
     updatedAt: remoteModifiedMs,
     vaultId: workspaceId,
     driveFileId: remote.id,
+    driveId: remote.id,
+    lastSyncedPath: reconstructedPath,
+    previousPath: undefined,
     lastSyncedAt: Date.now(),
   };
 
@@ -134,12 +144,16 @@ export async function pushLocalNote(
     await db.files
       .update(local.id, {
         driveFileId: remoteId,
+        driveId: remoteId,
+        lastSyncedPath: local.path,
+        previousPath: undefined,
         lastSyncedAt: Date.now(),
       })
       .catch(() => {});
   }
   return remoteId;
 }
+
 
 /**
  * runDriveSyncCycle
@@ -163,8 +177,15 @@ export async function runDriveSyncCycle(
   const stats = { uploaded: 0, downloaded: 0, skipped: 0 };
 
   onProgress?.('Scanning Google Drive for remote files...');
-  const { files: remoteMap, trashedPaths } = await crawlRemoteWorkspace(token, folderId);
+  const { files: remoteMap, trashedPaths, folders } = await crawlRemoteWorkspace(token, folderId);
   const remoteFiles = Array.from(remoteMap.values());
+
+  const folderCache = new Map<string, string>();
+  for (const [p, f] of folders.entries()) {
+    folderCache.set(p, f.id);
+  }
+
+  const movedFolderPaths = await syncPendingFolderMoves(token, folderId, folders);
 
   onProgress?.('Analyzing local workspace notes...');
   const [activeNotes, trashedNotes] = await Promise.all([
@@ -173,7 +194,27 @@ export async function runDriveSyncCycle(
   ]);
   const localNotes = [...activeNotes, ...trashedNotes];
 
-  const actions = reconcileDriveState(localNotes, remoteFiles, trashedPaths);
+  if (movedFolderPaths.size > 0) {
+    for (const note of localNotes) {
+      for (const movedFolder of movedFolderPaths) {
+        if (note.lastSyncedPath?.startsWith(movedFolder + '/') || note.previousPath?.startsWith(movedFolder + '/')) {
+          note.lastSyncedPath = note.path;
+          note.previousPath = undefined;
+          if (note.id) {
+            await db.files
+              .update(note.id, {
+                lastSyncedPath: note.path,
+                previousPath: undefined,
+                lastSyncedAt: Date.now(),
+              })
+              .catch(() => {});
+          }
+        }
+      }
+    }
+  }
+
+  const actions = reconcileDriveState(localNotes, remoteFiles, trashedPaths, undefined, movedFolderPaths);
   const activeActions = actions.filter((a) => a.type !== 'noop');
   const totalFiles = activeActions.length;
   let processedFiles = 0;
@@ -221,6 +262,22 @@ export async function runDriveSyncCycle(
         onProgress?.(`Trashing remote file ${action.path}...`);
         await trashRemoteFile(action.remoteFileId, token);
       }
+      processedFiles++;
+      syncProgressEmitter.emit({
+        status: 'syncing',
+        currentAction: 'uploading',
+        currentFileName: action.path,
+        totalFiles,
+        processedFiles,
+      });
+      onProgressState?.(syncProgressEmitter.getState());
+      continue;
+    }
+
+    if (action.type === 'move_remote' && action.local) {
+      onProgress?.(`Relocating ${action.oldPath || action.path} on Google Drive...`);
+      await moveRemoteNote(token, action.local, folderId, action, folderCache);
+      stats.uploaded++;
       processedFiles++;
       syncProgressEmitter.emit({
         status: 'syncing',

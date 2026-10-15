@@ -12,6 +12,7 @@ export * from './google/remoteCrawler';
 export * from './google/driveAuthService';
 export * from './google/drivePayloadBuilder';
 export * from './google/driveReconciler';
+export * from './google/driveFolderSync';
 export * from './google/driveSyncRunner';
 export * from './reconciler';
 export * from './syncExecutor';

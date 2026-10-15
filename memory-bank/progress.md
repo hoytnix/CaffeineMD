@@ -9,6 +9,7 @@
 - [x] **Google Drive Persistence & Auto-Sync**: Offline consent token issuance, persistent localStorage rehydration, and automatic debounced sync on note save.
 - [x] **Comprehensive CRUD Auto-Sync**: Immediate debounced sync triggering across Create, Update, Move, Rename, and Trash/Delete operations for both notes and folders.
 - [x] **Nested Sub-Directory Movement & Isolated Drag-and-Drop**: Recursively aggregated folder path collection, breadcrumb path selection, isolated folder header drop targeting with bubbling cancellation, multi-segment path normalization, and automatic ancestor folder expansion on move.
+- [x] **Google Drive In-Place Move, Reparenting & Anti-Resurrection**: Stable remote ID persistence across moves, pending folder move recording, `moveOrRenameDriveFile` in-place reparenting API (`PATCH /drive/v3/files/{fileId}?addParents=...&removeParents=...`), remote folder hierarchy tracking, differential move reconciliation, and empty remote folder pruning.
 
 ### 2. Editor Core & UX Suite
 - [x] **Tiptap v2 Rich Text**: Slash commands (`/`), WikiLinks (`[[`), task lists, tables, drag handles, callouts, and code blocks.

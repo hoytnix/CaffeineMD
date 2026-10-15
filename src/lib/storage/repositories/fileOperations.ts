@@ -2,6 +2,7 @@ import { db, VaultFile } from '../schema';
 import { serializeMarkdownWithFrontmatter, parseMarkdownContent } from '../../markdown/frontmatter';
 import { NativeFileSystemAdapter } from '../fileSystem';
 import { triggerBackgroundAutoSync } from '../../sync/syncAutoTrigger';
+import { recordFolderMove } from '../pendingMoves';
 
 /**
  * Rename a note or folder file path
@@ -45,17 +46,17 @@ export async function renameVaultFile(
     extension: ext,
     content: updatedContent,
     frontmatter: updatedFrontmatter,
+    driveFileId: file.driveFileId || file.driveId,
+    driveId: file.driveId || file.driveFileId,
+    lastSyncedPath: file.lastSyncedPath || (file.driveFileId || file.driveId ? oldPath : undefined),
+    previousPath: oldPath,
     updatedAt: Date.now(),
   };
 
   await db.transaction('rw', [db.files, db.backlinks], async () => {
     await db.files.delete(oldPath);
-    if (file.id && file.id !== oldPath) {
-      await db.files.delete(file.id);
-    }
+    if (file.id && file.id !== oldPath) await db.files.delete(file.id);
     await db.files.put(updatedFile);
-
-    // Update backlinks pointing to this source
     await db.backlinks.where('sourcePath').equals(oldPath).modify({
       sourcePath: newPath,
       sourceTitle: resolvedTitle,
@@ -165,19 +166,18 @@ export async function moveVaultFile(
     id: newPath,
     path: newPath,
     folder: cleanFolder,
+    driveFileId: file.driveFileId || file.driveId,
+    driveId: file.driveId || file.driveFileId,
+    lastSyncedPath: file.lastSyncedPath || (file.driveFileId || file.driveId ? oldPath : undefined),
+    previousPath: oldPath,
     updatedAt: Date.now(),
   };
 
   await db.transaction('rw', [db.files, db.backlinks], async () => {
     await db.files.delete(oldPath);
-    if (file.id && file.id !== oldPath) {
-      await db.files.delete(file.id);
-    }
+    if (file.id && file.id !== oldPath) await db.files.delete(file.id);
     await db.files.put(movedFile);
-
-    await db.backlinks.where('sourcePath').equals(oldPath).modify({
-      sourcePath: newPath,
-    });
+    await db.backlinks.where('sourcePath').equals(oldPath).modify({ sourcePath: newPath });
   });
 
   try {
@@ -280,6 +280,8 @@ export async function renameFolder(
     return n.path === cleanOld || n.path.startsWith(cleanOld + '/');
   });
 
+  await recordFolderMove(cleanOld, newFolderPath);
+
   await db.transaction('rw', [db.files, db.backlinks], async () => {
     for (const note of matchingNotes) {
       const rest = note.path === cleanOld ? '' : note.path.substring(cleanOld.length + 1);
@@ -293,15 +295,16 @@ export async function renameFolder(
         path: newPath,
         name: newName,
         folder: newFolder,
+        driveFileId: note.driveFileId || note.driveId,
+        driveId: note.driveId || note.driveFileId,
+        lastSyncedPath: note.lastSyncedPath || (note.driveFileId || note.driveId ? note.path : undefined),
+        previousPath: note.path,
         updatedAt: Date.now(),
       };
 
       await db.files.delete(note.id || note.path);
       await db.files.put(updatedNote);
-
-      await db.backlinks.where('sourcePath').equals(note.path).modify({
-        sourcePath: newPath,
-      });
+      await db.backlinks.where('sourcePath').equals(note.path).modify({ sourcePath: newPath });
 
       try {
         await NativeFileSystemAdapter.createNewFileOnDisk(newPath, note.content);
@@ -342,6 +345,8 @@ export async function moveFolder(
     return n.path === cleanSource || n.path.startsWith(cleanSource + '/');
   });
 
+  await recordFolderMove(cleanSource, newFolderPath);
+
   await db.transaction('rw', [db.files, db.backlinks], async () => {
     for (const note of matchingNotes) {
       const rest = note.path === cleanSource ? '' : note.path.substring(cleanSource.length + 1);
@@ -355,15 +360,16 @@ export async function moveFolder(
         path: newPath,
         name: newName,
         folder: newFolder,
+        driveFileId: note.driveFileId || note.driveId,
+        driveId: note.driveId || note.driveFileId,
+        lastSyncedPath: note.lastSyncedPath || (note.driveFileId || note.driveId ? note.path : undefined),
+        previousPath: note.path,
         updatedAt: Date.now(),
       };
 
       await db.files.delete(note.id || note.path);
       await db.files.put(updatedNote);
-
-      await db.backlinks.where('sourcePath').equals(note.path).modify({
-        sourcePath: newPath,
-      });
+      await db.backlinks.where('sourcePath').equals(note.path).modify({ sourcePath: newPath });
 
       try {
         await NativeFileSystemAdapter.createNewFileOnDisk(newPath, note.content);

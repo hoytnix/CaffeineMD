@@ -7,8 +7,9 @@ import { reconcileSyncSets, UploadSyncTask, SyncReconciliationResult } from '../
 export const TIME_TOLERANCE_MS = 2000;
 
 export interface DriveSyncAction {
-  type: 'push' | 'pull' | 'delete_remote' | 'delete_local' | 'conflict' | 'noop';
+  type: 'push' | 'pull' | 'delete_remote' | 'delete_local' | 'move_remote' | 'conflict' | 'noop';
   path: string;
+  oldPath?: string;
   noteId?: string;
   remoteFileId?: string;
   reason: string;
@@ -37,10 +38,12 @@ export function reconcileDriveState(
   localNotes: VaultFile[],
   remoteFiles: DriveRemoteFile[],
   trashedRemoteMap?: Map<string, DriveRemoteFile>,
-  toleranceMs = TIME_TOLERANCE_MS
+  toleranceMs = TIME_TOLERANCE_MS,
+  movedFolderPaths?: Set<string>
 ): DriveSyncAction[] {
   const actions: DriveSyncAction[] = [];
   const remoteMap = new Map<string, DriveRemoteFile>();
+  const remoteById = new Map<string, DriveRemoteFile>();
 
   for (const remote of remoteFiles) {
     const rawPath = remote.relativePath || remote.name;
@@ -49,6 +52,7 @@ export function reconcileDriveState(
     remoteMap.set(normalized, remote);
     remoteMap.set(flat, remote);
     remoteMap.set(remote.name, remote);
+    if (remote.id) remoteById.set(remote.id, remote);
   }
 
   const localMap = new Map<string, VaultFile>();
@@ -60,6 +64,7 @@ export function reconcileDriveState(
   }
 
   const processedPaths = new Set<string>();
+  const processedRemoteIds = new Set<string>();
 
   // 1. Evaluate local notes (active and trashed) against remote files
   for (const local of localNotes) {
@@ -68,7 +73,17 @@ export function reconcileDriveState(
     processedPaths.add(path);
 
     const flat = path.replace(/\//g, '___');
-    const remote = remoteMap.get(path) || remoteMap.get(flat) || remoteMap.get(local.name);
+    const remoteId = local.driveFileId || local.driveId;
+    const remote =
+      (remoteId ? remoteById.get(remoteId) : undefined) ||
+      remoteMap.get(path) ||
+      remoteMap.get(flat) ||
+      (local.lastSyncedPath ? remoteMap.get(local.lastSyncedPath) : undefined) ||
+      (local.previousPath ? remoteMap.get(local.previousPath) : undefined) ||
+      remoteMap.get(local.name);
+
+    if (remote?.id) processedRemoteIds.add(remote.id);
+
     const isDeleted = Boolean(local.isDeleted || local.isTrash);
 
     if (isDeleted) {
@@ -123,7 +138,7 @@ export function reconcileDriveState(
         : undefined;
 
       const wasTrashedRemotely = Boolean(trashedRemote);
-      const wasPreviouslySynced = Boolean(local.driveFileId);
+      const wasPreviouslySynced = Boolean(local.driveFileId || local.driveId);
 
       if (wasTrashedRemotely || wasPreviouslySynced) {
         let isModifiedAfterTrash = false;
@@ -142,7 +157,7 @@ export function reconcileDriveState(
             type: 'delete_local',
             path,
             noteId: local.id || local.path,
-            remoteFileId: trashedRemote?.id || local.driveFileId,
+            remoteFileId: trashedRemote?.id || local.driveFileId || local.driveId,
             reason: 'Deleted remotely on another client; moving local copy to Trash',
             local,
             remote: trashedRemote,
@@ -159,6 +174,44 @@ export function reconcileDriveState(
         local,
       });
     } else {
+      const rawRemotePath = remote.relativePath || remote.name;
+      const normalizedRemote = rawRemotePath.replace(/\\/g, '/').replace(/^\/+/, '').replace(/___/g, '/');
+      const isPathChanged = normalizedRemote !== path;
+
+      processedPaths.add(normalizedRemote);
+      processedPaths.add(rawRemotePath);
+
+      if (isPathChanged) {
+        let parentAlreadyRelocated = false;
+        if (movedFolderPaths && movedFolderPaths.size > 0) {
+          for (const movedFolder of movedFolderPaths) {
+            if (normalizedRemote === movedFolder || normalizedRemote.startsWith(movedFolder + '/')) {
+              parentAlreadyRelocated = true;
+              break;
+            }
+          }
+        }
+
+        const remoteTime = typeof remote.modifiedTime === 'number'
+          ? remote.modifiedTime
+          : new Date(remote.modifiedTime).getTime();
+        const localTime = local.updatedAt;
+
+        actions.push({
+          type: parentAlreadyRelocated && Math.abs(localTime - remoteTime) <= toleranceMs ? 'noop' : 'move_remote',
+          path,
+          oldPath: normalizedRemote,
+          noteId: local.id || local.path,
+          remoteFileId: remote.id,
+          reason: parentAlreadyRelocated
+            ? `Parent folder relocated atomically on Drive; keeping ${path} in sync`
+            : `Moved locally from ${normalizedRemote} to ${path}; updating Google Drive`,
+          local,
+          remote,
+        });
+        continue;
+      }
+
       const remoteTime = typeof remote.modifiedTime === 'number'
         ? remote.modifiedTime
         : new Date(remote.modifiedTime).getTime();
@@ -200,13 +253,19 @@ export function reconcileDriveState(
 
   // 2. Evaluate remote files that have NO local record at all
   for (const remote of remoteFiles) {
+    if (processedRemoteIds.has(remote.id)) continue;
     const rawPath = remote.relativePath || remote.name;
     const normalized = rawPath.replace(/___/g, '/').replace(/\\/g, '/').replace(/^\/+/, '');
     const flat = normalized.replace(/\//g, '___');
 
+    if (processedPaths.has(normalized) || processedPaths.has(flat) || processedPaths.has(rawPath)) {
+      continue;
+    }
+
     const local = localMap.get(normalized) || localMap.get(flat);
-    if (!local && !processedPaths.has(normalized)) {
+    if (!local) {
       processedPaths.add(normalized);
+      processedRemoteIds.add(remote.id);
       actions.push({
         type: 'pull',
         path: normalized,

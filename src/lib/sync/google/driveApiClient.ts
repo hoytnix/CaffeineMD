@@ -14,6 +14,14 @@ export interface RemoteDriveFile {
   md5Checksum?: string;
   size?: number;
   trashed?: boolean;
+  parentId?: string;
+}
+
+export interface RemoteDriveFolder {
+  id: string;
+  name: string;
+  relativePath: string;
+  parentId: string;
 }
 
 export interface DriveFileItem {
@@ -317,3 +325,55 @@ export async function listTrashedDriveFolder(
     return [];
   }
 }
+
+export interface MoveOrRenameOptions {
+  name?: string;
+  addParents?: string;
+  removeParents?: string;
+}
+
+/**
+ * Move or rename an existing Google Drive file or folder in-place using PATCH /drive/v3/files/{fileId}
+ */
+export async function moveOrRenameDriveFile(
+  accessToken: string,
+  fileId: string,
+  options: MoveOrRenameOptions
+): Promise<{ id: string; name: string; parents?: string[] } | null> {
+  const queryParams: string[] = ['fields=id,name,parents'];
+  if (options.addParents) queryParams.push(`addParents=${encodeURIComponent(options.addParents)}`);
+  if (options.removeParents) queryParams.push(`removeParents=${encodeURIComponent(options.removeParents)}`);
+  const endpoint = `files/${fileId}?${queryParams.join('&')}`;
+  const body = options.name ? JSON.stringify({ name: options.name }) : JSON.stringify({});
+
+  const res = await driveFetch(accessToken, endpoint, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body,
+  });
+  return res.json();
+}
+
+/**
+ * Permanently delete or trash a stale remote file or empty folder
+ */
+export async function deleteRemoteFile(fileId: string, token?: string): Promise<void> {
+  let accessToken = token;
+  if (!accessToken) {
+    const { DriveAuthService } = await import('./driveAuthService');
+    accessToken = (await DriveAuthService.getValidToken().catch(() => null)) || undefined;
+  }
+  if (!accessToken) return;
+
+  try {
+    const res = await fetch(`${DRIVE_API}/files/${fileId}`, {
+      method: 'DELETE',
+      headers: getHeaders('', accessToken),
+    });
+    if (res.status === 404) return;
+    if (!res.ok) await trashRemoteFile(fileId, accessToken);
+  } catch {
+    await trashRemoteFile(fileId, accessToken);
+  }
+}
+

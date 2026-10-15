@@ -99,7 +99,10 @@ export async function createNote(
     updatedAt: input.updatedAt || now,
     vaultId,
     folder: input.folder,
-    driveFileId: input.driveFileId,
+    driveFileId: input.driveFileId || input.driveId,
+    driveId: input.driveId || input.driveFileId,
+    lastSyncedPath: input.lastSyncedPath,
+    previousPath: input.previousPath,
     lastSyncedAt: input.lastSyncedAt,
     isTrash: false,
     isDeleted: false,
@@ -122,8 +125,11 @@ export async function updateNote(
   const updated: VaultFile = {
     ...existing,
     ...updates,
-    driveFileId: updates.driveFileId !== undefined ? updates.driveFileId : existing.driveFileId,
-    lastSyncedAt: updates.lastSyncedAt !== undefined ? updates.lastSyncedAt : existing.lastSyncedAt,
+    driveFileId: updates.driveFileId ?? updates.driveId ?? existing.driveFileId,
+    driveId: updates.driveId ?? updates.driveFileId ?? existing.driveId,
+    lastSyncedPath: updates.lastSyncedPath ?? existing.lastSyncedPath,
+    previousPath: updates.previousPath ?? existing.previousPath,
+    lastSyncedAt: updates.lastSyncedAt ?? existing.lastSyncedAt,
     updatedAt: updates.updatedAt || Date.now(),
   };
   await db.files.put(updated);

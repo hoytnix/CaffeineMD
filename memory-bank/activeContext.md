@@ -1,27 +1,30 @@
 # Active Context: CaffeineMD
 
 ## Current Focus
-- **Nested Sub-Directory File Movement & Isolated Drag-and-Drop Targeting**:
-  - **Recursive Sub-Directory Collection (`MoveModal`, `useTreeStructure`)**:
-    - Implemented `collectAllFolderPaths()` in [useTreeStructure.ts](file:///home/oloty/Dev/CaffeineMD/src/hooks/useTreeStructure.ts) recursively aggregating all full relative paths at every depth across TreeNode hierarchies, active/keep notes' `folder` and `path` fields, and `customFolders`.
-    - Revamped [MoveModal.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/MoveModal.tsx) with depth-based visual indentation (`depth * 14 + 10px`), folder breadcrumb formatting (`Memories / 2026 / October`), and an integrated filter/custom path input preserving internal `/` separators.
-  - **Drag-and-Drop Event Isolation (`FolderNode`, `useTreeDragAndDrop`)**:
-    - Attached `onDragOver`, `onDragEnter`, `onDragLeave`, and `onDrop` directly to the folder row header element in [FolderNode.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/tree/FolderNode.tsx) rather than the outer recursive wrapper.
-    - Added `e.stopPropagation()` and `e.preventDefault()` inside all folder drag handlers in [useTreeDragAndDrop.ts](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/hooks/useTreeDragAndDrop.ts) and guarded the canvas drop zone in [FileTree.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/FileTree.tsx) (`if (e.defaultPrevented) return;`), preventing drop event bubbling to parent folders.
-    - Wired draggable relocation attributes (`draggable`, `onNodeDragStart`, `onNodeDragEnd`) through [FileNodeRow.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/tree/FileNodeRow.tsx) and [FileTreeItem.tsx](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/FileTreeItem.tsx).
-  - **Multi-Segment Normalization & Auto-Expansion (`useFileTreeActions`, `fileOperations`)**:
-    - Normalized target destinations in [useFileTreeActions.ts](file:///home/oloty/Dev/CaffeineMD/src/components/sidebar/useFileTreeActions.ts) and [fileOperations.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/repositories/fileOperations.ts) via `targetFolder.trim().replace(/^\/+|\/+$/g, '')`, preserving internal slashes.
-    - Added `expandFolders`, `toggleExpandedFolder`, and `setExpandedFolders` in [workspaceStore.ts](file:///home/oloty/Dev/CaffeineMD/src/stores/workspaceStore.ts); auto-expanding all ancestor segments upon note or folder move so newly moved files are immediately visible.
-    - Enforced transactional execution in [vaultMutationService.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/vaultMutationService.ts) ensuring IndexedDB updates, disk handle syncing for Live Disk Folder mode, note store cache refresh for search indexing, and auto-sync triggering.
+- **Google Drive Sync In-Place Move / Reparent & Anti-Resurrection Engine**:
+  - **Stable Remote IDs & Move History Tracking (`schema.ts`, `pendingMoves.ts`, `fileOperations.ts`)**:
+    - Added `driveId`, `lastSyncedPath`, and `previousPath` to `VaultFile` across [schema.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/schema.ts) and IndexedDB DAL.
+    - Updated `renameVaultFile`, `moveVaultFile`, `renameFolder`, and `moveFolder` in [fileOperations.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/repositories/fileOperations.ts) to preserve remote IDs, update `lastSyncedPath`, and track `previousPath`.
+    - Created [pendingMoves.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/pendingMoves.ts) recording folder moves for atomic cloud synchronization.
+  - **In-Place Move / Reparent & Empty Folder Pruning API (`driveApiClient.ts`, `driveFolderSync.ts`)**:
+    - Implemented `moveOrRenameDriveFile()` in [driveApiClient.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sync/google/driveApiClient.ts) executing `PATCH /drive/v3/files/{fileId}?addParents=...&removeParents=...` and body `{ name }`.
+    - Implemented `deleteRemoteFile()` supporting permanent deletion or trashing of stale remote files and empty folders.
+    - Created [driveFolderSync.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sync/google/driveFolderSync.ts) providing `syncPendingFolderMoves()` for atomic remote folder reparenting, `ensureRemoteFolderPath()` for hierarchical path resolution, `pruneEmptiedRemoteFolders()` for cleanup, and `moveRemoteNote()` for in-place file relocation.
+  - **Differential Reconciliation & Move Detection (`driveReconciler.ts`, `reconciler.ts`, `driveSyncRunner.ts`)**:
+    - Upgraded `crawlRemoteWorkspace()` in [remoteCrawler.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sync/google/remoteCrawler.ts) to track remote folder structures and parent IDs.
+    - Updated `reconcileDriveState()` in [driveReconciler.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sync/google/driveReconciler.ts) and `reconcileSyncSets()` in [reconciler.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sync/reconciler.ts) to match local files to remote files via `driveId` / `driveFileId` and `lastSyncedPath` / `previousPath`.
+    - Prevented duplicate downloads and folder resurrection by recognizing local moves as `move_remote` operations rather than new uploads + old downloads.
+    - Connected `runDriveSyncCycle()` in [driveSyncRunner.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sync/google/driveSyncRunner.ts) to reparent folder nodes, relocate remote files, and update local Dexie records with `lastSyncedPath`.
 
 ## Architecture & Recent Changes
-1. **Isolated Drop Target Routing**:
-   - Header-level drag event binding with stopPropagation prevents recursive DOM bubbling from overriding child folder drop destinations.
-2. **Canonical Folder Path Aggregation**:
-   - `collectAllFolderPaths` guarantees all leaf and intermediate subdirectories are selectable in modals and drag zones.
-3. **Synchronized Folder Expansion State**:
-   - Ancestor expansion in Zustand ensures deep move targets expand automatically in the sidebar tree.
+1. **Atomic Remote Folder Reparenting**:
+   - Folders on Google Drive are reparented directly via `addParents`/`removeParents`, moving all children atomically and eliminating duplicate folder creation.
+2. **Move Tombstones & Remote ID Persistence**:
+   - `VaultFile` retains remote identifiers through local renames and moves, preventing the reconciler from misinterpreting relocated local notes as missing files.
+3. **Emptied Folder Pruning**:
+   - Stale remote ancestor directories left vacant after items move are automatically pruned on Google Drive.
 
 ## Next Steps
 - Maintain strict <250 LOC per file across all modules (strict hard limit: 400 LOC).
 - Verification: Run `pnpm run lint` on every prompt cycle.
+
