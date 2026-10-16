@@ -60,6 +60,30 @@ export function normalizeEisenhower(raw?: any): 'Urgent & Immediate' | 'Urgent &
   return 'Not Urgent & Not Immediate';
 }
 
+export const RESERVED_FRONTMATTER_KEYS = new Set([
+  'data',
+  'meta',
+  'content',
+  '_raw',
+  '_id',
+  'body',
+]);
+
+export function filterVisibleFrontmatter(
+  properties: Record<string, unknown>
+): Record<string, unknown> {
+  if (!properties || typeof properties !== 'object') return {};
+  const filtered: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(properties)) {
+    if (!RESERVED_FRONTMATTER_KEYS.has(key.toLowerCase())) {
+      filtered[key] = value;
+    }
+  }
+  return filtered;
+}
+
+export const filterDisplayFrontmatter = filterVisibleFrontmatter;
+
 /**
  * Sanitizes frontmatter meta so it contains only flat primitives or string arrays,
  * eliminating nested meta/frontmatter objects.
@@ -67,7 +91,7 @@ export function normalizeEisenhower(raw?: any): 'Urgent & Immediate' | 'Urgent &
 function sanitizeMetaRecord(meta: Record<string, any>): Record<string, any> {
   const sanitized: Record<string, any> = {};
   for (const [key, val] of Object.entries(meta || {})) {
-    if (key === 'meta' || key === 'frontmatter' || key === 'content' || key === 'data') {
+    if (RESERVED_FRONTMATTER_KEYS.has(key.toLowerCase()) || key === 'frontmatter') {
       continue;
     }
     if (val === null || val === undefined) {

@@ -97,7 +97,7 @@ export default function WorkspacePage() {
         toggleSplitPane();
       } else if (matchesShortcut(e, keyboardShortcuts.newNote)) {
         e.preventDefault();
-        setNewNoteModalOpen(true);
+        setNewNoteModalOpen(true, null);
       } else if (matchesShortcut(e, keyboardShortcuts.toggleSidebar)) {
         e.preventDefault();
         toggleSidebar();

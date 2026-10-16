@@ -45,6 +45,8 @@ export interface WorkspaceState extends ThemeSlice, TrashSlice, TabsSlice, UiOve
   sidebarCollapsed: boolean;
   rightPanelOpen: boolean;
   databaseViewMode: 'table' | 'board' | 'list';
+  newNoteParentPath: string | null;
+  setNewNoteModalOpen: (open: boolean, parentPath?: string | null) => void;
 
   // View & Workspace Navigation
   setActiveView: (view: ActiveWorkspaceView) => void;

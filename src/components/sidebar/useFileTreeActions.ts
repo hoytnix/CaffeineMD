@@ -35,6 +35,7 @@ export function useFileTreeActions({
     removeCustomFolder,
     renameCustomFolder,
     expandFolders,
+    setNewNoteModalOpen,
   } = useWorkspaceStore();
 
   const duplicateNode = useCallback(async (node: TreeNode) => {
@@ -154,5 +155,12 @@ export function useFileTreeActions({
     }
   }, [activeWorkspaceId, activeFilePath, closeFileTab, removeCustomFolder, setActiveFilePath, showToast]);
 
-  return { duplicateNode, renameNode, moveNode, handleDelete };
+  const handleNewNoteInFolder = useCallback((folderPath: string) => {
+    // Normalize folderPath ensuring no trailing slash or duplicate slashes
+    const cleanFolder = folderPath.replace(/^folder:/, '').trim().replace(/\/+$/, '');
+    const normalizedPath = cleanFolder ? (cleanFolder.startsWith('/') ? cleanFolder : `/${cleanFolder}`) : '/';
+    setNewNoteModalOpen(true, normalizedPath);
+  }, [setNewNoteModalOpen]);
+
+  return { duplicateNode, renameNode, moveNode, handleDelete, handleNewNoteInFolder };
 }

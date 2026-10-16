@@ -83,7 +83,7 @@ export async function pullRemoteNote(
 
     if (extension === 'md' || extension === 'markdown') {
       const parsed = parseFrontmatter(textContent);
-      parsedFrontmatter = parsed;
+      parsedFrontmatter = parsed.data || parsed;
       if (parsed.tags && Array.isArray(parsed.tags)) {
         tags = Array.from(new Set([...tags, ...parsed.tags]));
       }

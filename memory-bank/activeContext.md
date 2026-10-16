@@ -1,28 +1,27 @@
 # Active Context: CaffeineMD
 
 ## Current Focus
-- **Google Drive Sync In-Place Move / Reparent & Anti-Resurrection Engine**:
-  - **Stable Remote IDs & Move History Tracking (`schema.ts`, `pendingMoves.ts`, `fileOperations.ts`)**:
-    - Added `driveId`, `lastSyncedPath`, and `previousPath` to `VaultFile` across [schema.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/schema.ts) and IndexedDB DAL.
-    - Updated `renameVaultFile`, `moveVaultFile`, `renameFolder`, and `moveFolder` in [fileOperations.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/repositories/fileOperations.ts) to preserve remote IDs, update `lastSyncedPath`, and track `previousPath`.
-    - Created [pendingMoves.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/storage/pendingMoves.ts) recording folder moves for atomic cloud synchronization.
-  - **In-Place Move / Reparent & Empty Folder Pruning API (`driveApiClient.ts`, `driveFolderSync.ts`)**:
-    - Implemented `moveOrRenameDriveFile()` in [driveApiClient.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sync/google/driveApiClient.ts) executing `PATCH /drive/v3/files/{fileId}?addParents=...&removeParents=...` and body `{ name }`.
-    - Implemented `deleteRemoteFile()` supporting permanent deletion or trashing of stale remote files and empty folders.
-    - Created [driveFolderSync.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sync/google/driveFolderSync.ts) providing `syncPendingFolderMoves()` for atomic remote folder reparenting, `ensureRemoteFolderPath()` for hierarchical path resolution, `pruneEmptiedRemoteFolders()` for cleanup, and `moveRemoteNote()` for in-place file relocation.
-  - **Differential Reconciliation & Move Detection (`driveReconciler.ts`, `reconciler.ts`, `driveSyncRunner.ts`)**:
-    - Upgraded `crawlRemoteWorkspace()` in [remoteCrawler.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sync/google/remoteCrawler.ts) to track remote folder structures and parent IDs.
-    - Updated `reconcileDriveState()` in [driveReconciler.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sync/google/driveReconciler.ts) and `reconcileSyncSets()` in [reconciler.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sync/reconciler.ts) to match local files to remote files via `driveId` / `driveFileId` and `lastSyncedPath` / `previousPath`.
-    - Prevented duplicate downloads and folder resurrection by recognizing local moves as `move_remote` operations rather than new uploads + old downloads.
-    - Connected `runDriveSyncCycle()` in [driveSyncRunner.ts](file:///home/oloty/Dev/CaffeineMD/src/lib/sync/google/driveSyncRunner.ts) to reparent folder nodes, relocate remote files, and update local Dexie records with `lastSyncedPath`.
+- **Folder-Scoped "New Note in Folder" Path Resolution & Frontmatter Key Filtering**:
+  - **Folder Context Tracking in Workspace Store (`workspaceStore.ts`, `uiOverlaySlice.ts`)**:
+    - Added `newNoteParentPath: string | null` and updated `setNewNoteModalOpen(open: boolean, parentPath?: string | null)` to preserve and propagate folder path context across the app.
+  - **Tree Actions & Context Menu Wiring (`useFileTreeActions.ts`, `FileTreeModals.tsx`, `FileActionMenu.tsx`, `FileTreeCanvasContextMenu.tsx`)**:
+    - Implemented `handleNewNoteInFolder(folderPath: string)` normalizing path targets and passing destination into `setNewNoteModalOpen(true, normalizedPath)`.
+    - Wired `onNewNoteInFolder` through `FileTreeModals` and `FileActionMenu`.
+    - Retained root default `setNewNoteModalOpen(true, null)` for global keyboard shortcuts (`⌘N`) and canvas context menu triggers.
+  - **Destination Path Construction & Modal Indicator (`NewNoteModal.tsx`, `useTreeStructure.ts`)**:
+    - Injected destination indicator (`Creating in: <folder>`) into modal header and body.
+    - Sanitized file names and constructed final full paths prefixed with parent directory (`${folder}/${cleanName}` vs `/${cleanName}`).
+    - Normalized path segmentation in `useTreeStructure.ts` to prevent empty root folder artifacts.
+  - **Reserved Frontmatter Key Sanitization (`frontmatter.ts`, `NotePropertiesCard.tsx`, sync engines)**:
+    - Defined `RESERVED_FRONTMATTER_KEYS = new Set(['data', 'meta', 'content', '_raw', '_id', 'body'])` and exported `filterVisibleFrontmatter()`.
+    - Sanitized `NotePropertiesCard.tsx` property rendering and prevented creating custom properties matching reserved keys.
+    - Updated sync processors (`driveSyncRunner.ts`, `syncExecutor.ts`) to store parsed data without AST wrapper keys.
 
 ## Architecture & Recent Changes
-1. **Atomic Remote Folder Reparenting**:
-   - Folders on Google Drive are reparented directly via `addParents`/`removeParents`, moving all children atomically and eliminating duplicate folder creation.
-2. **Move Tombstones & Remote ID Persistence**:
-   - `VaultFile` retains remote identifiers through local renames and moves, preventing the reconciler from misinterpreting relocated local notes as missing files.
-3. **Emptied Folder Pruning**:
-   - Stale remote ancestor directories left vacant after items move are automatically pruned on Google Drive.
+1. **Target-Aware Note Creation Pipeline**:
+   - Sidebar folder action menus now preserve and transmit the folder path context to `NewNoteModal`, which builds complete paths without defaulting to root `/`.
+2. **Deterministic Frontmatter Metadata Filtering**:
+   - Internal parser/AST envelope keys (`data`, `meta`, `content`) are stripped from frontmatter display and user interaction cards.
 
 ## Next Steps
 - Maintain strict <250 LOC per file across all modules (strict hard limit: 400 LOC).

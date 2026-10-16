@@ -97,7 +97,7 @@ export function FileTree() {
     return collectAllFolderPaths(treeData, activeFiles, customFolders);
   }, [treeData, activeFiles, customFolders]);
 
-  const { duplicateNode, renameNode, moveNode } = useFileTreeActions({
+  const { duplicateNode, renameNode, moveNode, handleNewNoteInFolder } = useFileTreeActions({
     activeFiles,
     showToast,
     openFileTab,
@@ -294,6 +294,7 @@ export function FileTree() {
         renameNode={renameNode}
         moveNode={moveNode}
         promptDeleteNote={promptDeleteNote}
+        onNewNoteInFolder={handleNewNoteInFolder}
       />
 
       {/* Canvas Context Menu (Right-click on Empty Space) */}

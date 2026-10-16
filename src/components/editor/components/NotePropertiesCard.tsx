@@ -2,7 +2,11 @@
 
 import React, { useState } from 'react';
 import { VaultFile } from '@/src/lib/storage/db';
-import { normalizeEisenhower } from '@/src/lib/markdown/frontmatter';
+import {
+  normalizeEisenhower,
+  filterVisibleFrontmatter,
+  RESERVED_FRONTMATTER_KEYS,
+} from '@/src/lib/markdown/frontmatter';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { Plus, Tag, ChevronDown, ChevronRight } from 'lucide-react';
 
@@ -48,15 +52,19 @@ export function NotePropertiesCard({
 
   const handleAddPropertySubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPropKey.trim()) return;
+    const trimmedKey = newPropKey.trim();
+    if (!trimmedKey || RESERVED_FRONTMATTER_KEYS.has(trimmedKey.toLowerCase())) return;
 
-    handlePropertyChange(newPropKey.trim(), newPropValue.trim());
+    handlePropertyChange(trimmedKey, newPropValue.trim());
     setNewPropKey('');
     setNewPropValue('');
     setIsAddingProp(false);
   };
 
-  const customProperties = Object.entries(currentFile.frontmatter || {}).filter(
+  const visibleFrontmatter = filterVisibleFrontmatter(
+    (currentFile.frontmatter || {}) as Record<string, unknown>
+  );
+  const customProperties = Object.entries(visibleFrontmatter).filter(
     ([key]) => key !== 'eisenhower'
   );
   const hasFields = customProperties.length > 0 || Boolean(currentFile.eisenhower || currentFile.frontmatter?.eisenhower);
@@ -128,9 +136,7 @@ export function NotePropertiesCard({
           </select>
         </div>
 
-        {Object.entries(currentFile.frontmatter || {})
-          .filter(([key]) => key !== 'eisenhower')
-          .map(([key, value]) => {
+        {customProperties.map(([key, value]) => {
             const displayValue = Array.isArray(value) ? value.join(', ') : String(value ?? '');
             return (
               <div key={key} className="flex flex-col group py-0.5">

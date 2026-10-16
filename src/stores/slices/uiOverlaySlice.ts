@@ -46,7 +46,8 @@ export interface UiOverlaySlice {
   setCreateWorkspaceModalOpen: (open: boolean) => void;
 
   isNewNoteModalOpen: boolean;
-  setNewNoteModalOpen: (open: boolean) => void;
+  newNoteParentPath: string | null;
+  setNewNoteModalOpen: (open: boolean, parentPath?: string | null) => void;
 }
 
 export const createUiOverlaySlice = (set: any, get: any): UiOverlaySlice => ({
@@ -127,5 +128,10 @@ export const createUiOverlaySlice = (set: any, get: any): UiOverlaySlice => ({
   setCreateWorkspaceModalOpen: (open) => set({ isCreateWorkspaceModalOpen: open }),
 
   isNewNoteModalOpen: false,
-  setNewNoteModalOpen: (open) => set({ isNewNoteModalOpen: open }),
+  newNoteParentPath: null,
+  setNewNoteModalOpen: (open, parentPath = null) =>
+    set({
+      isNewNoteModalOpen: open,
+      newNoteParentPath: open ? (parentPath ?? null) : null,
+    }),
 });

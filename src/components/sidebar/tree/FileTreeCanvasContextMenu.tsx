@@ -25,12 +25,12 @@ export function FileTreeCanvasContextMenu({
       label: 'New Note at Root',
       icon: <FilePlus className="w-3.5 h-3.5" />,
       shortcut: '⌘N',
-      onClick: () => setNewNoteModalOpen(true),
+      onClick: () => setNewNoteModalOpen(true, null),
     },
     {
       label: 'New Folder at Root',
       icon: <FolderPlus className="w-3.5 h-3.5" />,
-      onClick: () => setNewNoteModalOpen(true),
+      onClick: () => setNewNoteModalOpen(true, null),
     },
     { isDivider: true },
     {

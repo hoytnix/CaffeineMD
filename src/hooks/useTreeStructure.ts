@@ -47,11 +47,12 @@ export function useTreeStructure(files: VaultFile[], filterQuery: string, custom
       : files;
 
     displayed.forEach((file) => {
-      const parts = file.path.split('/');
+      const parts = file.path.replace(/^\/+/, '').split('/');
       let current = root;
 
       for (let i = 0; i < parts.length; i++) {
         const part = parts[i];
+        if (!part) continue;
         const isLast = i === parts.length - 1;
         const currentPath = parts.slice(0, i + 1).join('/');
 
@@ -60,9 +61,9 @@ export function useTreeStructure(files: VaultFile[], filterQuery: string, custom
         let existing = current.children.find((c) => c.name === part);
         if (!existing) {
           existing = {
-            id: isLast ? (file.id || currentPath) : `folder:${currentPath}`,
+            id: isLast ? (file.id || file.path) : `folder:${currentPath}`,
             name: part,
-            path: currentPath,
+            path: isLast ? file.path : currentPath,
             isFolder: !isLast,
             children: isLast ? undefined : [],
             file: isLast ? file : undefined,

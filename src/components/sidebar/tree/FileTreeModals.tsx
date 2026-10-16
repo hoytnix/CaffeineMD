@@ -21,6 +21,7 @@ export interface FileTreeModalsProps {
   renameNode: (node: TreeNode, newName: string) => Promise<void>;
   moveNode: (node: TreeNode, destFolder: string) => Promise<void>;
   promptDeleteNote: (path: string, title?: string) => void;
+  onNewNoteInFolder?: (folderPath: string) => void;
 }
 
 /**
@@ -43,6 +44,7 @@ export function FileTreeModals({
   renameNode,
   moveNode,
   promptDeleteNote,
+  onNewNoteInFolder,
 }: FileTreeModalsProps) {
   return (
     <>
@@ -57,6 +59,12 @@ export function FileTreeModals({
         onRename={() => setRenameTarget(activeMenuNode)}
         onDuplicate={() => activeMenuNode && duplicateNode(activeMenuNode)}
         onMove={() => setMoveTarget(activeMenuNode)}
+        onNewNoteInFolder={() => {
+          if (activeMenuNode) {
+            const cleanPath = activeMenuNode.path.replace(/^folder:/, '');
+            onNewNoteInFolder?.(cleanPath);
+          }
+        }}
         onTrash={() => {
           if (activeMenuNode) {
             promptDeleteNote(

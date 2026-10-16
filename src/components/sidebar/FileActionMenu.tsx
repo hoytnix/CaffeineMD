@@ -44,6 +44,7 @@ export function FileActionMenu({
   onDuplicate,
   onMove,
   onTrash,
+  onNewNoteInFolder,
 }: FileActionMenuProps) {
   const {
     openFileTab,
@@ -67,12 +68,24 @@ export function FileActionMenu({
       {
         label: 'New Note in Folder',
         icon: <FilePlus className="w-3.5 h-3.5" />,
-        onClick: () => setNewNoteModalOpen(true),
+        onClick: () => {
+          if (onNewNoteInFolder) {
+            onNewNoteInFolder();
+          } else {
+            const clean = filePath.replace(/^folder:/, '').trim().replace(/\/+$/, '');
+            const normalized = clean ? (clean.startsWith('/') ? clean : `/${clean}`) : '/';
+            setNewNoteModalOpen(true, normalized);
+          }
+        },
       },
       {
         label: 'New Subfolder',
         icon: <FolderPlus className="w-3.5 h-3.5" />,
-        onClick: () => setNewNoteModalOpen(true),
+        onClick: () => {
+          const clean = filePath.replace(/^folder:/, '').trim().replace(/\/+$/, '');
+          const normalized = clean ? (clean.startsWith('/') ? clean : `/${clean}`) : '/';
+          setNewNoteModalOpen(true, normalized);
+        },
       },
       { isDivider: true },
       {

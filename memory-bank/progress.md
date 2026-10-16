@@ -60,8 +60,12 @@
 - [x] **Gemini AI Service & Route Handler Unification (`DRY-04`)**: Created `src/lib/ai/geminiClient.ts` with structured generation, model fallback cascading, and markdown fence stripping across `/api/theme/generate`, `aiThemeService.ts`, and `geminiTemplateGenerator.ts`.
 - [x] **Export Pre-Compiler & Vault Mutation DAL (`DRY-02`, `DRY-05`)**: Added `compileVaultExportContext()` to `exportBundleService.ts`; created `vaultMutationService.ts` unifying mutations, disk synchronization, and background Google Drive auto-sync.
 
+### 9. Folder Path Resolution & Frontmatter Key Sanitization
+- [x] **Folder-Scoped "New Note in Folder" Resolution**: Propagated target directory context via `newNoteParentPath` across `workspaceStore.ts`, `uiOverlaySlice.ts`, `useFileTreeActions.ts`, `FileTreeModals.tsx`, and `FileActionMenu.tsx`; resolved relative note paths and created notes under target directory paths with modal destination preview.
+- [x] **Reserved Frontmatter Key Sanitization**: Defined `RESERVED_FRONTMATTER_KEYS` and `filterVisibleFrontmatter()` in `frontmatter.ts`; purged internal AST wrapper keys (`data`, `meta`, `content`, `_raw`, `_id`, `body`) from `NotePropertiesCard.tsx` property rendering and guarded against custom attribute collisions; sanitized Google Drive sync dal records.
+
 ## Verification Status
-- Production Build: Passing cleanly.
+- Production Build: Passing cleanly (`next build` 7/7 static pages generated).
 - ESLint: Passing cleanly with 0 errors and 0 warnings (`pnpm run lint`).
 - TypeScript: Passing cleanly with 0 errors (`tsc --noEmit`).
 - Tiered LOC Limits: 100% compliant (<250 LOC per file across all touched modules, <400 hard limit).

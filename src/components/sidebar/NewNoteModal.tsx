@@ -13,17 +13,32 @@ interface NewNoteModalProps {
 
 export function NewNoteModal({ isOpen, onClose }: NewNoteModalProps) {
   const [newNoteName, setNewNoteName] = useState('');
-  const { openFileTab, activeWorkspaceId } = useWorkspaceStore();
+  const {
+    openFileTab,
+    setActiveFilePath,
+    activeWorkspaceId,
+    newNoteParentPath,
+    setNewNoteModalOpen,
+  } = useWorkspaceStore();
 
   if (!isOpen) return null;
 
+  const folder =
+    newNoteParentPath && newNoteParentPath !== '/'
+      ? newNoteParentPath.replace(/\/+$/, '')
+      : '';
+  const destinationDisplay = folder || '/';
+
   const handleCreateNewNote = async () => {
-    if (!newNoteName.trim()) return;
+    // Sanitize input title/file name (strip invalid filesystem characters)
+    const sanitized = newNoteName.trim().replace(/[:*?"<>|\\]/g, '');
+    if (!sanitized) return;
 
-    let path = newNoteName.trim();
-    if (!path.endsWith('.md')) path += '.md';
-
-    const title = path.replace(/\.[^/.]+$/, '').split('/').pop() || path;
+    // If name does not end with .md, append .md
+    const fileName = sanitized.endsWith('.md') ? sanitized : `${sanitized}.md`;
+    const cleanName = fileName.trim().replace(/^\/+/, '');
+    const finalFilePath = folder ? `${folder}/${cleanName}` : `/${cleanName}`;
+    const title = cleanName.replace(/\.[^/.]+$/, '').split('/').pop() || cleanName;
 
     const content = `---
 title: "${title}"
@@ -38,10 +53,11 @@ eisenhower: "Not Urgent & Not Immediate"
 Start writing here...`;
 
     const newNote: VaultFile = {
-      id: path,
-      path,
-      name: path.split('/').pop() || path,
+      id: finalFilePath,
+      path: finalFilePath,
+      name: cleanName.split('/').pop() || cleanName,
       title,
+      folder: folder || '',
       extension: 'md',
       content,
       frontmatter: {
@@ -62,10 +78,13 @@ Start writing here...`;
 
     await executeVaultMutation(
       () => db.files.put(newNote),
-      { syncDiskNote: { path, content: newNote.content } }
+      { syncDiskNote: { path: finalFilePath, content: newNote.content } }
     );
-    openFileTab(path, title);
+
+    setActiveFilePath(finalFilePath);
+    openFileTab(finalFilePath, title);
     setNewNoteName('');
+    setNewNoteModalOpen(false);
     onClose();
   };
 
@@ -74,7 +93,7 @@ Start writing here...`;
       isOpen={isOpen}
       onClose={onClose}
       size="sm"
-      title="Create New Note"
+      title={folder ? `Create New Note in ${folder}` : 'Create New Note'}
       footer={
         <>
           <button
@@ -95,9 +114,12 @@ Start writing here...`;
         </>
       }
     >
+      <div className="mb-2 text-xs text-neutral-400">
+        Creating in: <span className="font-mono text-indigo-400 font-semibold">{destinationDisplay}</span>
+      </div>
       <input
         type="text"
-        placeholder="e.g. Daily Standup or Projects/Alpha.md"
+        placeholder="e.g. Daily Standup or Architecture.md"
         value={newNoteName}
         onChange={(e) => setNewNoteName(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && handleCreateNewNote()}
