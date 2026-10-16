@@ -1,29 +1,28 @@
 # Active Context: CaffeineMD
 
 ## Current Focus
-- **Folder-Scoped "New Note in Folder" Path Resolution & Frontmatter Key Filtering**:
-  - **Folder Context Tracking in Workspace Store (`workspaceStore.ts`, `uiOverlaySlice.ts`)**:
-    - Added `newNoteParentPath: string | null` and updated `setNewNoteModalOpen(open: boolean, parentPath?: string | null)` to preserve and propagate folder path context across the app.
-  - **Tree Actions & Context Menu Wiring (`useFileTreeActions.ts`, `FileTreeModals.tsx`, `FileActionMenu.tsx`, `FileTreeCanvasContextMenu.tsx`)**:
-    - Implemented `handleNewNoteInFolder(folderPath: string)` normalizing path targets and passing destination into `setNewNoteModalOpen(true, normalizedPath)`.
-    - Wired `onNewNoteInFolder` through `FileTreeModals` and `FileActionMenu`.
-    - Retained root default `setNewNoteModalOpen(true, null)` for global keyboard shortcuts (`⌘N`) and canvas context menu triggers.
-  - **Destination Path Construction & Modal Indicator (`NewNoteModal.tsx`, `useTreeStructure.ts`)**:
-    - Injected destination indicator (`Creating in: <folder>`) into modal header and body.
-    - Sanitized file names and constructed final full paths prefixed with parent directory (`${folder}/${cleanName}` vs `/${cleanName}`).
-    - Normalized path segmentation in `useTreeStructure.ts` to prevent empty root folder artifacts.
-  - **Reserved Frontmatter Key Sanitization (`frontmatter.ts`, `NotePropertiesCard.tsx`, sync engines)**:
-    - Defined `RESERVED_FRONTMATTER_KEYS = new Set(['data', 'meta', 'content', '_raw', '_id', 'body'])` and exported `filterVisibleFrontmatter()`.
-    - Sanitized `NotePropertiesCard.tsx` property rendering and prevented creating custom properties matching reserved keys.
-    - Updated sync processors (`driveSyncRunner.ts`, `syncExecutor.ts`) to store parsed data without AST wrapper keys.
+- **Dual-Mode Database List View (Standard List vs Responsive Card Grid)**:
+  - **Zustand & LocalStorage Layout Persistence (`workspaceStore.ts`)**:
+    - Added `listViewLayout: 'list' | 'grid'` and `setListViewLayout: (layout: ListViewLayout) => void` to `WorkspaceState`.
+    - Persisted state changes to `localStorage` under key `caffeinemd-list-layout` with client-safe hydration.
+  - **Modular Card Item (`src/components/database/list/ListCardItem.tsx`)**:
+    - Extracted 144 LOC modular card component with document title/emoji, status pill, Eisenhower priority badge, 3-line body excerpt preview via `extractCleanExcerpt`, tag pills, and relative timestamp.
+    - Consumed solid theme CSS variables (`var(--card)`, `var(--border)`, `var(--foreground)`, `var(--bg-primary)`, `var(--theme-accent)`) for wallpaper isolation.
+    - Full keyboard accessibility (`Enter`/`Space` activation) and hover elevation.
+  - **Toolbar Segmented Switcher (`ViewSwitcher.tsx`)**:
+    - Rendered compact segmented toggle with `LayoutList` and `LayoutGrid` icons when `databaseViewMode === 'list'`.
+  - **Declarative List Orchestration (`ListView.tsx`)**:
+    - Integrated inline header bar displaying total note count, active layout badge, and quick switcher buttons.
+    - Switched conditionally between streamlined row list and responsive CSS grid (`grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4`).
+  - **Documentation & Verification (`database-graph-and-export.md`)**:
+    - Documented dual-mode list view capabilities, card structure, and state persistence.
 
 ## Architecture & Recent Changes
-1. **Target-Aware Note Creation Pipeline**:
-   - Sidebar folder action menus now preserve and transmit the folder path context to `NewNoteModal`, which builds complete paths without defaulting to root `/`.
-2. **Deterministic Frontmatter Metadata Filtering**:
-   - Internal parser/AST envelope keys (`data`, `meta`, `content`) are stripped from frontmatter display and user interaction cards.
+1. **Dual-Mode Database List Engine**:
+   - `ListView.tsx` acts as a declarative container switching between compact rows and multi-column visual cards while delegating card item logic to `ListCardItem.tsx` to maintain strict LOC limits.
+2. **Solid Theme Token Layering**:
+   - Database views utilize solid CSS variables (`var(--card)`) ensuring clean readability against user-configured background image wallpapers.
 
 ## Next Steps
 - Maintain strict <250 LOC per file across all modules (strict hard limit: 400 LOC).
 - Verification: Run `pnpm run lint` on every prompt cycle.
-

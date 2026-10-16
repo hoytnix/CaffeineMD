@@ -46,9 +46,20 @@ CaffeineMD transforms standard Markdown notes into relational database records w
 - **Drag-and-Drop (`useKanbanDragAndDrop.ts`)**:
   - Dragging a card between columns updates the note's frontmatter `status` or `eisenhower` attribute instantly with optimistic UI feedback.
 
-### 1.4 List View (`ListView.tsx`)
-- Minimalist, distraction-free document feed displaying title, snippet, tag pills, and modification dates.
-- Ideal for daily journals, meeting notes, and quick item scanning.
+### 1.4 List View & Responsive Card Grid (`ListView.tsx`, `ListCardItem.tsx`)
+- Dual-mode document layout engine allowing seamless toggling between:
+  - **Compact List Mode**: Distraction-free, dense vertical feed displaying document titles, status pills, Eisenhower priority indicators, author badges, tags, and modification dates.
+  - **Card Grid Mode (`ListCardItem.tsx`)**: Responsive multi-column visual gallery (`grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4`) featuring:
+    - Note icon/emoji and title with hover accent highlights.
+    - Frontmatter status badge (e.g. `todo`, `in-progress`, `done`) and Eisenhower priority quadrant pill.
+    - Plaintext body excerpt preview truncated to 3 lines (`line-clamp-3`).
+    - Tag badge pills with truncated overflow indicators.
+    - Relative timestamps (`Just now`, `5m ago`, `2h ago`, `3d ago`) with full localized date tooltips.
+    - Solid theme token background (`var(--card)`) preserving opacity against custom wallpaper backgrounds.
+    - Full keyboard accessibility (`Enter`/`Space` activation).
+- **Layout Switcher & Persistence**:
+  - Embedded quick switcher and toolbar toggle in `ViewSwitcher.tsx` enabling instant layout switching.
+  - Preference state stored in `useWorkspaceStore` (`listViewLayout: 'list' | 'grid'`) and persisted across reloads in `localStorage` (`caffeinemd-list-layout`).
 
 ---
 

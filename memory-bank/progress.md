@@ -60,9 +60,12 @@
 - [x] **Gemini AI Service & Route Handler Unification (`DRY-04`)**: Created `src/lib/ai/geminiClient.ts` with structured generation, model fallback cascading, and markdown fence stripping across `/api/theme/generate`, `aiThemeService.ts`, and `geminiTemplateGenerator.ts`.
 - [x] **Export Pre-Compiler & Vault Mutation DAL (`DRY-02`, `DRY-05`)**: Added `compileVaultExportContext()` to `exportBundleService.ts`; created `vaultMutationService.ts` unifying mutations, disk synchronization, and background Google Drive auto-sync.
 
-### 9. Folder Path Resolution & Frontmatter Key Sanitization
-- [x] **Folder-Scoped "New Note in Folder" Resolution**: Propagated target directory context via `newNoteParentPath` across `workspaceStore.ts`, `uiOverlaySlice.ts`, `useFileTreeActions.ts`, `FileTreeModals.tsx`, and `FileActionMenu.tsx`; resolved relative note paths and created notes under target directory paths with modal destination preview.
-- [x] **Reserved Frontmatter Key Sanitization**: Defined `RESERVED_FRONTMATTER_KEYS` and `filterVisibleFrontmatter()` in `frontmatter.ts`; purged internal AST wrapper keys (`data`, `meta`, `content`, `_raw`, `_id`, `body`) from `NotePropertiesCard.tsx` property rendering and guarded against custom attribute collisions; sanitized Google Drive sync dal records.
+### 10. Dual-Mode Database List View (Standard List vs Card Grid)
+- [x] **Zustand & LocalStorage Layout Persistence**: `listViewLayout: 'list' | 'grid'` state, action `setListViewLayout`, and `localStorage` hydration under `caffeinemd-list-layout` in `workspaceStore.ts`.
+- [x] **Modular Card Component (`ListCardItem.tsx`)**: Created modular `< 150 LOC` card component rendering note title, emoji/icon, frontmatter status, Eisenhower priority pill, 3-line body excerpt preview via `extractCleanExcerpt`, tags, and relative timestamps with solid `var(--card)` opacity.
+- [x] **Toolbar View Switcher Extension (`ViewSwitcher.tsx`)**: Compact segmented toggle switch with `LayoutList` and `LayoutGrid` icons shown whenever list view mode is active.
+- [x] **Responsive Card Grid & Inline Header (`ListView.tsx`)**: Responsive multi-column grid (`grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4`) toggled alongside compact row list, with an embedded header control bar.
+- [x] **Documentation & Strict Verification**: Documented capabilities in `database-graph-and-export.md`. Verified TypeScript compiler (0 errors), ESLint (0 errors, 0 warnings), Next.js production build (7/7 static pages), and strict LOC limits (<250 LOC).
 
 ## Verification Status
 - Production Build: Passing cleanly (`next build` 7/7 static pages generated).

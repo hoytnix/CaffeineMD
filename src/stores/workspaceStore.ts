@@ -18,6 +18,7 @@ export { DEFAULT_AUTOSAVE_INTERVAL };
 export type ActiveWorkspaceView = 'editor' | 'graph' | 'table' | 'board' | 'list' | 'tags' | 'settings';
 export type WorkspaceTabId = ActiveWorkspaceView | 'kanban';
 export type EditorModeType = 'richtext' | 'plaintext' | 'diff';
+export type ListViewLayout = 'list' | 'grid';
 
 export const AUTOSAVE_INTERVAL_PRESETS = [
   { value: 0, label: 'Manual only (Off)' },
@@ -45,6 +46,8 @@ export interface WorkspaceState extends ThemeSlice, TrashSlice, TabsSlice, UiOve
   sidebarCollapsed: boolean;
   rightPanelOpen: boolean;
   databaseViewMode: 'table' | 'board' | 'list';
+  listViewLayout: ListViewLayout;
+  setListViewLayout: (layout: ListViewLayout) => void;
   newNoteParentPath: string | null;
   setNewNoteModalOpen: (open: boolean, parentPath?: string | null) => void;
 
@@ -103,6 +106,16 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   sidebarCollapsed: false,
   rightPanelOpen: true,
   databaseViewMode: 'table',
+  listViewLayout:
+    (typeof window !== 'undefined' &&
+      (localStorage.getItem('caffeinemd-list-layout') as ListViewLayout)) ||
+    'list',
+  setListViewLayout: (layout: ListViewLayout) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('caffeinemd-list-layout', layout);
+    }
+    set({ listViewLayout: layout });
+  },
 
   setActiveView: (view) => {
     const tab: WorkspaceTabId = view === 'board' ? 'kanban' : view;
