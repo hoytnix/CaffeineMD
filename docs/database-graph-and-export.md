@@ -43,12 +43,13 @@ CaffeineMD transforms standard Markdown notes into relational database records w
 - **Board-Level CRUD & Reordering (`KanbanBoardSelector.tsx`, `KanbanBoardModals.tsx`)**:
   - Users can create multiple named Kanban boards (e.g., `Task Status`, `Eisenhower Matrix`, `Not ToDO`, `Sprint Backlog`), switch between active boards, reorder boards via HTML5 drag-and-drop pill tabs, rename boards, and delete boards (automatically falling back to the default board).
   - Board configurations, order, and active board state are managed in `kanbanSlice.ts` (`reorderKanbanBoards`) and persisted via `storageRegistry` (`caffeinemd-kanban-boards` and `caffeinemd-active-kanban-board`).
-- **Column/Lane-Level CRUD (`KanbanColumnMenu.tsx`, `KanbanAddColumnCard.tsx`)**:
+- **Column/Lane-Level CRUD & Reordering (`KanbanColumnMenu.tsx`, `KanbanAddColumnCard.tsx`, `KanbanColumn.tsx`)**:
   - **Add Column**: Inline `+ Add Column` card at the end of the board viewport appends custom lanes (e.g., `Not ToDO`) to the active board.
+  - **Reorder Columns**: Dragging a column by its header grip handle allows rearranging column orders with visual drop targets and persistent storage via `reorderColumnsInBoard`.
   - **Rename Column & Batch Migration**: Renaming a column updates the board schema and executes an atomic batch frontmatter migration across all matching notes in IndexedDB via `executeVaultMutation` and `serializeFrontmatter`.
   - **Delete Column**: Removing a column reassigns any orphaned cards in that lane to the board's primary fallback column via `executeVaultMutation`.
-- **Drag-and-Drop (`useKanbanDragAndDrop.ts`)**:
-  - Dragging a card between columns updates the note's frontmatter `status`, `eisenhower`, or custom grouping attribute instantly with optimistic UI feedback.
+- **Card Drag-and-Drop (`useKanbanDragAndDrop.ts`)**:
+  - Dragging a card between columns updates the note's frontmatter `status`, `eisenhower`, or custom grouping attribute instantly with optimistic UI feedback without conflicting with column drag mechanics.
 
 ### 1.4 List View & Responsive Card Grid (`ListView.tsx`, `ListCardItem.tsx`)
 - Dual-mode document layout engine allowing seamless toggling between:

@@ -51,6 +51,7 @@ export interface KanbanSlice {
   addColumnToBoard: (boardId: string, column: string) => void;
   renameColumnInBoard: (boardId: string, oldCol: string, newCol: string) => void;
   deleteColumnFromBoard: (boardId: string, column: string) => void;
+  reorderColumnsInBoard: (boardId: string, startIndex: number, endIndex: number, currentColumns?: string[]) => void;
 }
 
 type SliceSetter = (partial: Partial<KanbanSlice> | ((state: KanbanSlice) => Partial<KanbanSlice>)) => void;
@@ -170,6 +171,20 @@ export const createKanbanSlice = (set: SliceSetter, get: SliceGetter): KanbanSli
     const nextBoards = get().kanbanBoards.map((board) => {
       if (board.id !== boardId || board.columns.length <= 1) return board;
       return { ...board, columns: board.columns.filter((c) => c !== column), updatedAt: Date.now() };
+    });
+    persistBoards(nextBoards);
+    set({ kanbanBoards: nextBoards });
+  },
+
+  reorderColumnsInBoard: (boardId, startIndex, endIndex, currentColumns) => {
+    const nextBoards = get().kanbanBoards.map((board) => {
+      if (board.id !== boardId) return board;
+      const base = currentColumns && currentColumns.length > 0 ? currentColumns : board.columns;
+      const cols = [...base];
+      if (startIndex < 0 || startIndex >= cols.length || endIndex < 0 || endIndex >= cols.length) return board;
+      const [removed] = cols.splice(startIndex, 1);
+      cols.splice(endIndex, 0, removed);
+      return { ...board, columns: cols, updatedAt: Date.now() };
     });
     persistBoards(nextBoards);
     set({ kanbanBoards: nextBoards });

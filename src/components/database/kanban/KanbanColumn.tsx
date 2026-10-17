@@ -2,16 +2,19 @@
 
 import React from 'react';
 import { VaultFile } from '@/src/lib/storage/db';
-import { Plus } from 'lucide-react';
+import { Plus, GripVertical } from 'lucide-react';
 import { KanbanCard } from './KanbanCard';
 import { KanbanColumnMenu } from './KanbanColumnMenu';
 
 interface KanbanColumnProps {
   col: string;
+  index: number;
   files: VaultFile[];
   columns: string[];
   isGroupingByEisenhower: boolean;
   isOver: boolean;
+  isColumnDragging?: boolean;
+  isColumnOver?: boolean;
   draggedPath: string | null;
   activeColumnForNew: string | null;
   newCardTitle: string;
@@ -23,6 +26,10 @@ interface KanbanColumnProps {
   onDrop: (e: React.DragEvent, col: string) => void;
   onDragStart: (e: React.DragEvent, path: string) => void;
   onDragEnd: () => void;
+  onColumnDragStart?: (e: React.DragEvent, index: number) => void;
+  onColumnDragEnd?: () => void;
+  onColumnDragOver?: (e: React.DragEvent, index: number) => void;
+  onColumnDrop?: (e: React.DragEvent, index: number) => void;
   onOpenFile: (path: string, title?: string) => void;
   onMoveStatus: (file: VaultFile, targetCol: string) => void;
   onRenameColumn?: (oldCol: string, newCol: string) => void;
@@ -32,10 +39,13 @@ interface KanbanColumnProps {
 
 export function KanbanColumn({
   col,
+  index,
   files,
   columns,
   isGroupingByEisenhower,
   isOver,
+  isColumnDragging = false,
+  isColumnOver = false,
   draggedPath,
   activeColumnForNew,
   newCardTitle,
@@ -47,6 +57,10 @@ export function KanbanColumn({
   onDrop,
   onDragStart,
   onDragEnd,
+  onColumnDragStart,
+  onColumnDragEnd,
+  onColumnDragOver,
+  onColumnDrop,
   onOpenFile,
   onMoveStatus,
   onRenameColumn,
@@ -55,22 +69,37 @@ export function KanbanColumn({
 }: KanbanColumnProps) {
   return (
     <div
-      onDragOver={(e) => onDragOver(e, col)}
+      onDragOver={(e) => {
+        if (onColumnDragOver) onColumnDragOver(e, index);
+        onDragOver(e, col);
+      }}
       onDragLeave={(e) => onDragLeave(e, col)}
-      onDrop={(e) => onDrop(e, col)}
+      onDrop={(e) => {
+        if (onColumnDrop) onColumnDrop(e, index);
+        onDrop(e, col);
+      }}
       style={{ backgroundColor: 'var(--theme-bg-sidebar)', borderColor: 'var(--theme-border)' }}
       className={`w-72 shrink-0 rounded-xl border transition-all flex flex-col p-3 shadow-xs ${
-        isOver
+        isColumnDragging
+          ? 'opacity-40 scale-[0.98] border-dashed border-indigo-500'
+          : isColumnOver
+          ? 'ring-2 ring-indigo-500 ring-offset-2 ring-offset-[var(--background)]'
+          : isOver
           ? 'ring-2 ring-indigo-500/30'
           : ''
       }`}
     >
       {/* Column Header */}
       <div
+        draggable
+        onDragStart={(e) => onColumnDragStart?.(e, index)}
+        onDragEnd={onColumnDragEnd}
+        title="Drag column to reorder"
         style={{ borderColor: 'var(--theme-border)' }}
-        className="flex items-center justify-between pb-2 mb-2 border-b"
+        className="flex items-center justify-between pb-2 mb-2 border-b cursor-grab active:cursor-grabbing select-none group/colheader"
       >
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <GripVertical className="w-3.5 h-3.5 text-neutral-400/50 group-hover/colheader:text-neutral-400 shrink-0 transition-colors" />
           <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 truncate">
             {col}
           </span>
@@ -78,7 +107,10 @@ export function KanbanColumn({
             {files.length}
           </span>
         </div>
-        <div className="flex items-center gap-0.5 shrink-0">
+        <div
+          className="flex items-center gap-0.5 shrink-0"
+          onMouseDown={(e) => e.stopPropagation()}
+        >
           <button
             type="button"
             onClick={() => onSetActiveColumnForNew(col)}

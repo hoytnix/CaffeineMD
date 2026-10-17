@@ -12,7 +12,7 @@
     - `KanbanBoardModals.tsx`: Create, Rename, and Delete board modals built on `ModalShell`.
     - `KanbanColumnMenu.tsx`: Column header popover supporting inline column renaming and deletion with card count badges.
     - `KanbanAddColumnCard.tsx`: Dashed inline `+ Add Column` card at the end of the board viewport.
-    - `KanbanColumn.tsx` & `KanbanView.tsx`: Connected active board state, column CRUD handlers, board reordering callback, and atomic batch frontmatter migrations via `executeVaultMutation` and `serializeFrontmatter`.
+    - `KanbanColumn.tsx` & `KanbanView.tsx`: Connected active board state, column CRUD handlers, board reordering callback, HTML5 column header drag-and-drop reordering (`reorderColumnsInBoard`, `useKanbanDragAndDrop`), and atomic batch frontmatter migrations via `executeVaultMutation` and `serializeFrontmatter`.
 
 ## Next Steps
 - Maintain strict <250 LOC per file across all modules (strict hard limit: 400 LOC).

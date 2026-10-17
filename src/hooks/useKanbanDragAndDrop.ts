@@ -8,6 +8,7 @@ interface UseKanbanDragAndDropOptions {
   isGroupingByEisenhower: boolean;
   activeGroupKey: string;
   onRefresh: () => void;
+  onReorderColumns?: (startIndex: number, endIndex: number) => void;
 }
 
 export function useKanbanDragAndDrop({
@@ -16,9 +17,12 @@ export function useKanbanDragAndDrop({
   isGroupingByEisenhower,
   activeGroupKey,
   onRefresh,
+  onReorderColumns,
 }: UseKanbanDragAndDropOptions) {
   const [draggedPath, setDraggedPath] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
+  const [draggedColumnIndex, setDraggedColumnIndex] = useState<number | null>(null);
+  const [dragOverColumnIndex, setDragOverColumnIndex] = useState<number | null>(null);
 
   const normalizeStatus = (raw: any): string => {
     if (!raw) return 'Draft';
@@ -99,31 +103,75 @@ export function useKanbanDragAndDrop({
     setDragOverColumn(null);
   }, []);
 
-  const handleDragOver = useCallback((e: React.DragEvent, col: string) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverColumn((prev) => (prev !== col ? col : prev));
-  }, []);
+  const handleDragOver = useCallback(
+    (e: React.DragEvent, col: string) => {
+      if (draggedColumnIndex !== null) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      setDragOverColumn((prev) => (prev !== col ? col : prev));
+    },
+    [draggedColumnIndex]
+  );
 
-  const handleDragLeave = useCallback((e: React.DragEvent, col: string) => {
-    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
-    setDragOverColumn((prev) => (prev === col ? null : prev));
-  }, []);
+  const handleDragLeave = useCallback(
+    (e: React.DragEvent, col: string) => {
+      if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+      setDragOverColumn((prev) => (prev === col ? null : prev));
+    },
+    []
+  );
 
   const handleDrop = useCallback(
     async (e: React.DragEvent, col: string) => {
+      if (draggedColumnIndex !== null) return;
       e.preventDefault();
       setDragOverColumn(null);
       const notePath = e.dataTransfer.getData('text/plain');
       if (!notePath) return;
       await updateNoteStatus(notePath, col);
     },
-    [updateNoteStatus]
+    [draggedColumnIndex, updateNoteStatus]
+  );
+
+  const handleColumnDragStart = useCallback((e: React.DragEvent, index: number) => {
+    e.dataTransfer.setData('application/x-caffeinemd-kanban-column', String(index));
+    e.dataTransfer.effectAllowed = 'move';
+    setDraggedColumnIndex(index);
+  }, []);
+
+  const handleColumnDragEnd = useCallback(() => {
+    setDraggedColumnIndex(null);
+    setDragOverColumnIndex(null);
+  }, []);
+
+  const handleColumnDragOver = useCallback(
+    (e: React.DragEvent, index: number) => {
+      if (draggedColumnIndex === null) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      setDragOverColumnIndex((prev) => (prev !== index ? index : prev));
+    },
+    [draggedColumnIndex]
+  );
+
+  const handleColumnDrop = useCallback(
+    (e: React.DragEvent, targetIndex: number) => {
+      if (draggedColumnIndex === null) return;
+      e.preventDefault();
+      if (draggedColumnIndex !== targetIndex) {
+        onReorderColumns?.(draggedColumnIndex, targetIndex);
+      }
+      setDraggedColumnIndex(null);
+      setDragOverColumnIndex(null);
+    },
+    [draggedColumnIndex, onReorderColumns]
   );
 
   return {
     draggedPath,
     dragOverColumn,
+    draggedColumnIndex,
+    dragOverColumnIndex,
     handleMoveStatus,
     updateNoteStatus,
     handleDragStart,
@@ -131,5 +179,9 @@ export function useKanbanDragAndDrop({
     handleDragOver,
     handleDragLeave,
     handleDrop,
+    handleColumnDragStart,
+    handleColumnDragEnd,
+    handleColumnDragOver,
+    handleColumnDrop,
   };
 }

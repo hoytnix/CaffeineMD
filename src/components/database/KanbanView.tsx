@@ -33,7 +33,7 @@ export function KanbanView({ files, onRefresh }: KanbanViewProps) {
   const {
     openFileTab, activeWorkspaceId, kanbanBoards, activeBoardId, setActiveBoardId,
     createKanbanBoard, renameKanbanBoard, deleteKanbanBoard, reorderKanbanBoards,
-    addColumnToBoard, renameColumnInBoard, deleteColumnFromBoard, showToast,
+    addColumnToBoard, renameColumnInBoard, deleteColumnFromBoard, reorderColumnsInBoard, showToast,
   } = useWorkspaceStore();
 
   const [modalMode, setModalMode] = useState<BoardModalMode>(null);
@@ -67,10 +67,27 @@ export function KanbanView({ files, onRefresh }: KanbanViewProps) {
     return [...baseCols, ...extraCols];
   }, [currentBoard.columns, files, isGroupingByEisenhower, isGroupingByStatus, activeGroupKey]);
 
+  const handleReorderColumns = useCallback(
+    (startIndex: number, endIndex: number) => {
+      reorderColumnsInBoard(currentBoard.id, startIndex, endIndex, columns);
+      showToast('Reordered columns');
+    },
+    [currentBoard.id, reorderColumnsInBoard, columns, showToast]
+  );
+
   const {
     draggedPath, dragOverColumn, handleMoveStatus, handleDragStart,
     handleDragEnd, handleDragOver, handleDragLeave, handleDrop,
-  } = useKanbanDragAndDrop({ files, isGroupingByStatus, isGroupingByEisenhower, activeGroupKey, onRefresh });
+    draggedColumnIndex, dragOverColumnIndex,
+    handleColumnDragStart, handleColumnDragEnd, handleColumnDragOver, handleColumnDrop,
+  } = useKanbanDragAndDrop({
+    files,
+    isGroupingByStatus,
+    isGroupingByEisenhower,
+    activeGroupKey,
+    onRefresh,
+    onReorderColumns: handleReorderColumns,
+  });
 
   const getFilesForColumn = useCallback(
     (col: string) =>
@@ -164,14 +181,17 @@ export function KanbanView({ files, onRefresh }: KanbanViewProps) {
       />
 
       <div className="flex gap-4 overflow-x-auto pb-4 pt-1 items-start min-h-[500px]">
-        {columns.map((col) => (
+        {columns.map((col, idx) => (
           <KanbanColumn
             key={col}
             col={col}
+            index={idx}
             files={getFilesForColumn(col)}
             columns={columns}
             isGroupingByEisenhower={isGroupingByEisenhower}
             isOver={dragOverColumn === col}
+            isColumnDragging={draggedColumnIndex === idx}
+            isColumnOver={dragOverColumnIndex === idx && draggedColumnIndex !== null && draggedColumnIndex !== idx}
             draggedPath={draggedPath}
             activeColumnForNew={activeColumnForNew}
             newCardTitle={newCardTitle}
@@ -183,6 +203,10 @@ export function KanbanView({ files, onRefresh }: KanbanViewProps) {
             onDrop={handleDrop}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
+            onColumnDragStart={handleColumnDragStart}
+            onColumnDragEnd={handleColumnDragEnd}
+            onColumnDragOver={handleColumnDragOver}
+            onColumnDrop={handleColumnDrop}
             onOpenFile={(path, title) => openFileTab(path, title)}
             onMoveStatus={handleMoveStatus}
             onRenameColumn={handleRenameColumn}

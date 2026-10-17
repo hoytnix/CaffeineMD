@@ -83,8 +83,8 @@
 ### 13. Full Kanban Board & Column CRUD Architecture
 - [x] **Storage Registry & Kanban Slice (`storageRegistry.ts`, `kanbanSlice.ts`, `workspaceStore.ts`)**: Added `KANBAN_BOARDS` and `ACTIVE_KANBAN_BOARD_ID` keys; created `KanbanSlice` with persistent board-level and column-level CRUD operations.
 - [x] **Board Navigation, Lifecycle Modals & Reordering (`KanbanBoardSelector.tsx`, `KanbanBoardModals.tsx`, `kanbanSlice.ts`)**: Implemented glassmorphic board switcher bar with HTML5 drag-and-drop board reordering (`reorderKanbanBoards`), visual drag state & drop target indicator rings, and `ModalShell`-based Create, Rename, and Delete board dialogs.
-- [x] **Column CRUD & Batch Frontmatter Migration (`KanbanColumnMenu.tsx`, `KanbanAddColumnCard.tsx`, `KanbanColumn.tsx`, `KanbanView.tsx`)**: Added inline `+ Add Column` card, column header rename/delete popover menu, and atomic batch frontmatter updates across IndexedDB notes via `executeVaultMutation` and `serializeFrontmatter`.
-- [x] **Documentation & Verification (`docs/database-graph-and-export.md`)**: Documented Kanban CRUD and drag-and-drop reordering architecture; verified 0 ESLint errors, 0 TypeScript errors, clean production build (7/7 static pages), and strict LOC ceilings across all files.
+- [x] **Column CRUD, Reordering & Batch Migration (`KanbanColumnMenu.tsx`, `KanbanAddColumnCard.tsx`, `KanbanColumn.tsx`, `KanbanView.tsx`, `useKanbanDragAndDrop.ts`)**: Added inline `+ Add Column` card, column header rename/delete popover menu, HTML5 drag-and-drop column reordering (`reorderColumnsInBoard`) with visual grab handle and drop target ring indicators, and atomic batch frontmatter updates across IndexedDB notes via `executeVaultMutation` and `serializeFrontmatter`.
+- [x] **Documentation & Verification (`docs/database-graph-and-export.md`)**: Documented Kanban CRUD and drag-and-drop board & column reordering architecture; verified 0 ESLint errors, 0 TypeScript errors, clean production build (7/7 static pages), and strict LOC ceilings across all files.
 
 ## Verification Status
 - Production Build: Passing cleanly (`next build` 7/7 static pages generated).
