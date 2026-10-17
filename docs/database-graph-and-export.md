@@ -39,12 +39,16 @@ CaffeineMD transforms standard Markdown notes into relational database records w
   - Inline property edits directly modifying the note's frontmatter in IndexedDB and triggering debounced sync.
   - Quick-add row button creating a new note with pre-populated frontmatter properties.
 
-### 1.3 Kanban Board & Eisenhower Matrix (`KanbanView.tsx`)
-- Visual card board categorizing notes into lanes:
-  - **Status Lanes**: Configurable status values (e.g., `Backlog`, `In Progress`, `Review`, `Done`).
-  - **Eisenhower Priority Quadrants**: `Urgent & Immediate` (Do First), `Urgent & Not Immediate` (Schedule), `Not Urgent & Immediate` (Delegate), and `Not Urgent & Not Immediate` (Don't / Backlog).
+### 1.3 Kanban Board CRUD, Custom Lanes & Eisenhower Matrix (`KanbanView.tsx`, `kanbanSlice.ts`)
+- **Board-Level CRUD (`KanbanBoardSelector.tsx`, `KanbanBoardModals.tsx`)**:
+  - Users can create multiple named Kanban boards (e.g., `Task Status`, `Eisenhower Matrix`, `Not ToDO`, `Sprint Backlog`), switch between active boards, rename boards, and delete boards (automatically falling back to the default board).
+  - Board configurations and active board state are managed in `kanbanSlice.ts` and persisted via `storageRegistry` (`caffeinemd-kanban-boards` and `caffeinemd-active-kanban-board`).
+- **Column/Lane-Level CRUD (`KanbanColumnMenu.tsx`, `KanbanAddColumnCard.tsx`)**:
+  - **Add Column**: Inline `+ Add Column` card at the end of the board viewport appends custom lanes (e.g., `Not ToDO`) to the active board.
+  - **Rename Column & Batch Migration**: Renaming a column updates the board schema and executes an atomic batch frontmatter migration across all matching notes in IndexedDB via `executeVaultMutation` and `serializeFrontmatter`.
+  - **Delete Column**: Removing a column reassigns any orphaned cards in that lane to the board's primary fallback column via `executeVaultMutation`.
 - **Drag-and-Drop (`useKanbanDragAndDrop.ts`)**:
-  - Dragging a card between columns updates the note's frontmatter `status` or `eisenhower` attribute instantly with optimistic UI feedback.
+  - Dragging a card between columns updates the note's frontmatter `status`, `eisenhower`, or custom grouping attribute instantly with optimistic UI feedback.
 
 ### 1.4 List View & Responsive Card Grid (`ListView.tsx`, `ListCardItem.tsx`)
 - Dual-mode document layout engine allowing seamless toggling between:

@@ -80,6 +80,12 @@
 - [x] **DatabaseView & GraphView Modularization**: Extracted `useDatabaseFilterState.ts`, `useDatabaseMutations.ts`, `useGraphSimulation.ts`, and `useGraphCanvasTransform.ts`, reducing `DatabaseView.tsx` to 88 LOC and `GraphView.tsx` to 126 LOC.
 - [x] **Export Suite Decomposition**: Extracted `ExportScopeSelector.tsx`, `PwaConfigSection.tsx`, `usePreviewBlobUrl.ts`, and `viewportDimensions.ts`; consolidated remaining raw `localStorage` fallbacks into `storageRegistry.ts`.
 
+### 13. Full Kanban Board & Column CRUD Architecture
+- [x] **Storage Registry & Kanban Slice (`storageRegistry.ts`, `kanbanSlice.ts`, `workspaceStore.ts`)**: Added `KANBAN_BOARDS` and `ACTIVE_KANBAN_BOARD_ID` keys; created `KanbanSlice` with persistent board-level and column-level CRUD operations.
+- [x] **Board Navigation & Lifecycle Modals (`KanbanBoardSelector.tsx`, `KanbanBoardModals.tsx`)**: Implemented glassmorphic board switcher bar and `ModalShell`-based Create, Rename, and Delete board dialogs.
+- [x] **Column CRUD & Batch Frontmatter Migration (`KanbanColumnMenu.tsx`, `KanbanAddColumnCard.tsx`, `KanbanColumn.tsx`, `KanbanView.tsx`)**: Added inline `+ Add Column` card, column header rename/delete popover menu, and atomic batch frontmatter updates across IndexedDB notes via `executeVaultMutation` and `serializeFrontmatter`.
+- [x] **Documentation & Verification (`docs/database-graph-and-export.md`)**: Documented Kanban CRUD architecture; verified 0 ESLint errors, 0 TypeScript errors, clean production build (7/7 static pages), and strict LOC ceilings across all files.
+
 ## Verification Status
 - Production Build: Passing cleanly (`next build` 7/7 static pages generated).
 - ESLint: Passing cleanly with 0 errors and 0 warnings (`pnpm run lint`).

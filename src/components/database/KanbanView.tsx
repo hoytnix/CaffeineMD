@@ -1,12 +1,16 @@
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { VaultFile, db } from '@/src/lib/storage/db';
-import { normalizeEisenhower } from '@/src/lib/markdown/frontmatter';
+import { VaultFile, db, EisenhowerQuadrant } from '@/src/lib/storage/db';
+import { normalizeEisenhower, serializeFrontmatter } from '@/src/lib/markdown/frontmatter';
+import { executeVaultMutation } from '@/src/lib/storage/vaultMutationService';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
+import { DEFAULT_KANBAN_BOARDS } from '@/src/stores/slices/kanbanSlice';
 import { useKanbanDragAndDrop } from '@/src/hooks/useKanbanDragAndDrop';
 import { KanbanColumn } from './kanban/KanbanColumn';
-import { Layers, Flag } from 'lucide-react';
+import { KanbanBoardSelector } from './kanban/KanbanBoardSelector';
+import { KanbanBoardModals, BoardModalMode } from './kanban/KanbanBoardModals';
+import { KanbanAddColumnCard } from './kanban/KanbanAddColumnCard';
 
 interface KanbanViewProps {
   files: VaultFile[];
@@ -14,123 +18,149 @@ interface KanbanViewProps {
   onRefresh: () => void;
 }
 
-const DEFAULT_STATUS_COLUMNS = ['Draft', 'In Progress', 'Completed', 'Archived'] as const;
-const EISENHOWER_COLUMNS = [
-  'Urgent & Immediate',
-  'Urgent & Not Immediate',
-  'Not Urgent & Immediate',
-  'Not Urgent & Not Immediate',
-] as const;
+function normalizeStatusValue(raw: unknown): string {
+  if (!raw) return 'Draft';
+  const s = String(raw).trim();
+  const lower = s.toLowerCase();
+  if (lower === 'in progress' || lower === 'doing') return 'In Progress';
+  if (lower === 'completed' || lower === 'done') return 'Completed';
+  if (lower === 'archived') return 'Archived';
+  if (lower === 'draft' || lower === 'todo' || lower === 'to do') return 'Draft';
+  return s;
+}
 
-export function KanbanView({ files, groupKey = 'status', onRefresh }: KanbanViewProps) {
-  const { openFileTab, activeWorkspaceId } = useWorkspaceStore();
-  const [overrideGroupKey, setOverrideGroupKey] = useState<string | null>(null);
+export function KanbanView({ files, onRefresh }: KanbanViewProps) {
+  const {
+    openFileTab, activeWorkspaceId, kanbanBoards, activeBoardId, setActiveBoardId,
+    createKanbanBoard, renameKanbanBoard, deleteKanbanBoard,
+    addColumnToBoard, renameColumnInBoard, deleteColumnFromBoard, showToast,
+  } = useWorkspaceStore();
+
+  const [modalMode, setModalMode] = useState<BoardModalMode>(null);
   const [newCardTitle, setNewCardTitle] = useState('');
   const [activeColumnForNew, setActiveColumnForNew] = useState<string | null>(null);
 
-  const activeGroupKey = overrideGroupKey ?? groupKey;
+  const currentBoard = useMemo(
+    () => kanbanBoards.find((b) => b.id === activeBoardId) || kanbanBoards[0] || DEFAULT_KANBAN_BOARDS[0],
+    [kanbanBoards, activeBoardId]
+  );
+
+  const activeGroupKey = currentBoard.groupKey || 'status';
   const isGroupingByStatus = activeGroupKey === 'status';
   const isGroupingByEisenhower = activeGroupKey === 'eisenhower';
 
-  const normalizeStatus = (raw: any): string => {
-    if (!raw) return 'Draft';
-    const s = String(raw).trim();
-    const lower = s.toLowerCase();
-    if (lower === 'in progress' || lower === 'doing') return 'In Progress';
-    if (lower === 'completed' || lower === 'done') return 'Completed';
-    if (lower === 'archived') return 'Archived';
-    if (lower === 'draft' || lower === 'todo' || lower === 'to do') return 'Draft';
-    return s;
-  };
-
   const columns = useMemo(() => {
-    if (isGroupingByEisenhower) return Array.from(EISENHOWER_COLUMNS);
-    if (isGroupingByStatus) {
-      const discoveredValues = new Set<string>();
-      files.forEach((f) => {
-        const val = f.frontmatter?.status || (f as any).status;
-        if (val) {
-          const norm = normalizeStatus(val);
-          if (!DEFAULT_STATUS_COLUMNS.includes(norm as any)) discoveredValues.add(norm);
-        }
-      });
-      return [...DEFAULT_STATUS_COLUMNS, ...Array.from(discoveredValues)];
-    }
-    const genericSet = new Set<string>();
+    const baseCols = currentBoard.columns.length > 0 ? currentBoard.columns : ['Draft'];
+    if (isGroupingByEisenhower) return baseCols;
+
+    const lowerBase = new Set(baseCols.map((c) => c.toLowerCase()));
+    const extraCols: string[] = [];
     files.forEach((f) => {
-      const val = f.frontmatter?.[activeGroupKey] || (f as any)[activeGroupKey];
-      if (val) genericSet.add(String(val));
+      const rawVal = isGroupingByStatus ? f.frontmatter?.status : f.frontmatter?.[activeGroupKey];
+      if (!rawVal) return;
+      const resolved = isGroupingByStatus ? normalizeStatusValue(rawVal) : String(rawVal).trim();
+      if (resolved && !lowerBase.has(resolved.toLowerCase())) {
+        lowerBase.add(resolved.toLowerCase());
+        extraCols.push(resolved);
+      }
     });
-    return Array.from(genericSet);
-  }, [files, isGroupingByEisenhower, isGroupingByStatus, activeGroupKey]);
+    return [...baseCols, ...extraCols];
+  }, [currentBoard.columns, files, isGroupingByEisenhower, isGroupingByStatus, activeGroupKey]);
 
   const {
     draggedPath, dragOverColumn, handleMoveStatus, handleDragStart,
     handleDragEnd, handleDragOver, handleDragLeave, handleDrop,
   } = useKanbanDragAndDrop({ files, isGroupingByStatus, isGroupingByEisenhower, activeGroupKey, onRefresh });
 
-  const getFilesForColumn = (col: string) => {
-    return files.filter((f) => {
-      if (isGroupingByEisenhower) {
-        return normalizeEisenhower(f.eisenhower || f.frontmatter?.eisenhower) === col;
-      }
-      if (isGroupingByStatus) {
-        const val = f.frontmatter?.status || (f as any).status;
-        return normalizeStatus(val).toLowerCase() === col.toLowerCase();
-      }
-      const val = f.frontmatter?.[activeGroupKey] || (f as any)[activeGroupKey];
-      return String(val || '').toLowerCase() === col.toLowerCase();
-    });
-  };
+  const getFilesForColumn = useCallback(
+    (col: string) =>
+      files.filter((f) => {
+        if (isGroupingByEisenhower) return normalizeEisenhower(f.eisenhower || f.frontmatter?.eisenhower) === col;
+        if (isGroupingByStatus) return normalizeStatusValue(f.frontmatter?.status).toLowerCase() === col.toLowerCase();
+        return String(f.frontmatter?.[activeGroupKey] || '').toLowerCase() === col.toLowerCase();
+      }),
+    [files, isGroupingByEisenhower, isGroupingByStatus, activeGroupKey]
+  );
 
-  const handleCreateCard = useCallback(async (col: string) => {
-    if (!newCardTitle.trim()) return;
-    const baseTitle = newCardTitle.trim();
-    const fileName = `${baseTitle}.md`;
-    const cardStatus = isGroupingByStatus ? col : 'Draft';
-    const cardEisenhower = isGroupingByEisenhower ? (col as any) : 'Not Urgent & Not Immediate';
-    const content = `---\ntitle: "${baseTitle}"\ntags: []\nstatus: "${cardStatus}"\nauthor: ""\neisenhower: "${cardEisenhower}"\n---\n\n# ${baseTitle}\n`;
+  const batchReassignColumnFiles = useCallback(
+    async (matchingFiles: VaultFile[], targetValue: string) => {
+      if (matchingFiles.length === 0) return;
+      await executeVaultMutation(async () => {
+        for (const file of matchingFiles) {
+          const updatedFm = { ...file.frontmatter, [activeGroupKey]: targetValue };
+          const updatedContent = serializeFrontmatter(updatedFm, file.content);
+          await db.files.update(file.id, {
+            frontmatter: updatedFm,
+            ...(isGroupingByEisenhower ? { eisenhower: targetValue as EisenhowerQuadrant } : {}),
+            content: updatedContent,
+            updatedAt: Date.now(),
+          });
+        }
+      });
+    },
+    [activeGroupKey, isGroupingByEisenhower]
+  );
 
-    await db.files.put({
-      id: fileName, path: fileName, name: fileName, title: baseTitle, extension: 'md',
-      content, frontmatter: { title: baseTitle, tags: [], status: cardStatus, author: '', eisenhower: cardEisenhower },
-      tags: [], eisenhower: cardEisenhower, isBinary: false, size: content.length,
-      createdAt: Date.now(), updatedAt: Date.now(), vaultId: activeWorkspaceId || 'default-vault',
-    });
-    setNewCardTitle('');
-    setActiveColumnForNew(null);
-    onRefresh();
-  }, [newCardTitle, isGroupingByStatus, isGroupingByEisenhower, activeWorkspaceId, onRefresh]);
+  const handleCreateCard = useCallback(
+    async (col: string) => {
+      if (!newCardTitle.trim()) return;
+      const baseTitle = newCardTitle.trim();
+      const fileName = `${baseTitle}.md`;
+      const cardStatus = isGroupingByStatus ? col : 'Draft';
+      const cardEisenhower: EisenhowerQuadrant = isGroupingByEisenhower
+        ? (col as EisenhowerQuadrant)
+        : 'Not Urgent & Not Immediate';
+      const frontmatter = {
+        title: baseTitle, tags: [], status: cardStatus, author: '', eisenhower: cardEisenhower,
+        ...(!isGroupingByStatus && !isGroupingByEisenhower ? { [activeGroupKey]: col } : {}),
+      };
+      const content = serializeFrontmatter(frontmatter, `# ${baseTitle}\n`);
+
+      await executeVaultMutation(() =>
+        db.files.put({
+          id: fileName, path: fileName, name: fileName, title: baseTitle, extension: 'md',
+          content, frontmatter, tags: [], eisenhower: cardEisenhower, isBinary: false,
+          size: content.length, createdAt: Date.now(), updatedAt: Date.now(),
+          vaultId: activeWorkspaceId || 'default-vault',
+        })
+      );
+      setNewCardTitle('');
+      setActiveColumnForNew(null);
+      onRefresh();
+    },
+    [newCardTitle, isGroupingByStatus, isGroupingByEisenhower, activeGroupKey, activeWorkspaceId, onRefresh]
+  );
+
+  const handleRenameColumn = useCallback(
+    async (oldCol: string, newCol: string) => {
+      renameColumnInBoard(currentBoard.id, oldCol, newCol);
+      await batchReassignColumnFiles(getFilesForColumn(oldCol), newCol);
+      showToast(`Renamed column "${oldCol}" to "${newCol}"`);
+      onRefresh();
+    },
+    [currentBoard.id, renameColumnInBoard, batchReassignColumnFiles, getFilesForColumn, showToast, onRefresh]
+  );
+
+  const handleDeleteColumn = useCallback(
+    async (col: string) => {
+      const fallbackCol = columns.find((c) => c !== col) || 'Draft';
+      const matchingFiles = getFilesForColumn(col);
+      deleteColumnFromBoard(currentBoard.id, col);
+      await batchReassignColumnFiles(matchingFiles, fallbackCol);
+      showToast(`Removed column "${col}"`);
+      onRefresh();
+    },
+    [columns, currentBoard.id, deleteColumnFromBoard, batchReassignColumnFiles, getFilesForColumn, showToast, onRefresh]
+  );
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between pb-1">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-neutral-500">Group by:</span>
-          <div className="flex items-center p-0.5 rounded-lg bg-[var(--card)] border border-[var(--border)] text-xs shadow-2xs">
-            <button
-              type="button"
-              onClick={() => setOverrideGroupKey('status')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
-                isGroupingByStatus ? 'bg-[var(--accent)] text-white shadow-xs' : 'text-neutral-400 hover:text-[var(--foreground)]'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>Status</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setOverrideGroupKey('eisenhower')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
-                isGroupingByEisenhower ? 'bg-[var(--accent)] text-white shadow-xs' : 'text-neutral-400 hover:text-[var(--foreground)]'
-              }`}
-            >
-              <Flag className="w-3.5 h-3.5" />
-              <span>Eisenhower</span>
-            </button>
-          </div>
-        </div>
-      </div>
+      <KanbanBoardSelector
+        boards={kanbanBoards}
+        activeBoard={currentBoard}
+        onSelectBoard={setActiveBoardId}
+        onOpenModal={setModalMode}
+      />
 
       <div className="flex gap-4 overflow-x-auto pb-4 pt-1 items-start min-h-[500px]">
         {columns.map((col) => (
@@ -154,9 +184,27 @@ export function KanbanView({ files, groupKey = 'status', onRefresh }: KanbanView
             onDragEnd={handleDragEnd}
             onOpenFile={(path, title) => openFileTab(path, title)}
             onMoveStatus={handleMoveStatus}
+            onRenameColumn={handleRenameColumn}
+            onDeleteColumn={handleDeleteColumn}
+            canDeleteColumn={columns.length > 1}
           />
         ))}
+        <KanbanAddColumnCard
+          onAddColumn={(name) => {
+            addColumnToBoard(currentBoard.id, name);
+            showToast(`Added column "${name}"`);
+          }}
+        />
       </div>
+
+      <KanbanBoardModals
+        mode={modalMode}
+        activeBoard={currentBoard}
+        onClose={() => setModalMode(null)}
+        onCreateBoard={(name, gk, cols) => { createKanbanBoard(name, gk, cols); showToast(`Created board "${name}"`); }}
+        onRenameBoard={(id, newName) => { renameKanbanBoard(id, newName); showToast(`Renamed board to "${newName}"`); }}
+        onDeleteBoard={(id) => { deleteKanbanBoard(id); showToast('Deleted Kanban board'); }}
+      />
     </div>
   );
 }

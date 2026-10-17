@@ -27,6 +27,8 @@ export const STORAGE_KEYS = {
   GDRIVE_ACCESS_TOKEN: 'kite_gdrive_access_token',
   GDRIVE_TOKEN_META: 'kite_gdrive_token_meta',
   LIST_VIEW_LAYOUT: 'caffeinemd-list-layout',
+  KANBAN_BOARDS: 'caffeinemd-kanban-boards',
+  ACTIVE_KANBAN_BOARD_ID: 'caffeinemd-active-kanban-board',
 } as const;
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS] | (string & {});

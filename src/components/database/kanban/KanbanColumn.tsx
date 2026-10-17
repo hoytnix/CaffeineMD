@@ -4,6 +4,7 @@ import React from 'react';
 import { VaultFile } from '@/src/lib/storage/db';
 import { Plus } from 'lucide-react';
 import { KanbanCard } from './KanbanCard';
+import { KanbanColumnMenu } from './KanbanColumnMenu';
 
 interface KanbanColumnProps {
   col: string;
@@ -24,6 +25,9 @@ interface KanbanColumnProps {
   onDragEnd: () => void;
   onOpenFile: (path: string, title?: string) => void;
   onMoveStatus: (file: VaultFile, targetCol: string) => void;
+  onRenameColumn?: (oldCol: string, newCol: string) => void;
+  onDeleteColumn?: (col: string) => void;
+  canDeleteColumn?: boolean;
 }
 
 export function KanbanColumn({
@@ -45,6 +49,9 @@ export function KanbanColumn({
   onDragEnd,
   onOpenFile,
   onMoveStatus,
+  onRenameColumn,
+  onDeleteColumn,
+  canDeleteColumn = true,
 }: KanbanColumnProps) {
   return (
     <div
@@ -63,20 +70,33 @@ export function KanbanColumn({
         style={{ borderColor: 'var(--theme-border)' }}
         className="flex items-center justify-between pb-2 mb-2 border-b"
       >
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 truncate">
             {col}
           </span>
-          <span className="text-[11px] text-neutral-400 font-mono tabular-nums">
+          <span className="text-[11px] text-neutral-400 font-mono tabular-nums shrink-0">
             {files.length}
           </span>
         </div>
-        <button
-          onClick={() => onSetActiveColumnForNew(col)}
-          className="p-1 rounded text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-200/50 dark:hover:bg-neutral-800 cursor-pointer"
-        >
-          <Plus className="w-3.5 h-3.5" />
-        </button>
+        <div className="flex items-center gap-0.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => onSetActiveColumnForNew(col)}
+            title="New note in column"
+            className="p-1 rounded text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-200/50 dark:hover:bg-neutral-800 cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+          </button>
+          {onRenameColumn && onDeleteColumn && (
+            <KanbanColumnMenu
+              col={col}
+              cardCount={files.length}
+              canDelete={canDeleteColumn}
+              onRename={onRenameColumn}
+              onDelete={onDeleteColumn}
+            />
+          )}
+        </div>
       </div>
 
       {/* Cards List / Drop Target */}

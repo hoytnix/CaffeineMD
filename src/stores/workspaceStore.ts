@@ -12,8 +12,9 @@ import {
 import { TrashSlice, createTrashSlice } from './slices/trashSlice';
 import { TabItem, TabsSlice, createTabsSlice } from './slices/tabsSlice';
 import { UiOverlaySlice, createUiOverlaySlice } from './slices/uiOverlaySlice';
+import { KanbanBoard, KanbanSlice, createKanbanSlice } from './slices/kanbanSlice';
 
-export type { TabItem, ToolboxPosition, EditorFontFamily };
+export type { TabItem, ToolboxPosition, EditorFontFamily, KanbanBoard };
 export { DEFAULT_AUTOSAVE_INTERVAL };
 
 export type ActiveWorkspaceView = 'editor' | 'graph' | 'table' | 'board' | 'list' | 'tags' | 'settings';
@@ -30,7 +31,12 @@ export const AUTOSAVE_INTERVAL_PRESETS = [
   { value: 600000, label: 'Every 10 minutes' },
 ] as const;
 
-export interface WorkspaceState extends ThemeSlice, TrashSlice, TabsSlice, UiOverlaySlice {
+export interface WorkspaceState
+  extends ThemeSlice,
+    TrashSlice,
+    TabsSlice,
+    UiOverlaySlice,
+    KanbanSlice {
   vaultName: string;
   activeWorkspaceId: string;
   mountedMode: 'indexeddb' | 'filesystem';
@@ -88,6 +94,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   ...createTrashSlice(set, get),
   ...createTabsSlice(set, get),
   ...createUiOverlaySlice(set, get),
+  ...createKanbanSlice(set, get),
 
   notes: [],
   setNotes: (notes) => set({ notes }),
