@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { useWorkspaceRouter } from '@/src/hooks/useWorkspaceRouter';
-import { seedInitialVaultIfEmpty } from '@/src/lib/storage/db';
+import { useWorkspaceKeyboardShortcuts } from '@/src/hooks/useWorkspaceKeyboardShortcuts';
+import { useWorkspaceThemeBackdrop } from '@/src/hooks/useWorkspaceThemeBackdrop';
 import { FileTree } from '@/src/components/sidebar/FileTree';
 import { SplitPaneContainer } from '@/src/components/editor/SplitPaneContainer';
 import { GraphView } from '@/src/components/graph/GraphView';
@@ -18,18 +19,22 @@ import { TemplateSelectorModal } from '@/src/components/sidebar/TemplateSelector
 import { EmojiDrawer } from '@/src/components/emoji/EmojiDrawer';
 import { useEmojiDrawer } from '@/src/hooks/useEmojiDrawer';
 import { WorkspaceHeader } from '@/src/components/workspace/WorkspaceHeader';
-import { THEME_PRESETS, applyThemeToDocument } from '@/src/lib/themes/themeDefinitions';
 import { DeleteConfirmModal } from '@/src/components/common/DeleteConfirmModal';
 import { NewNoteModal } from '@/src/components/sidebar/NewNoteModal';
 import { ExportPwaModal } from '@/src/components/export/ExportPwaModal';
 import { VaultFindReplaceModal } from '@/src/components/search/VaultFindReplaceModal';
 import { FileText, Check } from 'lucide-react';
-import { matchesShortcut } from '@/src/lib/shortcuts/shortcutManager';
-import { useFindReplaceStore } from '@/src/stores/findReplaceStore';
 
 export default function WorkspacePage() {
   // Bi-directional Gmail-style URL and hash routing synchronization
   useWorkspaceRouter();
+
+  // Global keyboard shortcuts & emoji drawer listener
+  useWorkspaceKeyboardShortcuts();
+  useEmojiDrawer();
+
+  // Ambient theme backdrop and initial vault seeding
+  const { bgImageUrl, themeOpacity } = useWorkspaceThemeBackdrop();
 
   const {
     activeFilePath,
@@ -37,107 +42,14 @@ export default function WorkspacePage() {
     activeTab,
     setActiveTab,
     sidebarCollapsed,
-    toggleSidebar,
     isImportModalOpen,
     setImportModalOpen,
     isNewNoteModalOpen,
     setNewNoteModalOpen,
-    isSearchOpen,
-    setIsSearchOpen,
-    isQuickSwitcherOpen,
-    setQuickSwitcherOpen,
-    toggleSplitPane,
-    keyboardShortcuts,
-    setTheme,
-    themeId,
-    customTheme,
-    themeOpacity,
-    hydrateThemeFromStorage,
     toastMessage,
     isFocusMode,
     setFocusMode,
-    toggleFocusMode,
   } = useWorkspaceStore();
-
-  // Activate universal emoji drawer global listener (Shift + Space)
-  useEmojiDrawer();
-
-  const [, setHasInitialized] = useState(false);
-
-  // Global Keyboard Shortcuts (Quick Switcher, Vault Search, Find & Replace, Split Pane, Focus Mode, New Note, Toggle Sidebar, Open Settings)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Focus Mode escape / toggle
-      if (e.key === 'F11' || ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'f')) {
-        e.preventDefault();
-        toggleFocusMode();
-        return;
-      }
-      if (e.key === 'Escape' && isFocusMode) {
-        e.preventDefault();
-        setFocusMode(false);
-        return;
-      }
-
-      // Check configured shortcuts
-      if (matchesShortcut(e, keyboardShortcuts.quickSwitcher)) {
-        e.preventDefault();
-        setQuickSwitcherOpen(!isQuickSwitcherOpen);
-      } else if (
-        matchesShortcut(e, keyboardShortcuts.quickSearch) ||
-        (keyboardShortcuts.quickSearch === 'Mod+K' && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'o')
-      ) {
-        e.preventDefault();
-        setIsSearchOpen(!isSearchOpen);
-      } else if (matchesShortcut(e, keyboardShortcuts.findReplace)) {
-        e.preventDefault();
-        useFindReplaceStore.getState().setOpen(!useFindReplaceStore.getState().isOpen);
-      } else if (matchesShortcut(e, keyboardShortcuts.splitPane)) {
-        e.preventDefault();
-        toggleSplitPane();
-      } else if (matchesShortcut(e, keyboardShortcuts.newNote)) {
-        e.preventDefault();
-        setNewNoteModalOpen(true, null);
-      } else if (matchesShortcut(e, keyboardShortcuts.toggleSidebar)) {
-        e.preventDefault();
-        toggleSidebar();
-      } else if (matchesShortcut(e, keyboardShortcuts.openSettings)) {
-        e.preventDefault();
-        setActiveTab('settings');
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [
-    isFocusMode,
-    toggleFocusMode,
-    setFocusMode,
-    keyboardShortcuts,
-    isQuickSwitcherOpen,
-    setQuickSwitcherOpen,
-    isSearchOpen,
-    setIsSearchOpen,
-    toggleSplitPane,
-    setNewNoteModalOpen,
-    toggleSidebar,
-    setActiveTab,
-  ]);
-
-  // Initial vault seed and theme rehydration
-  useEffect(() => {
-    seedInitialVaultIfEmpty().then(() => {
-      setHasInitialized(true);
-    });
-
-    hydrateThemeFromStorage();
-  }, [hydrateThemeFromStorage]);
-
-  const activeThemePreset = THEME_PRESETS.find((t) => t.id === themeId);
-  const bgImageUrl =
-    (themeId === 'custom'
-      ? customTheme?.backgroundImageUrl || customTheme?.bgImageUrl
-      : activeThemePreset?.backgroundImageUrl || activeThemePreset?.bgImageUrl) || '';
 
   return (
     <div

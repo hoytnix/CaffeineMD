@@ -26,6 +26,7 @@ export const STORAGE_KEYS = {
   GITHUB_DEFAULT_REPO: 'caffeinemd-default-github-repo',
   GDRIVE_ACCESS_TOKEN: 'kite_gdrive_access_token',
   GDRIVE_TOKEN_META: 'kite_gdrive_token_meta',
+  LIST_VIEW_LAYOUT: 'caffeinemd-list-layout',
 } as const;
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS] | (string & {});

@@ -73,6 +73,13 @@
 - [x] **Resilient Settings Error Surface (`useGoogleDriveSyncSettings.ts`)**: Removed unconditional `setAccessToken(null)` calls on sync errors containing 401 or access token warnings, preserving session tokens until explicit user logout.
 - [x] **Verification**: ESLint (0 errors, 0 warnings), TypeScript compiler (0 errors), Next.js production build (7/7 static pages), and LOC constraints strictly maintained across all modules (<250 LOC).
 
+### 12. 7-Target Component Modularization & Storage Registry Purge
+- [x] **Workspace Page Decomposition (`app/w/[workspaceId]/page.tsx`)**: Extracted `useWorkspaceKeyboardShortcuts.ts` and `useWorkspaceThemeBackdrop.ts`, reducing `page.tsx` to 177 LOC.
+- [x] **FileTree Hook Extraction (`FileTree.tsx`)**: Extracted `useFileTreeSearch.ts` and `useFileTreeDragController.ts`, keeping `FileTree.tsx` under 250 LOC.
+- [x] **TiptapEditor Hook Extraction (`TiptapEditor.tsx`)**: Extracted `useEditorProperties.ts` and `useTypewriterScroll.ts`, reducing `TiptapEditor.tsx` to 185 LOC.
+- [x] **DatabaseView & GraphView Modularization**: Extracted `useDatabaseFilterState.ts`, `useDatabaseMutations.ts`, `useGraphSimulation.ts`, and `useGraphCanvasTransform.ts`, reducing `DatabaseView.tsx` to 88 LOC and `GraphView.tsx` to 126 LOC.
+- [x] **Export Suite Decomposition**: Extracted `ExportScopeSelector.tsx`, `PwaConfigSection.tsx`, `usePreviewBlobUrl.ts`, and `viewportDimensions.ts`; consolidated remaining raw `localStorage` fallbacks into `storageRegistry.ts`.
+
 ## Verification Status
 - Production Build: Passing cleanly (`next build` 7/7 static pages generated).
 - ESLint: Passing cleanly with 0 errors and 0 warnings (`pnpm run lint`).

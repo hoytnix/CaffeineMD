@@ -1,16 +1,15 @@
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { db } from '@/src/lib/storage/db';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
-import { useTreeStructure, TreeNode, collectAllFolderPaths } from '@/src/hooks/useTreeStructure';
+import { TreeNode } from '@/src/hooks/useTreeStructure';
 import { FolderNode } from './tree/FolderNode';
 import { FileNodeRow } from './tree/FileNodeRow';
 import { FileTreeModals } from './tree/FileTreeModals';
 import { TrashSection } from './TrashSection';
 import { useFileTreeActions } from './useFileTreeActions';
-import { useTreeDragAndDrop } from './hooks/useTreeDragAndDrop';
+import { useFileTreeSearch } from './hooks/useFileTreeSearch';
+import { useFileTreeDragController } from './hooks/useFileTreeDragController';
 import { useSidebarResize } from './hooks/useSidebarResize';
 import { SidebarResizer } from './SidebarResizer';
 import { Search, FolderUp, Settings, Replace } from 'lucide-react';
@@ -21,10 +20,6 @@ import { useFindReplaceStore } from '@/src/stores/findReplaceStore';
 import { formatShortcutForDisplay } from '@/src/lib/shortcuts/shortcutManager';
 
 export function FileTree() {
-  const rawFiles = useLiveQuery(() => db.files.toArray());
-  const files = useMemo(() => rawFiles ?? [], [rawFiles]);
-
-  // File action drawer/menu and modal targets
   const [activeMenuNode, setActiveMenuNode] = useState<TreeNode | null>(null);
   const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
   const [renameTarget, setRenameTarget] = useState<TreeNode | null>(null);
@@ -67,35 +62,16 @@ export function FileTree() {
     setSidebarWidth,
   } = useSidebarResize();
 
-  React.useEffect(() => {
-    purgeExpiredTrashNotes();
-  }, [purgeExpiredTrashNotes]);
-
-  const activeFiles = useMemo(() => {
-    return files.filter((f) => {
-      if (f.isTrash) return false;
-      if (!activeWorkspaceId || activeWorkspaceId === 'default-vault') {
-        return !f.vaultId || f.vaultId === 'default-vault';
-      }
-      return f.vaultId === activeWorkspaceId;
-    });
-  }, [files, activeWorkspaceId]);
-
-  const trashFiles = useMemo(() => {
-    return files.filter((f) => {
-      if (!f.isTrash) return false;
-      if (!activeWorkspaceId || activeWorkspaceId === 'default-vault') {
-        return !f.vaultId || f.vaultId === 'default-vault';
-      }
-      return f.vaultId === activeWorkspaceId;
-    });
-  }, [files, activeWorkspaceId]);
-
-  const treeData = useTreeStructure(activeFiles, '', customFolders);
-
-  const folderSuggestions = useMemo(() => {
-    return collectAllFolderPaths(treeData, activeFiles, customFolders);
-  }, [treeData, activeFiles, customFolders]);
+  const {
+    activeFiles,
+    trashFiles,
+    treeData,
+    folderSuggestions,
+  } = useFileTreeSearch({
+    activeWorkspaceId: activeWorkspaceId || 'default-vault',
+    customFolders,
+    purgeExpiredTrashNotes,
+  });
 
   const { duplicateNode, renameNode, moveNode, handleNewNoteInFolder } = useFileTreeActions({
     activeFiles,
@@ -103,21 +79,6 @@ export function FileTree() {
     openFileTab,
     renameFileTab,
   });
-
-  const handleRelocateNode = useCallback(
-    async (sourcePath: string, destFolder: string) => {
-      const file = activeFiles.find((f) => f.path === sourcePath);
-      const node: TreeNode = {
-        id: file ? (file.id || sourcePath) : `folder:${sourcePath}`,
-        name: sourcePath.split('/').pop() || sourcePath,
-        path: sourcePath,
-        isFolder: !file,
-        file,
-      };
-      await moveNode(node, destFolder);
-    },
-    [activeFiles, moveNode]
-  );
 
   const {
     isDragOverTree,
@@ -132,16 +93,13 @@ export function FileTree() {
     handleFolderDragEnter,
     handleFolderDragLeave,
     handleFolderDrop,
-  } = useTreeDragAndDrop({
+  } = useFileTreeDragController({
     activeWorkspaceId: activeWorkspaceId || 'default-vault',
+    activeFiles,
     setImportProgress,
     openFileTab,
-    onRelocateNode: handleRelocateNode,
+    moveNode,
   });
-
-  const toggleFolder = useCallback((path: string) => {
-    toggleExpandedFolder(path);
-  }, [toggleExpandedFolder]);
 
   const handleOpenActionMenu = useCallback((e: React.MouseEvent, node: TreeNode) => {
     e.preventDefault();
@@ -227,7 +185,7 @@ export function FileTree() {
                 depth={0}
                 openFolders={openFolders}
                 activeFilePath={activeFilePath}
-                onToggleFolder={toggleFolder}
+                onToggleFolder={toggleExpandedFolder}
                 onOpenFile={openFileTab}
                 onOpenActionMenu={handleOpenActionMenu}
                 dropTargetFolderPath={dropTargetFolderPath}

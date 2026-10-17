@@ -1,19 +1,13 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { db, VaultFile } from '@/src/lib/storage/db';
-import {
-  parseFrontmatter,
-  serializeFrontmatter,
-  editorHtmlToMarkdown,
-  NoteProperties,
-  DEFAULT_NOTE_PROPERTIES,
-} from '@/src/lib/markdown/serializer';
+import React, { useState, useRef } from 'react';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { useEditorDropUpload } from '@/src/hooks/useEditorDropUpload';
 import { useEditorSuggestions } from '@/src/hooks/useEditorSuggestions';
 import { useTiptapInit } from './hooks/useTiptapInit';
 import { useEditorAutosave } from './hooks/useEditorAutosave';
+import { useEditorProperties } from './hooks/useEditorProperties';
+import { useTypewriterScroll } from './hooks/useTypewriterScroll';
 import { EditorDragOverlay } from './components/EditorDragOverlay';
 import { EditorHeader } from './EditorHeader';
 import { BinaryAssetPreview } from './BinaryAssetPreview';
@@ -72,76 +66,20 @@ export function TiptapEditor({ filePath }: TiptapEditorProps) {
     onAutoSave: handleSave,
   });
 
-  const handleUpdateProperties = useCallback(
-    async (newPropsOrFile: Partial<NoteProperties> | VaultFile) => {
-      if (!file) return;
+  const { handleUpdateProperties } = useEditorProperties({
+    file,
+    editorMode,
+    editor,
+    rawMarkdown,
+    setFile,
+    setRawMarkdown,
+  });
 
-      const isVaultFile = 'frontmatter' in newPropsOrFile && Boolean(newPropsOrFile.frontmatter);
-      const incomingMeta = isVaultFile
-        ? (newPropsOrFile as VaultFile).frontmatter || {}
-        : (newPropsOrFile as Partial<NoteProperties>);
-
-      const newMeta: NoteProperties = {
-        ...DEFAULT_NOTE_PROPERTIES,
-        ...(file.frontmatter || {}),
-        ...incomingMeta,
-      };
-
-      const cleanBody =
-        editorMode === 'richtext' && editor && !editor.isDestroyed
-          ? parseFrontmatter(editorHtmlToMarkdown(editor.getHTML())).content
-          : parseFrontmatter(file.content || rawMarkdown || '').content;
-
-      const fullContent = serializeFrontmatter(newMeta, cleanBody);
-
-      const updatedFile: VaultFile = {
-        ...file,
-        ...(isVaultFile ? (newPropsOrFile as VaultFile) : {}),
-        content: fullContent,
-        frontmatter: newMeta,
-        title: newMeta.title || file.title,
-        tags: Array.isArray(newMeta.tags) ? newMeta.tags : file.tags,
-        eisenhower: newMeta.eisenhower || file.eisenhower,
-        updatedAt: Date.now(),
-      };
-
-      setFile(updatedFile);
-      setRawMarkdown(fullContent);
-      await db.files.put(updatedFile);
-      return updatedFile;
-    },
-    [file, editorMode, editor, rawMarkdown, setFile, setRawMarkdown]
-  );
-
-  // Typewriter Scrolling: Keep current cursor vertically centered
-  useEffect(() => {
-    if (!isTypewriterScrolling || !editor || editor.isDestroyed) return;
-
-    const handleSelectionUpdate = () => {
-      const container = scrollContainerRef.current;
-      if (!container) return;
-
-      try {
-        const { from } = editor.state.selection;
-        const coords = editor.view.coordsAtPos(from);
-        const containerRect = container.getBoundingClientRect();
-        const relativeTop = coords.top - containerRect.top;
-        const targetScroll = container.scrollTop + relativeTop - containerRect.height / 2;
-
-        container.scrollTo({
-          top: targetScroll,
-          behavior: 'smooth',
-        });
-      } catch {
-        // Selection coords might not be computed yet during unmount
-      }
-    };
-
-    editor.on('selectionUpdate', handleSelectionUpdate);
-    return () => {
-      editor.off('selectionUpdate', handleSelectionUpdate);
-    };
-  }, [editor, isTypewriterScrolling]);
+  useTypewriterScroll({
+    editor,
+    isTypewriterScrolling,
+    scrollContainerRef,
+  });
 
   // Compute effective editor font stack
   const isMono =

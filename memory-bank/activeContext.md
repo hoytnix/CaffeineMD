@@ -1,27 +1,28 @@
 # Active Context: CaffeineMD
 
 ## Current Focus
-- **Google Drive Authentication & Token Persistence Pipeline**:
-  - **Firebase Client (`src/lib/firebase/client.ts`)**:
-    - Updated `setAccessToken` to accept `expiresInSeconds` defaulting to 3600 (1 hour OAuth validity).
-    - Persisted `TokenMetadata` (`savedAt`, `expiresAt`) into `storageRegistry` under `kite_gdrive_token_meta` alongside `sessionStorage` and `localStorage`.
-    - Implemented helper functions `getTokenMetadata()` and `isStoredTokenExpired(bufferMs)` for proactive expiry checks.
-    - Protected active sessions from unconditional wiping in `initAuth` when auth state changes during cold starts or transient disconnections.
-  - **DriveAuthService (`src/lib/sync/google/driveAuthService.ts`)**:
-    - Replaced in-memory only expiry checking with `isTokenExpired()` querying persistent `TokenMetadata` via `storageRegistry`.
-    - Added `refreshToken()` placeholder for future silent refresh capabilities.
-    - Updated `authorizedFetch` to log warnings and throw non-destructive session errors without invoking `clearSession()`, preserving valid Dexie workspace states.
-  - **Settings Hook (`src/components/settings/sections/useGoogleDriveSyncSettings.ts`)**:
-    - Eliminated aggressive error handlers that nullified `setAccessToken(null)` upon sync errors or 401 responses.
-    - Confined session destruction strictly to explicit user sign-out (`logoutGoogle`).
-  - **Storage Registry (`src/lib/config/storageRegistry.ts`)**:
-    - Made `fallback` parameter optional in `getJson` with default null fallback for flexible type consumption.
-
-## Architecture & Recent Changes
-1. **Non-Destructive Cloud Auth Pipeline**:
-   - Google Drive sync errors or 401 responses surface as warnings without clearing stored OAuth access tokens or purging local Dexie databases.
-2. **Persistent Token Expiry Tracking**:
-   - `storageRegistry` persists `TokenMetadata` with absolute timestamps, allowing the app to proactively identify expiring credentials prior to executing network transfers.
+- **7-Target Architectural Refactoring & Modularization (<250 LOC Ceiling)**:
+  - **Workspace Root (`app/w/[workspaceId]/page.tsx`)**:
+    - Extracted global keyboard shortcut listener into `src/hooks/useWorkspaceKeyboardShortcuts.ts`.
+    - Extracted ambient theme backdrop resolution and initial vault seeding into `src/hooks/useWorkspaceThemeBackdrop.ts`.
+    - Simplified `page.tsx` to 177 LOC as a clean layout orchestrator.
+  - **FileTree Sidebar (`src/components/sidebar/FileTree.tsx`)**:
+    - Extracted live Dexie queries, workspace filtering, and tree hierarchy resolution into `src/components/sidebar/hooks/useFileTreeSearch.ts`.
+    - Extracted internal node relocation and drag-and-drop orchestration into `src/components/sidebar/hooks/useFileTreeDragController.ts`.
+  - **TiptapEditor Host (`src/components/editor/TiptapEditor.tsx`)**:
+    - Extracted YAML frontmatter property reconciliation into `src/components/editor/hooks/useEditorProperties.ts`.
+    - Extracted ProseMirror cursor centering into `src/components/editor/hooks/useTypewriterScroll.ts`.
+  - **DatabaseView Controller (`src/components/database/DatabaseView.tsx`)**:
+    - Extracted multi-filter state and schema projection into `src/components/database/hooks/useDatabaseFilterState.ts`.
+    - Extracted record creation mutations into `src/components/database/hooks/useDatabaseMutations.ts`.
+  - **GraphView Renderer (`src/components/graph/GraphView.tsx`)**:
+    - Extracted D3 force simulation lifecycle and tick loop into `src/components/graph/hooks/useGraphSimulation.ts`.
+    - Extracted canvas pan/zoom affine transform and hit-testing into `src/components/graph/hooks/useGraphCanvasTransform.ts`.
+  - **Export Suite (`ExportOptionsForm.tsx` & `ExportPreviewDrawer.tsx`)**:
+    - Extracted `ExportScopeSelector.tsx` and `PwaConfigSection.tsx` under `src/components/export/sections/`.
+    - Extracted `usePreviewBlobUrl.ts` and `viewportDimensions.ts` under `src/components/export/`.
+  - **Storage Registry Consolidation**:
+    - Consolidated remaining direct `localStorage` calls in `workspaceStore.ts`, `themeStorageSlice.ts`, and `uiOverlaySlice.ts` into `storageRegistry`.
 
 ## Next Steps
 - Maintain strict <250 LOC per file across all modules (strict hard limit: 400 LOC).

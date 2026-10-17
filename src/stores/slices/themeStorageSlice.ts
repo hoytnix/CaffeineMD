@@ -1,12 +1,12 @@
 import {
   ThemeDefinition,
-  DEFAULT_CUSTOM_THEME,
   applyThemeId,
 } from '../../lib/themes/themeDefinitions';
 import {
   ShortcutActionId,
   DEFAULT_SHORTCUTS,
 } from '../../lib/shortcuts/shortcutManager';
+import { storageRegistry, STORAGE_KEYS } from '../../lib/config/storageRegistry';
 import {
   ToolboxPosition,
   EditorFontFamily,
@@ -64,11 +64,8 @@ export const createThemeStorageSlice = (set: any, get: any): ThemeSlice => ({
   setThemeOpacity: (opacity: number) => {
     const clamped = Math.max(0.1, Math.min(1.0, Number(opacity.toFixed(2))));
     set({ themeOpacity: clamped });
+    storageRegistry.setItem(STORAGE_KEYS.THEME_OPACITY, String(clamped));
     if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('caffeinemd-theme-opacity', String(clamped));
-        localStorage.setItem('kite-theme-opacity', String(clamped));
-      } catch {}
       document.documentElement.style.setProperty('--theme-opacity', String(clamped));
       document.documentElement.style.setProperty('--bg-image-opacity', String(clamped));
     }
@@ -79,12 +76,7 @@ export const createThemeStorageSlice = (set: any, get: any): ThemeSlice => ({
 
   setTheme: (themeId) => {
     set({ themeId, theme: themeId });
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('caffeinemd-theme', themeId);
-        localStorage.setItem('kite-theme-id', themeId);
-      } catch {}
-    }
+    storageRegistry.setItem(STORAGE_KEYS.ACTIVE_THEME, themeId);
     const currentCustom = get().customThemeColors || get().customTheme;
     applyThemeId(themeId, { ...currentCustom, bgOpacity: get().themeOpacity });
   },
@@ -92,14 +84,8 @@ export const createThemeStorageSlice = (set: any, get: any): ThemeSlice => ({
   setCustomThemeColors: (colors) => {
     const updated: ThemeDefinition = { ...get().customTheme, ...colors, id: 'custom' };
     set({ customTheme: updated, customThemeColors: updated, themeId: 'custom', theme: 'custom' });
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('caffeinemd-custom-theme-colors', JSON.stringify(updated));
-        localStorage.setItem('kite-custom-theme', JSON.stringify(updated));
-        localStorage.setItem('caffeinemd-theme', 'custom');
-        localStorage.setItem('kite-theme-id', 'custom');
-      } catch {}
-    }
+    storageRegistry.setJson(STORAGE_KEYS.CUSTOM_THEME_COLORS, updated);
+    storageRegistry.setItem(STORAGE_KEYS.ACTIVE_THEME, 'custom');
     applyThemeId('custom', updated);
   },
 
@@ -110,27 +96,11 @@ export const createThemeStorageSlice = (set: any, get: any): ThemeSlice => ({
   hydrateThemeFromStorage: () => {
     if (typeof window === 'undefined') return;
     try {
-      const savedTheme = localStorage.getItem('caffeinemd-theme') || localStorage.getItem('kite-theme-id') || 'dark';
-      let savedCustomColors = get().customTheme;
-      const rawCustom = localStorage.getItem('caffeinemd-custom-theme-colors') || localStorage.getItem('kite-custom-theme');
-      if (rawCustom) {
-        try { savedCustomColors = { ...DEFAULT_CUSTOM_THEME, ...JSON.parse(rawCustom), id: 'custom' }; } catch {}
-      }
-      const rawFont = localStorage.getItem('caffeinemd-editor-font') || localStorage.getItem('caffeinemd-editor-font-family') || 'sans';
-      const savedFont: EditorFontFamily = ['sans', 'mono', 'serif'].includes(rawFont) ? (rawFont as EditorFontFamily) : 'sans';
-
-      const rawShortcuts = localStorage.getItem('caffeinemd-keyboard-shortcuts');
-      let savedShortcuts = get().keyboardShortcuts;
-      if (rawShortcuts) {
-        try { savedShortcuts = { ...DEFAULT_SHORTCUTS, ...JSON.parse(rawShortcuts) }; } catch {}
-      }
-
-      const rawOpacity = localStorage.getItem('caffeinemd-theme-opacity') || localStorage.getItem('kite-theme-opacity');
-      let savedOpacity = get().themeOpacity;
-      if (rawOpacity !== null) {
-        const parsed = parseFloat(rawOpacity);
-        if (!isNaN(parsed) && parsed >= 0.05 && parsed <= 1.0) savedOpacity = parsed;
-      }
+      const savedTheme = getInitialStoredTheme();
+      const savedCustomColors = getInitialStoredCustomColors();
+      const savedFont = getInitialStoredEditorFont();
+      const savedShortcuts = getInitialStoredShortcuts();
+      const savedOpacity = getInitialStoredThemeOpacity();
 
       set({
         themeId: savedTheme,
@@ -154,76 +124,57 @@ export const createThemeStorageSlice = (set: any, get: any): ThemeSlice => ({
   setKeyboardShortcut: (actionId: ShortcutActionId, combo: string) => {
     const updated = { ...get().keyboardShortcuts, [actionId]: combo };
     set({ keyboardShortcuts: updated });
-    if (typeof window !== 'undefined') {
-      try { localStorage.setItem('caffeinemd-keyboard-shortcuts', JSON.stringify(updated)); } catch {}
-    }
+    storageRegistry.setJson(STORAGE_KEYS.SHORTCUTS, updated);
   },
   resetKeyboardShortcuts: () => {
     set({ keyboardShortcuts: DEFAULT_SHORTCUTS });
-    if (typeof window !== 'undefined') {
-      try { localStorage.removeItem('caffeinemd-keyboard-shortcuts'); } catch {}
-    }
+    storageRegistry.removeItem(STORAGE_KEYS.SHORTCUTS);
   },
 
   editorFontFamily: getInitialStoredEditorFont(),
   setEditorFontFamily: (font: EditorFontFamily) => {
     set({ editorFontFamily: font });
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('caffeinemd-editor-font', font);
-        localStorage.setItem('caffeinemd-editor-font-family', font);
-      } catch {}
-    }
+    storageRegistry.setItem(STORAGE_KEYS.EDITOR_FONT, font);
+    storageRegistry.setItem(STORAGE_KEYS.EDITOR_FONT_FAMILY, font);
   },
 
   editorFontSize: getInitialStoredEditorFontSize(),
   setEditorFontSize: (size: number) => {
     set({ editorFontSize: size });
-    if (typeof window !== 'undefined') {
-      try { localStorage.setItem('caffeinemd-editor-font-size', String(size)); } catch {}
-    }
+    storageRegistry.setItem(STORAGE_KEYS.EDITOR_FONT_SIZE, String(size));
   },
   spellcheck: getInitialStoredSpellcheck(),
   setSpellcheck: (val: boolean) => {
     set({ spellcheck: val });
-    if (typeof window !== 'undefined') {
-      try { localStorage.setItem('caffeinemd-spellcheck', String(val)); } catch {}
-    }
+    storageRegistry.setItem(STORAGE_KEYS.SPELLCHECK, String(val));
   },
   toggleSpellcheck: () => get().setSpellcheck(!get().spellcheck),
 
   codeExecutionSandboxEnabled: getInitialStoredSandboxEnabled(),
   setCodeExecutionSandboxEnabled: (enabled: boolean) => {
     set({ codeExecutionSandboxEnabled: enabled });
-    if (typeof window !== 'undefined') {
-      try { localStorage.setItem('caffeinemd-code-execution-sandbox', String(enabled)); } catch {}
-    }
+    storageRegistry.setItem(STORAGE_KEYS.SANDBOX_ENABLED, String(enabled));
   },
   toggleCodeExecutionSandbox: () => get().setCodeExecutionSandboxEnabled(!get().codeExecutionSandboxEnabled),
 
-  toolboxPosition:
-    typeof window !== 'undefined' && ['left', 'right', 'bottom', 'top'].includes(localStorage.getItem('kite-toolbox-position') || '')
-      ? (localStorage.getItem('kite-toolbox-position') as ToolboxPosition)
-      : 'bottom',
+  toolboxPosition: (() => {
+    const pos = storageRegistry.getItem(STORAGE_KEYS.TOOLBOX_POSITION, 'bottom');
+    return ['left', 'right', 'bottom', 'top'].includes(pos) ? (pos as ToolboxPosition) : 'bottom';
+  })(),
   setToolboxPosition: (position: ToolboxPosition) => {
     set({ toolboxPosition: position });
-    if (typeof window !== 'undefined') {
-      try { localStorage.setItem('kite-toolbox-position', position); } catch {}
-    }
+    storageRegistry.setItem(STORAGE_KEYS.TOOLBOX_POSITION, position);
   },
 
-  autosaveInterval:
-    typeof window !== 'undefined'
-      ? (() => {
-          const stored = localStorage.getItem('caffeinemd-autosave-interval') || localStorage.getItem('kite-autosave-interval');
-          const parsed = stored ? parseInt(stored, 10) : NaN;
-          return !isNaN(parsed) ? parsed : DEFAULT_AUTOSAVE_INTERVAL;
-        })()
-      : DEFAULT_AUTOSAVE_INTERVAL,
+  autosaveInterval: (() => {
+    const stored =
+      storageRegistry.getItem(STORAGE_KEYS.AUTOSAVE_INTERVAL) ||
+      storageRegistry.getItem(STORAGE_KEYS.LEGACY_AUTOSAVE_INTERVAL);
+    const parsed = stored ? parseInt(stored, 10) : NaN;
+    return !isNaN(parsed) ? parsed : DEFAULT_AUTOSAVE_INTERVAL;
+  })(),
   setAutosaveInterval: (interval: number) => {
     set({ autosaveInterval: interval });
-    if (typeof window !== 'undefined') {
-      try { localStorage.setItem('caffeinemd-autosave-interval', String(interval)); } catch {}
-    }
+    storageRegistry.setItem(STORAGE_KEYS.AUTOSAVE_INTERVAL, String(interval));
   },
 });

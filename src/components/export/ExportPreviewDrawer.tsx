@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Monitor,
   Tablet,
@@ -9,6 +9,8 @@ import {
   Loader2,
   Eye,
 } from 'lucide-react';
+import { usePreviewBlobUrl } from './hooks/usePreviewBlobUrl';
+import { getViewportWidth, PreviewViewport } from './utils/viewportDimensions';
 
 export interface ExportPreviewDrawerProps {
   compiledHtml: string | null;
@@ -21,38 +23,8 @@ export function ExportPreviewDrawer({
   isLoading,
   appName,
 }: ExportPreviewDrawerProps) {
-  const [viewport, setViewport] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
-  const previewUrl = React.useMemo(() => {
-    if (!compiledHtml) return null;
-    const blob = new Blob([compiledHtml], { type: 'text/html;charset=utf-8' });
-    return URL.createObjectURL(blob);
-  }, [compiledHtml]);
-
-  useEffect(() => {
-    return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-    };
-  }, [previewUrl]);
-
-  const handleOpenExternal = () => {
-    if (previewUrl) {
-      window.open(previewUrl, '_blank');
-    }
-  };
-
-  const getViewportWidth = () => {
-    switch (viewport) {
-      case 'mobile':
-        return 'w-[375px] max-w-full';
-      case 'tablet':
-        return 'w-[768px] max-w-full';
-      case 'desktop':
-      default:
-        return 'w-full';
-    }
-  };
+  const [viewport, setViewport] = useState<PreviewViewport>('desktop');
+  const { previewUrl, handleOpenExternal } = usePreviewBlobUrl(compiledHtml);
 
   return (
     <div className="flex flex-col h-full w-full md:w-[460px] md:border-l bg-[var(--background)] border border-[var(--border)] rounded-2xl overflow-hidden shadow-inner">
@@ -132,7 +104,7 @@ export function ExportPreviewDrawer({
             sandbox="allow-scripts"
             src={previewUrl}
             title={`${appName} Live Preview`}
-            className={`${getViewportWidth()} h-full rounded-xl border border-[var(--border)] bg-[var(--background)] shadow-2xl transition-all duration-200`}
+            className={`${getViewportWidth(viewport)} h-full rounded-xl border border-[var(--border)] bg-[var(--background)] shadow-2xl transition-all duration-200`}
           />
         ) : (
           <div className="flex flex-col items-center gap-2 text-neutral-500 text-xs">

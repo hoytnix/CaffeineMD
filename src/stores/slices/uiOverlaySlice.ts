@@ -1,3 +1,5 @@
+import { storageRegistry, STORAGE_KEYS } from '../../lib/config/storageRegistry';
+
 export interface UiOverlaySlice {
   toastMessage: string | null;
   showToast: (msg: string) => void;
@@ -73,21 +75,11 @@ export const createUiOverlaySlice = (set: any, get: any): UiOverlaySlice => ({
   setFocusMode: (open) => set({ isFocusMode: open, focusMode: open }),
   toggleFocusMode: () => set((state: UiOverlaySlice) => ({ isFocusMode: !state.isFocusMode, focusMode: !state.isFocusMode })),
 
-  isTypewriterScrolling:
-    typeof window !== 'undefined'
-      ? localStorage.getItem('caffeinemd-typewriter-mode') === 'true'
-      : false,
-  typewriterMode:
-    typeof window !== 'undefined'
-      ? localStorage.getItem('caffeinemd-typewriter-mode') === 'true'
-      : false,
+  isTypewriterScrolling: storageRegistry.getItem(STORAGE_KEYS.TYPEWRITER_MODE) === 'true',
+  typewriterMode: storageRegistry.getItem(STORAGE_KEYS.TYPEWRITER_MODE) === 'true',
   setTypewriterScrolling: (val) => {
     set({ isTypewriterScrolling: val, typewriterMode: val });
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('caffeinemd-typewriter-mode', String(val));
-      } catch {}
-    }
+    storageRegistry.setItem(STORAGE_KEYS.TYPEWRITER_MODE, String(val));
   },
   toggleTypewriterScrolling: () => get().setTypewriterScrolling(!get().isTypewriterScrolling),
   toggleTypewriterMode: () => get().setTypewriterScrolling(!get().isTypewriterScrolling),
@@ -99,17 +91,10 @@ export const createUiOverlaySlice = (set: any, get: any): UiOverlaySlice => ({
   toggleOutline: () => set((state: UiOverlaySlice) => ({ isOutlineOpen: !state.isOutlineOpen, outlineHudOpen: !state.isOutlineOpen })),
   toggleOutlineHud: () => set((state: UiOverlaySlice) => ({ isOutlineOpen: !state.isOutlineOpen, outlineHudOpen: !state.isOutlineOpen })),
 
-  showMinimap:
-    typeof window !== 'undefined'
-      ? localStorage.getItem('caffeinemd-show-minimap') !== 'false'
-      : true,
+  showMinimap: storageRegistry.getItem(STORAGE_KEYS.SHOW_MINIMAP, 'true') !== 'false',
   setShowMinimap: (val) => {
     set({ showMinimap: val });
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('caffeinemd-show-minimap', String(val));
-      } catch {}
-    }
+    storageRegistry.setItem(STORAGE_KEYS.SHOW_MINIMAP, String(val));
   },
   toggleMinimap: () => get().setShowMinimap(!get().showMinimap),
 

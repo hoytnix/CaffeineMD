@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { ImportProgress } from '../lib/storage/importPipeline';
 import { VaultFile } from '../lib/storage/db';
+import { storageRegistry, STORAGE_KEYS } from '../lib/config/storageRegistry';
 import {
   ThemeSlice,
   createThemeStorageSlice,
@@ -106,14 +107,9 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   sidebarCollapsed: false,
   rightPanelOpen: true,
   databaseViewMode: 'table',
-  listViewLayout:
-    (typeof window !== 'undefined' &&
-      (localStorage.getItem('caffeinemd-list-layout') as ListViewLayout)) ||
-    'list',
+  listViewLayout: (storageRegistry.getItem(STORAGE_KEYS.LIST_VIEW_LAYOUT, 'list') as ListViewLayout) || 'list',
   setListViewLayout: (layout: ListViewLayout) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('caffeinemd-list-layout', layout);
-    }
+    storageRegistry.setItem(STORAGE_KEYS.LIST_VIEW_LAYOUT, layout);
     set({ listViewLayout: layout });
   },
 

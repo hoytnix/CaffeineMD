@@ -1,15 +1,13 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { db, VaultFile } from '@/src/lib/storage/db';
-import { executeVaultMutation } from '@/src/lib/storage/vaultMutationService';
-import { useLiveQuery } from 'dexie-react-hooks';
+import React from 'react';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
 import { TableView } from './TableView';
 import { KanbanView } from './KanbanView';
 import { ListView } from './ListView';
 import { DatabaseToolbar } from './DatabaseToolbar';
-import { useDatabaseSchema } from '@/src/hooks/useDatabaseSchema';
+import { useDatabaseFilterState } from './hooks/useDatabaseFilterState';
+import { useDatabaseMutations } from './hooks/useDatabaseMutations';
 
 export function DatabaseView({ mode }: { mode?: 'table' | 'board' | 'list' }) {
   const {
@@ -20,83 +18,33 @@ export function DatabaseView({ mode }: { mode?: 'table' | 'board' | 'list' }) {
     activeWorkspaceId,
   } = useWorkspaceStore();
   const currentMode = mode || databaseViewMode;
-  const rawFiles = useLiveQuery(() => db.files.filter((f) => !f.isBinary && !f.isTrash).toArray());
-  const files = useMemo(() => {
-    const list = rawFiles ?? [];
-    return list.filter((f) => {
-      if (!activeWorkspaceId || activeWorkspaceId === 'default-vault') {
-        return !f.vaultId || f.vaultId === 'default-vault';
-      }
-      return f.vaultId === activeWorkspaceId;
-    });
-  }, [rawFiles, activeWorkspaceId]);
 
-  const [filterFolder, setFilterFolder] = useState<string>('all');
-  const [filterTag, setFilterTag] = useState<string>('all');
-  const [searchFilter, setSearchFilter] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterEisenhower, setFilterEisenhower] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<string>('updatedAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const {
+    filterFolder,
+    setFilterFolder,
+    filterTag,
+    setFilterTag,
+    searchFilter,
+    setSearchFilter,
+    filterStatus,
+    setFilterStatus,
+    filterEisenhower,
+    setFilterEisenhower,
+    sortBy,
+    setSortBy,
+    folders,
+    tags,
+    columns,
+    statuses,
+    filteredFiles,
+  } = useDatabaseFilterState(activeWorkspaceId || 'default-vault');
 
-  const { folders, tags, columns, statuses, filteredFiles } = useDatabaseSchema(
-    files,
+  useDatabaseMutations({
+    activeWorkspaceId: activeWorkspaceId || 'default-vault',
     filterFolder,
     filterTag,
-    searchFilter,
-    filterStatus,
-    filterEisenhower,
-    sortBy,
-    sortOrder
-  );
-
-  const handleCreateNewNote = async () => {
-    const timestamp = Date.now();
-    const noteTitle = `New Note ${timestamp.toString().slice(-4)}`;
-    const fileName = `${noteTitle}.md`;
-    const targetFolder = filterFolder !== 'all' ? `${filterFolder}/` : '';
-    const fullPath = `${targetFolder}${fileName}`;
-    const initialTags = filterTag !== 'all' ? [filterTag] : [];
-
-    const content = `---
-title: "${noteTitle}"
-tags: [${initialTags.map((t) => `"${t}"`).join(', ')}]
-status: "Draft"
-author: ""
-eisenhower: "Not Urgent & Not Immediate"
----
-
-# ${noteTitle}
-
-Start writing here...
-`;
-
-    const newNote: VaultFile = {
-      id: fullPath,
-      path: fullPath,
-      name: fileName,
-      title: noteTitle,
-      extension: 'md',
-      content,
-      frontmatter: {
-        title: noteTitle,
-        status: 'Draft',
-        author: '',
-        eisenhower: 'Not Urgent & Not Immediate',
-        tags: initialTags,
-      },
-      tags: initialTags,
-      eisenhower: 'Not Urgent & Not Immediate',
-      isBinary: false,
-      size: content.length,
-      createdAt: timestamp,
-      updatedAt: timestamp,
-      vaultId: activeWorkspaceId || 'default-vault',
-    };
-
-    await executeVaultMutation(() => db.files.put(newNote));
-    openFileTab(fullPath, newNote.title);
-  };
+    openFileTab,
+  });
 
   return (
     <div

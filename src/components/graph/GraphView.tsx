@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import * as d3 from 'd3-force';
 import { useWorkspaceStore } from '@/src/stores/workspaceStore';
-import { useGraphData, GraphNode, GraphLink } from '@/src/hooks/useGraphData';
+import { useGraphData, GraphNode } from '@/src/hooks/useGraphData';
 import { renderGraphCanvas } from '@/src/lib/graph/graphCanvasRenderer';
 import { getThemeDefinition } from '@/src/lib/themes/themeDefinitions';
 import { GraphControls } from './GraphControls';
+import { useGraphCanvasTransform, GraphTransform } from './hooks/useGraphCanvasTransform';
+import { useGraphSimulation } from './hooks/useGraphSimulation';
 
 export function GraphView() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -43,158 +44,52 @@ export function GraphView() {
     showOrphans,
   });
 
-  // Transform / Zoom
-  const transformRef = useRef({ x: 0, y: 0, k: 1 });
-  const isDraggingRef = useRef(false);
-  const dragStartRef = useRef({ x: 0, y: 0 });
+  const renderWithTransform = useCallback(
+    (transform: GraphTransform) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      renderGraphCanvas({
+        canvas,
+        nodes,
+        links,
+        hoveredNode,
+        transform,
+        colorByEisenhower,
+        themeColors,
+      });
+    },
+    [nodes, links, hoveredNode, colorByEisenhower, themeColors]
+  );
 
-  const nodesRef = useRef<GraphNode[]>([]);
-  const linksRef = useRef<GraphLink[]>([]);
-  const simulationRef = useRef<d3.Simulation<GraphNode, GraphLink> | null>(null);
+  const {
+    transformRef,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    handleClick,
+    handleWheel,
+    zoom,
+    resetView,
+  } = useGraphCanvasTransform({
+    canvasRef,
+    nodes,
+    hoveredNode,
+    setHoveredNode,
+    onSelectNode: (node) => openFileTab(node.path, node.title),
+    onRender: renderWithTransform,
+  });
 
   const renderCurrentCanvas = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    renderGraphCanvas({
-      canvas,
-      nodes: nodesRef.current,
-      links: linksRef.current,
-      hoveredNode,
-      transform: transformRef.current,
-      colorByEisenhower,
-      themeColors,
-    });
-  }, [hoveredNode, colorByEisenhower, themeColors]);
+    renderWithTransform(transformRef.current);
+  }, [renderWithTransform, transformRef]);
 
-  // Sync simulation when nodes/links change
-  useEffect(() => {
-    nodesRef.current = nodes;
-    linksRef.current = links;
+  useGraphSimulation({
+    canvasRef,
+    nodes,
+    links,
+    onTick: renderCurrentCanvas,
+  });
 
-    const canvas = canvasRef.current;
-    const width = canvas ? canvas.clientWidth : 800;
-    const height = canvas ? canvas.clientHeight : 600;
-
-    if (simulationRef.current) simulationRef.current.stop();
-
-    const sim = d3
-      .forceSimulation<GraphNode>(nodes)
-      .force(
-        'link',
-        d3
-          .forceLink<GraphNode, GraphLink>(links)
-          .id((d) => d.id)
-          .distance(70)
-      )
-      .force('charge', d3.forceManyBody().strength(-120))
-      .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('collision', d3.forceCollide().radius((d: any) => d.radius + 6));
-
-    simulationRef.current = sim;
-    sim.on('tick', () => {
-      renderCurrentCanvas();
-    });
-
-    return () => {
-      sim.stop();
-    };
-  }, [nodes, links, renderCurrentCanvas]);
-
-  // Canvas Mouse Interactions
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    isDraggingRef.current = true;
-    dragStartRef.current = { x: e.clientX, y: e.clientY };
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    if (isDraggingRef.current) {
-      const dx = e.clientX - dragStartRef.current.x;
-      const dy = e.clientY - dragStartRef.current.y;
-      transformRef.current.x += dx;
-      transformRef.current.y += dy;
-      dragStartRef.current = { x: e.clientX, y: e.clientY };
-      renderCurrentCanvas();
-      return;
-    }
-
-    // Hit test for hovered node
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-
-    const { x, y, k } = transformRef.current;
-    const worldX = (mouseX - x) / k;
-    const worldY = (mouseY - y) / k;
-
-    let found: GraphNode | null = null;
-    for (const node of nodesRef.current) {
-      if (node.x === undefined || node.y === undefined) continue;
-      const dist = Math.hypot(node.x - worldX, node.y - worldY);
-      if (dist <= node.radius + 4) {
-        found = node;
-        break;
-      }
-    }
-
-    if (found?.id !== hoveredNode?.id) {
-      setHoveredNode(found);
-      canvas.style.cursor = found ? 'pointer' : 'grab';
-    }
-  };
-
-  const handleMouseUp = () => {
-    isDraggingRef.current = false;
-  };
-
-  const handleClick = () => {
-    if (hoveredNode) {
-      openFileTab(hoveredNode.path, hoveredNode.title);
-    }
-  };
-
-  const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
-    e.preventDefault();
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-
-    const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
-    const newK = Math.max(0.2, Math.min(4, transformRef.current.k * zoomFactor));
-
-    // Zoom toward cursor
-    transformRef.current.x = mouseX - (mouseX - transformRef.current.x) * (newK / transformRef.current.k);
-    transformRef.current.y = mouseY - (mouseY - transformRef.current.y) * (newK / transformRef.current.k);
-    transformRef.current.k = newK;
-
-    renderCurrentCanvas();
-  };
-
-  const zoom = (factor: number) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const cx = canvas.clientWidth / 2;
-    const cy = canvas.clientHeight / 2;
-    const newK = Math.max(0.2, Math.min(4, transformRef.current.k * factor));
-
-    transformRef.current.x = cx - (cx - transformRef.current.x) * (newK / transformRef.current.k);
-    transformRef.current.y = cy - (cy - transformRef.current.y) * (newK / transformRef.current.k);
-    transformRef.current.k = newK;
-
-    renderCurrentCanvas();
-  };
-
-  const resetView = () => {
-    transformRef.current = { x: 0, y: 0, k: 1 };
-    renderCurrentCanvas();
-  };
-
-  // Re-render canvas when theme colors change
   useEffect(() => {
     renderCurrentCanvas();
   }, [themeColors, renderCurrentCanvas]);
