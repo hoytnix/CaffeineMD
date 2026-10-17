@@ -32,7 +32,7 @@ function normalizeStatusValue(raw: unknown): string {
 export function KanbanView({ files, onRefresh }: KanbanViewProps) {
   const {
     openFileTab, activeWorkspaceId, kanbanBoards, activeBoardId, setActiveBoardId,
-    createKanbanBoard, renameKanbanBoard, deleteKanbanBoard,
+    createKanbanBoard, renameKanbanBoard, deleteKanbanBoard, reorderKanbanBoards,
     addColumnToBoard, renameColumnInBoard, deleteColumnFromBoard, showToast,
   } = useWorkspaceStore();
 
@@ -160,6 +160,7 @@ export function KanbanView({ files, onRefresh }: KanbanViewProps) {
         activeBoard={currentBoard}
         onSelectBoard={setActiveBoardId}
         onOpenModal={setModalMode}
+        onReorderBoards={reorderKanbanBoards}
       />
 
       <div className="flex gap-4 overflow-x-auto pb-4 pt-1 items-start min-h-[500px]">

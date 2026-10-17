@@ -47,6 +47,7 @@ export interface KanbanSlice {
   updateKanbanBoard: (id: string, updates: Partial<Omit<KanbanBoard, 'id' | 'createdAt'>>) => void;
   renameKanbanBoard: (id: string, name: string) => void;
   deleteKanbanBoard: (id: string) => void;
+  reorderKanbanBoards: (startIndex: number, endIndex: number) => void;
   addColumnToBoard: (boardId: string, column: string) => void;
   renameColumnInBoard: (boardId: string, oldCol: string, newCol: string) => void;
   deleteColumnFromBoard: (boardId: string, column: string) => void;
@@ -130,6 +131,15 @@ export const createKanbanSlice = (set: SliceSetter, get: SliceGetter): KanbanSli
     persistBoards(nextBoards);
     storageRegistry.setItem(STORAGE_KEYS.ACTIVE_KANBAN_BOARD_ID, nextActiveId);
     set({ kanbanBoards: nextBoards, activeBoardId: nextActiveId });
+  },
+
+  reorderKanbanBoards: (startIndex: number, endIndex: number) => {
+    const boards = [...get().kanbanBoards];
+    if (startIndex < 0 || startIndex >= boards.length || endIndex < 0 || endIndex >= boards.length) return;
+    const [removed] = boards.splice(startIndex, 1);
+    boards.splice(endIndex, 0, removed);
+    persistBoards(boards);
+    set({ kanbanBoards: boards });
   },
 
   addColumnToBoard: (boardId, column) => {

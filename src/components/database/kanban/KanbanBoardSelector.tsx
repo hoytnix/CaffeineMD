@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Kanban, Plus, Pencil, Trash2, Layers, Flag } from 'lucide-react';
 import { KanbanBoard } from '@/src/stores/slices/kanbanSlice';
 import { BoardModalMode } from './KanbanBoardModals';
@@ -10,6 +10,7 @@ export interface KanbanBoardSelectorProps {
   activeBoard: KanbanBoard;
   onSelectBoard: (boardId: string) => void;
   onOpenModal: (mode: BoardModalMode) => void;
+  onReorderBoards?: (startIndex: number, endIndex: number) => void;
 }
 
 export function KanbanBoardSelector({
@@ -17,8 +18,41 @@ export function KanbanBoardSelector({
   activeBoard,
   onSelectBoard,
   onOpenModal,
+  onReorderBoards,
 }: KanbanBoardSelectorProps) {
+  const [draggedBoardIndex, setDraggedBoardIndex] = useState<number | null>(null);
+  const [dragOverBoardIndex, setDragOverBoardIndex] = useState<number | null>(null);
+
   const isEisenhower = activeBoard.groupKey === 'eisenhower';
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
+    setDraggedBoardIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    if (draggedBoardIndex === null) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverBoardIndex !== index) {
+      setDragOverBoardIndex(index);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    if (draggedBoardIndex !== null && draggedBoardIndex !== targetIndex) {
+      onReorderBoards?.(draggedBoardIndex, targetIndex);
+    }
+    setDraggedBoardIndex(null);
+    setDragOverBoardIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedBoardIndex(null);
+    setDragOverBoardIndex(null);
+  };
 
   return (
     <div
@@ -32,18 +66,35 @@ export function KanbanBoardSelector({
           <span className="hidden sm:inline">Boards</span>
         </div>
 
-        <div className="flex items-center gap-1 flex-wrap">
-          {boards.map((board) => {
+        <div
+          className="flex items-center gap-1 flex-wrap"
+          onDragLeave={(e) => {
+            if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+            setDragOverBoardIndex(null);
+          }}
+        >
+          {boards.map((board, index) => {
             const isActive = board.id === activeBoard.id;
+            const isDragging = draggedBoardIndex === index;
+            const isOver = dragOverBoardIndex === index && draggedBoardIndex !== null && draggedBoardIndex !== index;
+
             return (
               <button
                 key={board.id}
                 type="button"
+                draggable
+                onDragStart={(e) => handleDragStart(e, index)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDrop={(e) => handleDrop(e, index)}
+                onDragEnd={handleDragEnd}
                 onClick={() => onSelectBoard(board.id)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                title={`Drag to reorder "${board.name}"`}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-grab active:cursor-grabbing flex items-center gap-1.5 ${
                   isActive
                     ? 'bg-indigo-600 text-white shadow-xs'
                     : 'text-neutral-400 hover:text-[var(--foreground)] hover:bg-neutral-500/10'
+                } ${isDragging ? 'opacity-40 scale-95' : ''} ${
+                  isOver ? 'ring-2 ring-indigo-500 ring-offset-2 ring-offset-[var(--card)]' : ''
                 }`}
               >
                 <span>{board.name}</span>

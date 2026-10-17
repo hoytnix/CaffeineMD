@@ -40,9 +40,9 @@ CaffeineMD transforms standard Markdown notes into relational database records w
   - Quick-add row button creating a new note with pre-populated frontmatter properties.
 
 ### 1.3 Kanban Board CRUD, Custom Lanes & Eisenhower Matrix (`KanbanView.tsx`, `kanbanSlice.ts`)
-- **Board-Level CRUD (`KanbanBoardSelector.tsx`, `KanbanBoardModals.tsx`)**:
-  - Users can create multiple named Kanban boards (e.g., `Task Status`, `Eisenhower Matrix`, `Not ToDO`, `Sprint Backlog`), switch between active boards, rename boards, and delete boards (automatically falling back to the default board).
-  - Board configurations and active board state are managed in `kanbanSlice.ts` and persisted via `storageRegistry` (`caffeinemd-kanban-boards` and `caffeinemd-active-kanban-board`).
+- **Board-Level CRUD & Reordering (`KanbanBoardSelector.tsx`, `KanbanBoardModals.tsx`)**:
+  - Users can create multiple named Kanban boards (e.g., `Task Status`, `Eisenhower Matrix`, `Not ToDO`, `Sprint Backlog`), switch between active boards, reorder boards via HTML5 drag-and-drop pill tabs, rename boards, and delete boards (automatically falling back to the default board).
+  - Board configurations, order, and active board state are managed in `kanbanSlice.ts` (`reorderKanbanBoards`) and persisted via `storageRegistry` (`caffeinemd-kanban-boards` and `caffeinemd-active-kanban-board`).
 - **Column/Lane-Level CRUD (`KanbanColumnMenu.tsx`, `KanbanAddColumnCard.tsx`)**:
   - **Add Column**: Inline `+ Add Column` card at the end of the board viewport appends custom lanes (e.g., `Not ToDO`) to the active board.
   - **Rename Column & Batch Migration**: Renaming a column updates the board schema and executes an atomic batch frontmatter migration across all matching notes in IndexedDB via `executeVaultMutation` and `serializeFrontmatter`.
