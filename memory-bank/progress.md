@@ -67,6 +67,12 @@
 - [x] **Responsive Card Grid & Inline Header (`ListView.tsx`)**: Responsive multi-column grid (`grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4`) toggled alongside compact row list, with an embedded header control bar.
 - [x] **Documentation & Strict Verification**: Documented capabilities in `database-graph-and-export.md`. Verified TypeScript compiler (0 errors), ESLint (0 errors, 0 warnings), Next.js production build (7/7 static pages), and strict LOC limits (<250 LOC).
 
+### 11. Google Drive Token Persistence & Non-Destructive Auth Pipeline
+- [x] **Token Persistence & Metadata Tracking (`client.ts`)**: `setAccessToken` records `TokenMetadata` (`savedAt`, `expiresAt`) in `storageRegistry` under `kite_gdrive_token_meta` with default 3600-second expiry; exported `getTokenMetadata()` and `isStoredTokenExpired(bufferMs)` helpers.
+- [x] **Non-Destructive Expiry & 401 Handling (`driveAuthService.ts`)**: `isTokenExpired()` validates against persistent `TokenMetadata` via `storageRegistry`; added `refreshToken()` placeholder; removed `clearSession()` on 401 in `authorizedFetch()` to prevent purging local Dexie databases on network glitches.
+- [x] **Resilient Settings Error Surface (`useGoogleDriveSyncSettings.ts`)**: Removed unconditional `setAccessToken(null)` calls on sync errors containing 401 or access token warnings, preserving session tokens until explicit user logout.
+- [x] **Verification**: ESLint (0 errors, 0 warnings), TypeScript compiler (0 errors), Next.js production build (7/7 static pages), and LOC constraints strictly maintained across all modules (<250 LOC).
+
 ## Verification Status
 - Production Build: Passing cleanly (`next build` 7/7 static pages generated).
 - ESLint: Passing cleanly with 0 errors and 0 warnings (`pnpm run lint`).

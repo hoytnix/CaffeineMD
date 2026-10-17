@@ -40,7 +40,7 @@ export interface TokenMetadata {
   expiresAt?: number;
 }
 
-export const setAccessToken = (token: string | null, expiresInSeconds?: number) => {
+export const setAccessToken = (token: string | null, expiresInSeconds: number = 3600) => {
   cachedAccessToken = token;
   if (typeof window !== 'undefined') {
     try {
@@ -49,7 +49,7 @@ export const setAccessToken = (token: string | null, expiresInSeconds?: number) 
         sessionStorage.setItem(STORAGE_KEYS.GDRIVE_ACCESS_TOKEN, token);
         const meta: TokenMetadata = {
           savedAt: Date.now(),
-          expiresAt: expiresInSeconds ? Date.now() + expiresInSeconds * 1000 : undefined,
+          expiresAt: Date.now() + expiresInSeconds * 1000,
         };
         storageRegistry.setJson(STORAGE_KEYS.GDRIVE_TOKEN_META, meta);
       } else {
@@ -58,9 +58,24 @@ export const setAccessToken = (token: string | null, expiresInSeconds?: number) 
         sessionStorage.removeItem(STORAGE_KEYS.GDRIVE_ACCESS_TOKEN);
       }
     } catch {
-      // ignore
+      // storage unavailable
     }
   }
+};
+
+export const getTokenMetadata = (): TokenMetadata | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    return storageRegistry.getJson<TokenMetadata | null>(STORAGE_KEYS.GDRIVE_TOKEN_META, null);
+  } catch {
+    return null;
+  }
+};
+
+export const isStoredTokenExpired = (bufferMs: number = 60000): boolean => {
+  const meta = getTokenMetadata();
+  if (!meta || !meta.expiresAt) return false;
+  return Date.now() >= meta.expiresAt - bufferMs;
 };
 
 export const getAccessToken = async (): Promise<string | null> => {

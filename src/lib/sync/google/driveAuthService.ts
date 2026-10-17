@@ -1,6 +1,7 @@
 'use client';
 
-import { getAccessToken, setAccessToken } from '@/src/lib/firebase/client';
+import { storageRegistry, STORAGE_KEYS } from '@/src/lib/config/storageRegistry';
+import { getAccessToken, setAccessToken, TokenMetadata } from '@/src/lib/firebase/client';
 
 export interface DriveAuthHeaders {
   Authorization: string;
@@ -51,11 +52,29 @@ export class DriveAuthService {
 
   /**
    * Checks if the currently cached token is within expiry tolerance.
+   * Checks against stored token metadata retrieved via storageRegistry.
    */
   public static isTokenExpired(): boolean {
-    if (!this.tokenExpiryTime) return false;
-    // Consider token expired if within 60 seconds of expiration
-    return Date.now() >= this.tokenExpiryTime - 60000;
+    if (typeof window === 'undefined') return false;
+    try {
+      const meta = storageRegistry.getJson<TokenMetadata | null>(STORAGE_KEYS.GDRIVE_TOKEN_META, null);
+      if (!meta || !meta.expiresAt) return false;
+      return Date.now() >= meta.expiresAt - 60000;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Retrieves stored token metadata.
+   */
+  public static getStoredMetadata(): TokenMetadata | null {
+    if (typeof window === 'undefined') return null;
+    try {
+      return storageRegistry.getJson<TokenMetadata | null>(STORAGE_KEYS.GDRIVE_TOKEN_META, null);
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -63,8 +82,20 @@ export class DriveAuthService {
    */
   public static setTokenExpiry(expiresInSeconds: number): void {
     this.tokenExpiryTime = Date.now() + expiresInSeconds * 1000;
-    if (this.cachedToken) {
-      setAccessToken(this.cachedToken, expiresInSeconds);
+    const token = this.cachedToken || (typeof window !== 'undefined' ? storageRegistry.getItem(STORAGE_KEYS.GDRIVE_ACCESS_TOKEN) : null);
+    if (token) {
+      setAccessToken(token, expiresInSeconds);
+    }
+  }
+
+  /**
+   * Placeholder for silent token refresh via OAuth2 / Firebase.
+   */
+  public static async refreshToken(): Promise<string | null> {
+    try {
+      return await getAccessToken();
+    } catch {
+      return null;
     }
   }
 
@@ -111,7 +142,8 @@ export class DriveAuthService {
     });
 
     if (res.status === 401) {
-      this.clearSession();
+      // Attempt token re-validation or throw non-destructive auth error without wiping local Dexie workspace
+      console.warn('Google Drive access token expired (401). Prompting re-authorization.');
       throw new Error('Google Drive session expired (401 Unauthorized). Please reconnect.');
     }
 

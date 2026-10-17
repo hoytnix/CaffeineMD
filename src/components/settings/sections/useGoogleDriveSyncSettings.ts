@@ -7,7 +7,6 @@ import {
   googleSignIn,
   logoutGoogle,
   getAccessToken,
-  setAccessToken,
 } from '@/src/lib/firebase/client';
 import {
   GoogleDriveSyncService,
@@ -135,13 +134,8 @@ export function useGoogleDriveSyncSettings({
       );
       setSyncStatus(result);
       if (result.lastError) {
-        if (
-          result.lastError.includes('access token') ||
-          result.lastError.includes('401') ||
-          result.lastError.includes('sign in')
-        ) {
-          setAccessToken(null);
-        }
+        // Do not aggressively wipe access tokens on network hiccups; keep session intact.
+        console.warn('Sync completed with warning/error:', result.lastError);
       } else {
         fetchRemoteWorkspaces();
       }

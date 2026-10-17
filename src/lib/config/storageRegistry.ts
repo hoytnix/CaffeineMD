@@ -50,7 +50,7 @@ export const storageRegistry = {
     }
   },
 
-  getJson<T>(key: StorageKey, fallback: T, schema?: z.ZodType<T>): T {
+  getJson<T>(key: StorageKey, fallback: T = null as unknown as T, schema?: z.ZodType<T>): T {
     if (typeof window === 'undefined') return fallback;
     try {
       const raw = window.localStorage.getItem(key);
