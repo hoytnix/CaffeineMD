@@ -13,7 +13,11 @@
     - `KanbanColumnMenu.tsx`: Column header popover supporting inline column renaming and deletion with card count badges.
     - `KanbanAddColumnCard.tsx`: Dashed inline `+ Add Column` card at the end of the board viewport.
     - `KanbanColumn.tsx` & `KanbanView.tsx`: Connected active board state, column CRUD handlers, board reordering callback, HTML5 column header drag-and-drop reordering (`reorderColumnsInBoard`, `useKanbanDragAndDrop`), and atomic batch frontmatter migrations via `executeVaultMutation` and `serializeFrontmatter`.
+- **SEO & Traffic Optimization**:
+  - Implemented production-grade `public/robots.txt` prioritizing AI answer engine citation crawlers (PerplexityBot, ChatGPT-User, OAI-SearchBot, Claude-Web) and core search engines (Googlebot, Bingbot, Applebot).
+  - Explicitly allowed Next.js static assets and stylesheets for headless client-side rendering while blocking crawl-budget traps, dynamic queries, and internal API routes.
 
 ## Next Steps
 - Maintain strict <250 LOC per file across all modules (strict hard limit: 400 LOC).
 - Verification: Run `pnpm run lint` on every prompt cycle.
+

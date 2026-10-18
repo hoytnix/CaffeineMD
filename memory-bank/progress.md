@@ -85,9 +85,12 @@
 - [x] **Board Navigation, Lifecycle Modals & Reordering (`KanbanBoardSelector.tsx`, `KanbanBoardModals.tsx`, `kanbanSlice.ts`)**: Implemented glassmorphic board switcher bar with HTML5 drag-and-drop board reordering (`reorderKanbanBoards`), visual drag state & drop target indicator rings, and `ModalShell`-based Create, Rename, and Delete board dialogs.
 - [x] **Column CRUD, Reordering & Batch Migration (`KanbanColumnMenu.tsx`, `KanbanAddColumnCard.tsx`, `KanbanColumn.tsx`, `KanbanView.tsx`, `useKanbanDragAndDrop.ts`)**: Added inline `+ Add Column` card, column header rename/delete popover menu, HTML5 drag-and-drop column reordering (`reorderColumnsInBoard`) with visual grab handle and drop target ring indicators, and atomic batch frontmatter updates across IndexedDB notes via `executeVaultMutation` and `serializeFrontmatter`.
 - [x] **Documentation & Verification (`docs/database-graph-and-export.md`)**: Documented Kanban CRUD and drag-and-drop board & column reordering architecture; verified 0 ESLint errors, 0 TypeScript errors, clean production build (7/7 static pages), and strict LOC ceilings across all files.
+### 14. SEO, AI Search & Crawl Optimization
+- [x] **Traffic-Optimized Robots Policy (`public/robots.txt`)**: Whitelisted modern AI citation engines (`PerplexityBot`, `ChatGPT-User`, `OAI-SearchBot`, `Claude-Web`) to maximize AI answer search citations and referral traffic; enabled headless asset crawling (`_next/static/`, styles, scripts, images) for search engines (`Googlebot`, `Bingbot`, `Applebot`); blocked scrapers and crawl budget traps (`?q=`, `?sort=`, `?filter=`, `/api/`).
 
 ## Verification Status
 - Production Build: Passing cleanly (`next build` 7/7 static pages generated).
 - ESLint: Passing cleanly with 0 errors and 0 warnings (`pnpm run lint`).
 - TypeScript: Passing cleanly with 0 errors (`tsc --noEmit`).
 - Tiered LOC Limits: 100% compliant (<250 LOC per file across all touched modules, <400 hard limit).
+
