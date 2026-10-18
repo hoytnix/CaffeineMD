@@ -87,6 +87,7 @@
 - [x] **Documentation & Verification (`docs/database-graph-and-export.md`)**: Documented Kanban CRUD and drag-and-drop board & column reordering architecture; verified 0 ESLint errors, 0 TypeScript errors, clean production build (7/7 static pages), and strict LOC ceilings across all files.
 ### 14. SEO, AI Search & Crawl Optimization
 - [x] **Traffic-Optimized Robots Policy (`public/robots.txt`)**: Whitelisted modern AI citation engines (`PerplexityBot`, `ChatGPT-User`, `OAI-SearchBot`, `Claude-Web`) to maximize AI answer search citations and referral traffic; enabled headless asset crawling (`_next/static/`, styles, scripts, images) for search engines (`Googlebot`, `Bingbot`, `Applebot`); blocked scrapers and crawl budget traps (`?q=`, `?sort=`, `?filter=`, `/api/`).
+- [x] **JSON-LD Schema Verification & Organization Attribution (`app/layout.tsx`)**: Configured Organization entity to `TehWiz Productions` (`https://tehwiz.com`) in the root JSON-LD graph.
 
 ## Verification Status
 - Production Build: Passing cleanly (`next build` 7/7 static pages generated).

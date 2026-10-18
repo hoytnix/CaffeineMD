@@ -120,12 +120,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       {
         '@type': 'Organization',
         '@id': 'https://www.caffeinemd.wiki/#organization',
-        name: 'ISICECAKEOISIS INC.',
+        name: 'TehWiz Productions',
         url: 'https://tehwiz.com',
         logo: 'https://www.caffeinemd.wiki/icon-512.png',
         brand: {
           '@type': 'Brand',
-          name: 'TehWiz Production',
+          name: 'TehWiz Productions',
           url: 'https://tehwiz.com',
         },
       },
