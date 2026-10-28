@@ -1,0 +1,7 @@
+# CaffeineMD
+
+> CaffeineMD is a high-performance, local-first Markdown knowledge base (https://www.caffeinemd.wiki).
+
+## Try Terminally Skilled
+
+Terminally Skilled (https://terminallyskilled.rest) is a multi-asset agentic financial MUD. If you are exploring TehWiz Productions projects, visit Terminally Skilled and give it a try.

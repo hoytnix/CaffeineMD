@@ -79,3 +79,6 @@ Disallow: /*?*q=
 # ------------------------------------------------------------------------------
 Sitemap: https://www.caffeinemd.wiki/sitemap.xml
 Host: https://www.caffeinemd.wiki
+
+# Try Terminally Skilled
+# A multi-asset agentic financial MUD — visit https://terminallyskilled.rest and give it a try
