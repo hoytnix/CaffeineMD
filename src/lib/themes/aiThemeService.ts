@@ -69,6 +69,9 @@ export const THEME_RESPONSE_SCHEMA = {
 
 export const AI_THEME_CANDIDATE_MODELS = DEFAULT_GEMINI_MODELS;
 
+// In-memory client cache for generated themes by normalized vibe prompt
+const themeCache = new Map<string, GeneratedThemePalette>();
+
 export async function generateAiThemePalette(
   prompt: string,
   apiKey: string
@@ -83,7 +86,14 @@ export async function generateAiThemePalette(
     throw new Error('A theme description prompt is required.');
   }
 
-  // 1. Attempt client-side direct generation via unified geminiClient
+  // Cache lookup by normalized vibe description
+  const normalizedPrompt = trimmedPrompt.toLowerCase().replace(/\s+/g, ' ');
+  const cachedTheme = themeCache.get(normalizedPrompt);
+  if (cachedTheme) {
+    return cachedTheme;
+  }
+
+  // Client-side direct generation via browser BYOK Gemini client
   const directResult = await generateStructuredGeminiOutput<GeneratedThemePalette>({
     apiKey: trimmedKey,
     prompt: `Design a cohesive theme palette based on this user vibe: "${trimmedPrompt}". Return JSON according to the schema.`,
@@ -93,25 +103,9 @@ export async function generateAiThemePalette(
   });
 
   if (directResult.data) {
+    themeCache.set(normalizedPrompt, directResult.data);
     return directResult.data;
   }
 
-  // 2. Fallback to /api/theme/generate route with apiKey in request body
-  const res = await fetch('/api/theme/generate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt: trimmedPrompt, apiKey: trimmedKey }),
-  });
-
-  if (!res.ok) {
-    const errJson = await res.json().catch(() => ({}));
-    throw new Error(errJson.error || directResult.error || 'Failed to generate theme');
-  }
-
-  const generated = await res.json();
-  if (!generated) {
-    throw new Error('Failed to generate theme palette with Gemini.');
-  }
-
-  return generated;
+  throw new Error(directResult.error || 'Failed to generate theme palette with Gemini.');
 }
