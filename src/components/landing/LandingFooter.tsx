@@ -12,16 +12,7 @@ export const LandingFooter: React.FC = () => {
         </div>
 
         <p>
-          Copyright © 2026 ISICECAKEOISIS INC. A{' '}
-          <a
-            href="https://tehwiz.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[#94a39b] hover:text-emerald-400 underline underline-offset-4 transition-colors"
-          >
-            TehWiz Production
-          </a>
-          .
+          Copyright (C) 2026 <a href="https://isicecakeoisis.com" target="_blank" rel="noopener">ISICECAKEOISIS</a>. A <a href="https://tehwiz.com" target="_blank" rel="noopener">TehWiz Production</a>.
         </p>
       </div>
     </footer>
